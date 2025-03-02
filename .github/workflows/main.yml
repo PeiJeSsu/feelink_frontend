@@ -11,3 +11,6 @@ jobs:
     uses: ./.github/workflows/SonarQube.yml
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  invoke-unittest:
+    name: Run UnitTest
+    uses: ./.github/workflows/UnitTest.yml
