@@ -1,0 +1,190 @@
+import React, { useRef, useEffect } from "react";
+import PropTypes from "prop-types";
+import "./Canvas.css";
+import {
+	initializeCanvas,
+	resizeCanvas,
+	clearCanvas,
+	setDrawingMode,
+	setPanningMode,
+} from "./CanvasOperations";
+import { createBrush, setupBrushEventListeners } from "../brush/BrushTools";
+import { setupShapeDrawing, disableShapeDrawing } from "../shape/ShapeTools";
+import { setupEraser, disableEraser } from "../eraser/ObjectEraserTools";
+import { setupPathEraser, disablePathEraser } from "../eraser/PathEraserTools";
+import CanvasControls from "./CanvasControls";
+import HistoryManager from "../history/HistoryManager";
+import ChatSidebar from "../chat/ChatSidebar";
+
+const Canvas = ({
+	activeTool,
+	brushSettings,
+	shapeSettings,
+	eraserSettings,
+	clearTrigger,
+	onCanvasInit,
+}) => {
+	const canvasRef = useRef(null);
+	const fabricCanvasRef = useRef(null);
+	const eraserRef = useRef(null);
+	const pathEraserRef = useRef(null);
+	const historyManagerRef = useRef(null);
+
+	// 初始化畫布後傳遞引用
+	useEffect(() => {
+		// 獲取容器尺寸而不是使用固定值
+		const container = document.querySelector(".canvas-container");
+		const containerWidth = container ? container.clientWidth : window.innerWidth - 60;
+		const containerHeight = container ? container.clientHeight : window.innerHeight;
+
+		fabricCanvasRef.current = initializeCanvas(
+			canvasRef.current,
+			containerWidth,
+			containerHeight
+		);
+
+		// 初始化歷史管理器
+		historyManagerRef.current = new HistoryManager(fabricCanvasRef.current);
+
+		// 將歷史管理器附加到 canvas 實例上
+		fabricCanvasRef.current.historyManager = historyManagerRef.current;
+
+		console.log("Canvas initialized with history manager:", {
+			canvas: fabricCanvasRef.current,
+			historyManager: historyManagerRef.current,
+		});
+
+		// 保存初始狀態
+		if (fabricCanvasRef.current.historyManager) {
+			fabricCanvasRef.current.historyManager.saveState();
+		}
+
+		if (onCanvasInit && typeof onCanvasInit === "function") {
+			onCanvasInit(fabricCanvasRef.current);
+		}
+
+		// 立即渲染畫布
+		fabricCanvasRef.current.renderAll();
+
+		// 處理視窗大小變化
+		const handleResize = () => {
+			const container = document.querySelector(".canvas-container");
+			const containerWidth = container ? container.clientWidth : window.innerWidth - 60;
+			const containerHeight = container ? container.clientHeight : window.innerHeight;
+
+			resizeCanvas(fabricCanvasRef.current, containerWidth, containerHeight);
+
+			// 確保調整大小後重新渲染
+			fabricCanvasRef.current.renderAll();
+		};
+
+		window.addEventListener("resize", handleResize);
+
+		return () => {
+			window.removeEventListener("resize", handleResize);
+			if (fabricCanvasRef.current) {
+				fabricCanvasRef.current.dispose();
+			}
+			if (historyManagerRef.current) {
+				historyManagerRef.current.clear();
+			}
+		};
+	}, [onCanvasInit]);
+
+	// 根據當前工具設置畫布模式
+	useEffect(() => {
+		if (!fabricCanvasRef.current) return;
+
+		const canvas = fabricCanvasRef.current;
+
+		// 根據當前工具設置繪圖模式
+		if (activeTool === "pencil") {
+			setDrawingMode(canvas, true);
+			disableShapeDrawing(canvas);
+			disableEraser(canvas);
+			disablePathEraser(canvas);
+			setPanningMode(canvas, false);
+
+			// 創建並設置畫筆
+			canvas.freeDrawingBrush = createBrush(canvas, brushSettings.type, brushSettings);
+
+			// 設置畫筆事件監聽器
+			setupBrushEventListeners(canvas, brushSettings);
+		} else if (activeTool === "shape") {
+			setDrawingMode(canvas, false);
+			disableEraser(canvas);
+			disablePathEraser(canvas);
+			setPanningMode(canvas, false);
+
+			// 設置圖形繪製
+			setupShapeDrawing(canvas, shapeSettings);
+		} else if (activeTool === "eraser") {
+			setDrawingMode(canvas, false);
+			disableShapeDrawing(canvas);
+			disablePathEraser(canvas);
+			setPanningMode(canvas, false);
+
+			// 根據橡皮擦類型選擇不同的橡皮擦實現
+			if (eraserSettings.type === "path") {
+				// 設置筆跡橡皮擦
+				pathEraserRef.current = setupPathEraser(canvas, eraserSettings);
+			} else {
+				// 設置物件橡皮擦
+				eraserRef.current = setupEraser(canvas, eraserSettings);
+			}
+		} else if (activeTool === "pan") {
+			// 啟用平移模式
+			setDrawingMode(canvas, false);
+			disableShapeDrawing(canvas);
+			disableEraser(canvas);
+			disablePathEraser(canvas);
+			setPanningMode(canvas, true);
+		} else {
+			setDrawingMode(canvas, false);
+			disableShapeDrawing(canvas);
+			disableEraser(canvas);
+			disablePathEraser(canvas);
+			setPanningMode(canvas, false);
+		}
+	}, [activeTool, brushSettings, shapeSettings, eraserSettings]);
+
+	// 響應清除觸發器
+	useEffect(() => {
+		if (clearTrigger > 0 && fabricCanvasRef.current) {
+			clearCanvas(fabricCanvasRef.current);
+			if (historyManagerRef.current) {
+				historyManagerRef.current.clear();
+			}
+		}
+	}, [clearTrigger]);
+
+	// 當橡皮擦設置變化時更新橡皮擦大小
+	useEffect(() => {
+		if (activeTool === "eraser" && eraserSettings) {
+			if (eraserSettings.type === "path" && pathEraserRef.current) {
+				pathEraserRef.current.updateSize(eraserSettings.size);
+			} else if (eraserRef.current) {
+				eraserRef.current.updateSize(eraserSettings.size);
+			}
+		}
+	}, [eraserSettings, activeTool]);
+
+	return (
+		<div className="canvas-wrapper">
+			<canvas ref={canvasRef} />
+			<CanvasControls canvas={fabricCanvasRef.current} />
+			<ChatSidebar />
+		</div>
+	);
+};
+
+Canvas.propTypes = {
+	activeTool: PropTypes.string.isRequired,
+	brushSettings: PropTypes.object.isRequired,
+	shapeSettings: PropTypes.object.isRequired,
+	eraserSettings: PropTypes.object.isRequired,
+	clearTrigger: PropTypes.number.isRequired,
+	onCanvasInit: PropTypes.func,
+};
+
+export default Canvas;
