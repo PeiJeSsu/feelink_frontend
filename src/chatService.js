@@ -4,6 +4,17 @@ class ChatService {
         this.baseUrl = 'http://localhost:8080/api/chat';
     }
 
+    sendImage(imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        formData.append('sessionId', this.sessionId);
+        formData.append('isUser', true);
+        
+        return fetch(`${this.baseUrl}/upload-image`, {
+            method: 'POST',
+            body: formData
+        }).then(response => response.json());
+    }
     // 生成唯一的會話ID
     generateSessionId() {
         return 'user-' + Math.random().toString(36).substr(2, 9);

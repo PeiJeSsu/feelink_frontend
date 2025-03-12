@@ -18,7 +18,8 @@ export default function ChatRoom() {
                     const formattedHistory = history.map((msg, index) => ({
                         id: index + 1,
                         message: msg.content,
-                        isUser: msg.isUser
+                        isUser: msg.isUser,
+                        isImage: msg.isImage || false
                     }));
                     setMessages(formattedHistory);
                 }
@@ -43,7 +44,8 @@ export default function ChatRoom() {
         const newMessage = {
             id: newId,
             message: messageText,
-            isUser: true
+            isUser: true,
+            isImage: false
         };
         
         setMessages(prevMessages => [...prevMessages, newMessage]);
@@ -59,7 +61,8 @@ export default function ChatRoom() {
                                 const apiMessage = {
                                     id: messages.length + 2, // +1 是因為已經添加了使用者訊息
                                     message: response.content,
-                                    isUser: false
+                                    isUser: false,
+                                    isImage: response.isImage || false
                                 };
                                 setMessages(prevMessages => [...prevMessages, apiMessage]);
                             }
@@ -70,31 +73,32 @@ export default function ChatRoom() {
             .catch(error => console.error('發送訊息錯誤:', error));
     };
 
-    // 處理API分析請求
-    const handleAnalysis = (messageText) => {
-        if (!messageText.trim()) return;
+    // 處理圖片上傳
+    const handleUploadImage = (file) => {
+        if (!file) return;
         
-        ChatService.callApi(messageText)
-            .then(apiResponse => {
-                if (apiResponse && apiResponse.success) {
-                    // 分析請求成功後，檢查新的回應
-                    setTimeout(() => {
-                        ChatService.getLatestResponse()
-                            .then(response => {
-                                if (response) {
-                                    const apiMessage = {
-                                        id: messages.length + 1,
-                                        message: response.content,
-                                        isUser: false
-                                    };
-                                    setMessages(prevMessages => [...prevMessages, apiMessage]);
-                                }
-                            })
-                            .catch(error => console.error('獲取API回應錯誤:', error));
-                    }, 500);
-                }
-            })
-            .catch(error => console.error('API分析錯誤:', error));
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imageDataUrl = e.target.result;
+            
+            // 產生新的訊息ID
+            const newId = messages.length > 0 
+                ? Math.max(...messages.map(m => m.id)) + 1 
+                : 1;
+            
+            // 先將使用者圖片添加到UI
+            const newMessage = {
+                id: newId,
+                message: imageDataUrl,
+                isUser: true,  // 確保這裡設置為 true
+                isImage: true
+            };
+            
+            setMessages(prevMessages => [...prevMessages, newMessage]);
+            
+            // 發送到後端...
+        };
+        reader.readAsDataURL(file);
     };
 
     // 處理輸入區域高度變化
@@ -134,6 +138,7 @@ export default function ChatRoom() {
                         key={msg.id}
                         message={msg.message}
                         isUser={msg.isUser}
+                        isImage={msg.isImage}
                     />
                 ))}
                 {loading && <div>載入中...</div>}
@@ -141,8 +146,8 @@ export default function ChatRoom() {
 
             {/* 輸入區域 */}
             <TextInputArea 
-                onSendMessage={handleSendMessage} 
-                onAnalyze={handleAnalysis} 
+                onSendMessage={handleSendMessage}
+                onUploadImage={handleUploadImage}
                 disabled={loading}
                 onHeightChange={handleInputHeightChange}
             />

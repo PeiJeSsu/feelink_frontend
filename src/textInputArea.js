@@ -2,12 +2,14 @@ import * as React from 'react';
 import { Box, TextField } from '@mui/material';
 import FunctionButton from './functionButton';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
-import AssignmentIcon from '@mui/icons-material/Assignment';
+import ImageIcon from '@mui/icons-material/Image'; // 更改為圖片圖標
 import InputIcon from '@mui/icons-material/Input';
-export default function TextInputArea({ onSendMessage, onAnalyze, disabled, onHeightChange }) {
+
+export default function TextInputArea({ onSendMessage, onUploadImage, disabled, onHeightChange }) {
     const [message, setMessage] = React.useState('');
     const [lineCount, setLineCount] = React.useState(1);
     const textFieldRef = React.useRef(null);
+    const fileInputRef = React.useRef(null); // 新增檔案輸入參考
 
     const calculateLines = (text) => {
         // 計算文字行數
@@ -42,9 +44,15 @@ export default function TextInputArea({ onSendMessage, onAnalyze, disabled, onHe
         }
     };
 
-    const handleAnalyze = () => {
-        if (!disabled && message.trim()) {
-            onAnalyze(message);
+    const handleImageUpload = () => {
+        // 觸發檔案選擇
+        fileInputRef.current.click();
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            onUploadImage(file);
         }
     };
 
@@ -88,63 +96,71 @@ return (
                 width: "65%",
             }}
         />
-           <FunctionButton 
-                icon={<AssignmentIcon />}
-                displayName={"分析"}
-                onClick={handleAnalyze}
-                sx={{
-                    position:"absolute",
-                    left:"5px",
-                    bottom:"5px",
-                    width: "30%",
-                    minWidth: "unset",
-                    padding: "4px 8px",
-                    borderColor: "gray",
-                    color: "black",
-                    "&:hover": {
-                        borderColor: "black",
-                        backgroundColor: "rgba(0, 0, 0, 0.1)",
-                    },
-                }} 
-            />
-            <FunctionButton 
-                icon={<InputIcon />}
-                displayName={"輸入"}
-                onClick={handleSend}
-                disabled={disabled || !message.trim()}
-                sx={{
-                    position:"absolute",
-                    right:"5px",
-                    bottom:"5px",
-                    width: "30%",
-                    minWidth: "unset",
-                    padding: "4px 8px",
+        {/* 隱藏的檔案輸入元素 */}
+        <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+        />
+        <FunctionButton 
+            icon={<ImageIcon />}
+            displayName={"上傳圖片"}
+            onClick={handleImageUpload}
+            sx={{
+                position:"absolute",
+                left:"5px",
+                bottom:"5px",
+                width: "30%",
+                minWidth: "unset",
+                padding: "4px 8px",
+                borderColor: "gray",
+                color: "black",
+                "&:hover": {
                     borderColor: "black",
-                    color: "black",
-                    "&:hover": {
-                        borderColor: "black",
-                        backgroundColor: "rgba(0, 0, 0, 0.1)",
-                    },
-                }} 
-            />
-            <FunctionButton 
-                icon={<KeyboardVoiceIcon />}
-                displayName={"語音"}
-                sx={{
-                    position:"absolute",
-                    right:"5px",
-                    bottom:"40px",
-                    width: "30%",
-                    minWidth: "unset",
-                    padding: "4px 8px",                           
+                    backgroundColor: "rgba(0, 0, 0, 0.1)",
+                },
+            }} 
+        />
+        <FunctionButton 
+            icon={<InputIcon />}
+            displayName={"輸入"}
+            onClick={handleSend}
+            disabled={disabled || !message.trim()}
+            sx={{
+                position:"absolute",
+                right:"5px",
+                bottom:"5px",
+                width: "30%",
+                minWidth: "unset",
+                padding: "4px 8px",
+                borderColor: "black",
+                color: "black",
+                "&:hover": {
                     borderColor: "black",
-                    color: "black",
-                    "&:hover": {
-                        borderColor: "black",
-                        backgroundColor: "rgba(0, 0, 0, 0.1)",
-                    },  
-                }} 
-            />
-        </Box>
-    );
+                    backgroundColor: "rgba(0, 0, 0, 0.1)",
+                },
+            }} 
+        />
+        <FunctionButton 
+            icon={<KeyboardVoiceIcon />}
+            displayName={"語音"}
+            sx={{
+                position:"absolute",
+                right:"5px",
+                bottom:"40px",
+                width: "30%",
+                minWidth: "unset",
+                padding: "4px 8px",                           
+                borderColor: "black",
+                color: "black",
+                "&:hover": {
+                    borderColor: "black",
+                    backgroundColor: "rgba(0, 0, 0, 0.1)",
+                },  
+            }} 
+        />
+    </Box>
+);
 }
