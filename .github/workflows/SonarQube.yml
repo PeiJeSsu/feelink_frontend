@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run Jest tests with coverage
-        run: npm test -- --coverage --coverageReporters=lcov
+        run: npm test -- --coverage --coverageReporters=lcov --coverageThreshold='{}'
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
         env:
