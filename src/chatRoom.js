@@ -7,9 +7,8 @@ import ChatService from './chatService';
 export default function ChatRoom() {
     const [messages, setMessages] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
-    const [inputAreaHeight, setInputAreaHeight] = React.useState(12); // 以百分比表示
+    const [inputAreaHeight, setInputAreaHeight] = React.useState(12);
 
-    // 當元件掛載時從後端載入訊息歷史
     React.useEffect(() => {
         setLoading(true);
         ChatService.getChatHistory()
@@ -31,16 +30,13 @@ export default function ChatRoom() {
             });
     }, []);
 
-    // 處理發送新訊息
     const handleSendMessage = (messageText) => {
         if (!messageText.trim()) return;
         
-        // 產生新的訊息ID
         const newId = messages.length > 0 
             ? Math.max(...messages.map(m => m.id)) + 1 
             : 1;
         
-        // 先將使用者訊息添加到UI
         const newMessage = {
             id: newId,
             message: messageText,
@@ -50,16 +46,14 @@ export default function ChatRoom() {
         
         setMessages(prevMessages => [...prevMessages, newMessage]);
         
-        // 發送到後端
         ChatService.sendMessage(messageText, true)
             .then(() => {
-                // 發送成功後，檢查API回應
                 setTimeout(() => {
                     ChatService.getLatestResponse()
                         .then(response => {
                             if (response) {
                                 const apiMessage = {
-                                    id: messages.length + 2, // +1 是因為已經添加了使用者訊息
+                                    id: messages.length + 2,
                                     message: response.content,
                                     isUser: false,
                                     isImage: response.isImage || false
@@ -68,48 +62,78 @@ export default function ChatRoom() {
                             }
                         })
                         .catch(error => console.error('獲取API回應錯誤:', error));
-                }, 500); // 給後端一些處理時間
+                }, 500);
             })
             .catch(error => console.error('發送訊息錯誤:', error));
     };
 
-    // 處理圖片上傳
-    const handleUploadImage = (file) => {
+    const handleUploadImage = (file, messageText = '') => {
         if (!file) return;
         
         const reader = new FileReader();
         reader.onload = (e) => {
             const imageDataUrl = e.target.result;
-            
-            // 產生新的訊息ID
             const newId = messages.length > 0 
                 ? Math.max(...messages.map(m => m.id)) + 1 
                 : 1;
             
-            // 先將使用者圖片添加到UI
-            const newMessage = {
-                id: newId,
+            // 如果有文字訊息，先發送文字
+            if (messageText && messageText.trim()) {
+                const textMessage = {
+                    id: newId,
+                    message: messageText,
+                    isUser: true,
+                    isImage: false
+                };
+                
+                setMessages(prevMessages => [...prevMessages, textMessage]);
+                
+                // 發送文字訊息到後端
+                ChatService.sendMessage(messageText, true)
+                    .catch(error => console.error('發送文字訊息錯誤:', error));
+            }
+            
+            // 然後發送圖片
+            const imageMessage = {
+                id: newId + (messageText ? 1 : 0),
                 message: imageDataUrl,
-                isUser: true,  // 確保這裡設置為 true
+                isUser: true,
                 isImage: true
             };
             
-            setMessages(prevMessages => [...prevMessages, newMessage]);
+            setMessages(prevMessages => [...prevMessages, imageMessage]);
             
-            // 發送到後端...
+            // 發送圖片到後端
+            // 這裡假設 ChatService 有處理上傳圖片的方法
+            ChatService.sendImage(file)
+                .then(() => {
+                    // 獲取後端回應
+                    setTimeout(() => {
+                        ChatService.getLatestResponse()
+                            .then(response => {
+                                if (response) {
+                                    const apiMessage = {
+                                        id: messages.length + 2 + (messageText ? 1 : 0),
+                                        message: response.content,
+                                        isUser: false,
+                                        isImage: response.isImage || false
+                                    };
+                                    setMessages(prevMessages => [...prevMessages, apiMessage]);
+                                }
+                            })
+                            .catch(error => console.error('獲取API回應錯誤:', error));
+                    }, 500);
+                })
+                .catch(error => console.error('上傳圖片錯誤:', error));
         };
         reader.readAsDataURL(file);
     };
 
-    // 處理輸入區域高度變化
     const handleInputHeightChange = (lineCount) => {
-        // 根據行數計算高度百分比
-        // 基本高度是12%，每增加一行增加3%，最大到25%
         const newHeight = Math.min(12 + (lineCount - 1) * 3, 18);
         setInputAreaHeight(newHeight);
     };
 
-    // 計算訊息區域高度
     const chatAreaHeight = `${85 - inputAreaHeight+8}%`;
 
     return (
@@ -121,7 +145,6 @@ export default function ChatRoom() {
             height: "100%",
             gap: "8px"
         }}>
-            {/* 聊天訊息區域 */}
             <Box sx={{
                 border: '1px solid #ccc',
                 borderRadius: '4px',
@@ -144,7 +167,6 @@ export default function ChatRoom() {
                 {loading && <div>載入中...</div>}
             </Box>
 
-            {/* 輸入區域 */}
             <TextInputArea 
                 onSendMessage={handleSendMessage}
                 onUploadImage={handleUploadImage}
