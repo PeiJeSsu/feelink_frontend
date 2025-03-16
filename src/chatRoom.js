@@ -45,26 +45,24 @@ export default function ChatRoom() {
         };
         
         setMessages(prevMessages => [...prevMessages, newMessage]);
+        setLoading(true);
         
-        ChatService.sendMessage(messageText, true)
-            .then(() => {
-                setTimeout(() => {
-                    ChatService.getLatestResponse()
-                        .then(response => {
-                            if (response) {
-                                const apiMessage = {
-                                    id: messages.length + 2,
-                                    message: response.content,
-                                    isUser: false,
-                                    isImage: response.isImage || false
-                                };
-                                setMessages(prevMessages => [...prevMessages, apiMessage]);
-                            }
-                        })
-                        .catch(error => console.error('獲取API回應錯誤:', error));
-                }, 500);
-            })
-            .catch(error => console.error('發送訊息錯誤:', error));
+        ChatService.sendMessage(messageText)
+        .then(response => {
+            // 接收 AI 的回應
+            const apiMessage = {
+                id: newId + 1,
+                message: response.content,  // 使用 response.content 獲取 AI 回覆內容
+                isUser: false,
+                isImage: false
+            };
+            setMessages(prevMessages => [...prevMessages, apiMessage]);
+            setLoading(false);
+        })
+        .catch(error => {
+            console.error('發送訊息錯誤:', error);
+            setLoading(false);
+        });
     };
 
     const handleUploadImage = (file, messageText = '') => {
@@ -77,7 +75,7 @@ export default function ChatRoom() {
                 ? Math.max(...messages.map(m => m.id)) + 1 
                 : 1;
             
-            // 如果有文字訊息，先發送文字
+            // 如果有文字訊息，先加入顯示
             if (messageText && messageText.trim()) {
                 const textMessage = {
                     id: newId,
@@ -87,13 +85,9 @@ export default function ChatRoom() {
                 };
                 
                 setMessages(prevMessages => [...prevMessages, textMessage]);
-                
-                // 發送文字訊息到後端
-                ChatService.sendMessage(messageText, true)
-                    .catch(error => console.error('發送文字訊息錯誤:', error));
             }
             
-            // 然後發送圖片
+            // 顯示圖片訊息
             const imageMessage = {
                 id: newId + (messageText ? 1 : 0),
                 message: imageDataUrl,
@@ -102,29 +96,25 @@ export default function ChatRoom() {
             };
             
             setMessages(prevMessages => [...prevMessages, imageMessage]);
+            setLoading(true);
             
             // 發送圖片到後端
-            // 這裡假設 ChatService 有處理上傳圖片的方法
-            ChatService.sendImage(file)
-                .then(() => {
-                    // 獲取後端回應
-                    setTimeout(() => {
-                        ChatService.getLatestResponse()
-                            .then(response => {
-                                if (response) {
-                                    const apiMessage = {
-                                        id: messages.length + 2 + (messageText ? 1 : 0),
-                                        message: response.content,
-                                        isUser: false,
-                                        isImage: response.isImage || false
-                                    };
-                                    setMessages(prevMessages => [...prevMessages, apiMessage]);
-                                }
-                            })
-                            .catch(error => console.error('獲取API回應錯誤:', error));
-                    }, 500);
+            ChatService.sendImage(file, messageText)
+                .then(response => {
+                    // 直接處理回應
+                    const apiMessage = {
+                        id: newId + (messageText ? 2 : 1),
+                        message: response.content,
+                        isUser: false,
+                        isImage: response.isImage || false
+                    };
+                    setMessages(prevMessages => [...prevMessages, apiMessage]);
+                    setLoading(false);
                 })
-                .catch(error => console.error('上傳圖片錯誤:', error));
+                .catch(error => {
+                    console.error('上傳圖片錯誤:', error);
+                    setLoading(false);
+                });
         };
         reader.readAsDataURL(file);
     };
@@ -134,7 +124,7 @@ export default function ChatRoom() {
         setInputAreaHeight(newHeight);
     };
 
-    const chatAreaHeight = `${85 - inputAreaHeight+8}%`;
+    const chatAreaHeight = `${85 - inputAreaHeight + 8}%`;
 
     return (
         <Box sx={{ 

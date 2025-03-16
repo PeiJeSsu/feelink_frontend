@@ -9,29 +9,37 @@ class ChatService {
         return 'user-' + Math.random().toString(36).substr(2, 9);
     }
 
-    // 發送訊息
+    // 發送訊息並直接獲取AI回應
     sendMessage(message, isUser = true) {
-        return fetch(`${this.baseUrl}/send`, {
+        const formData = new FormData();
+        formData.append('userMessage', message);
+        formData.append('sessionId', this.sessionId);
+        
+        return fetch(`${this.baseUrl}/chat`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                content: message,
-                isUser: isUser,
-                sessionId: this.sessionId
-            })
-        }).then(response => response.json());
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 確保返回格式與 sendImage 方法一致
+            return {
+                content: data.content,  // 假設後端返回的 AI 回應在 content 欄位
+                isUser: false,
+                isImage: false
+            };
+        });
     }
 
     // 發送圖片
-    sendImage(imageFile) {
+    sendImage(imageFile, message) {
+        console.log("正在發送消息:", message);
         const formData = new FormData();
-        formData.append('image', imageFile);
+        formData.append('file', imageFile);
+        formData.append('userMessage', message);
         formData.append('sessionId', this.sessionId);
         formData.append('isUser', true);
         
-        return fetch(`${this.baseUrl}/upload-image`, {
+        return fetch(`${this.baseUrl}/chat`, {
             method: 'POST',
             body: formData
         }).then(response => response.json());

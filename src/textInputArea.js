@@ -57,6 +57,7 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
             if (onHeightChange) {
                 onHeightChange(1);
             }
+            e.target.value = '';
         }
     };
 
