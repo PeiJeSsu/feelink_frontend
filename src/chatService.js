@@ -1,7 +1,7 @@
 class ChatService {
     constructor() {
         this.sessionId = this.generateSessionId();
-        this.baseUrl = 'http://localhost:8080/api/chat';
+        this.baseUrl = 'http://localhost:8080';
     }
 
     // 生成唯一的會話ID
