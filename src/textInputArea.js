@@ -107,7 +107,7 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
                 style={{ display: 'none' }}
                 onChange={handleFileChange}
             />
-            <FunctionButton 
+            <FunctionButton  aria-label="上傳圖片"
                 icon={<AssignmentIcon />}
                 displayName={"上傳圖片"}
                 onClick={handleImageUpload}
@@ -126,7 +126,7 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
                     },
                 }} 
             />
-            <FunctionButton 
+            <FunctionButton  aria-label="輸入"
                 icon={<InputIcon />}
                 displayName={"輸入"}
                 onClick={handleSend}
