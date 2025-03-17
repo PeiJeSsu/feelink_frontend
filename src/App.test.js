@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ChatRoom from './chatRoom';
 import ChatService from './chatService';
@@ -17,7 +17,7 @@ describe('ChatRoom 組件測試', () => {
     jest.clearAllMocks();
   });
 
-  test('應該正確渲染 ChatRoom 組件', () => {
+  test('應該正確渲染 ChatRoom 組件', async () => {
     // 模擬 getChatHistory 回傳空陣列
     ChatService.getChatHistory.mockResolvedValue([]);
     
@@ -25,6 +25,11 @@ describe('ChatRoom 組件測試', () => {
     
     // 確認載入中的訊息出現
     expect(screen.getByText('載入中...')).toBeInTheDocument();
+
+    // 等待初始化完成
+    await waitFor(() => {
+      expect(ChatService.getChatHistory).toHaveBeenCalled();
+    });
   });
 
   test('應該載入聊天歷史', async () => {
@@ -62,15 +67,19 @@ describe('ChatRoom 組件測試', () => {
     });
     
     // 模擬輸入訊息
-    // 注意：這裡需要找到 TextInputArea 中的輸入欄位
-    // 假設有一個輸入欄位有 placeholder="輸入訊息..."
     const inputElement = screen.getByPlaceholderText('輸入訊息...');
-    fireEvent.change(inputElement, { target: { value: '測試訊息' } });
+    await act(async () => {
+      fireEvent.change(inputElement, { target: { value: '測試訊息' } });
+    });
     
-    // 模擬按下發送按鈕
-    // 假設有一個按鈕包含文字"輸入"
-    const sendButton = screen.getByText('輸入');
-    fireEvent.click(sendButton);
+    // 模擬按下發送按鈕 - 使用 TestId 或找圖標
+    const sendButton = screen.getByTestId('InputIcon').closest('button');
+    // 或者可以在組件中添加 data-testid="send-button" 後這樣找:
+    // const sendButton = screen.getByTestId('send-button');
+    
+    await act(async () => {
+      fireEvent.click(sendButton);
+    });
     
     // 確認訊息已發送
     await waitFor(() => {
@@ -96,12 +105,10 @@ describe('ChatRoom 組件測試', () => {
       expect(ChatService.getChatHistory).toHaveBeenCalled();
     });
     
-    // 模擬文件選擇
     // 創建一個假的圖片文件
     const file = new File(['dummy content'], 'test-image.png', { type: 'image/png' });
     
-    // 獲取文件輸入元素 (通常是隱藏的)
-    // 這裡需要使用 querySelector 或其他方法來獲取隱藏的輸入元素
+    // 獲取文件輸入元素
     const fileInput = document.querySelector('input[type="file"]');
     
     // 模擬 FileReader 的行為
@@ -113,11 +120,12 @@ describe('ChatRoom 組件測試', () => {
     
     global.FileReader = jest.fn(() => mockFileReader);
     
-    // 模擬文件選擇事件
-    fireEvent.change(fileInput, { target: { files: [file] } });
-    
-    // 模擬 FileReader 完成讀取
-    mockFileReader.onload({ target: mockFileReader });
+    // 模擬文件選擇事件 - 包裹在 act 中
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+      // 模擬 FileReader 完成讀取
+      mockFileReader.onload({ target: mockFileReader });
+    });
     
     // 確認圖片已上傳
     await waitFor(() => {
@@ -155,11 +163,18 @@ describe('ChatRoom 組件測試', () => {
     
     // 模擬輸入空訊息
     const inputElement = screen.getByPlaceholderText('輸入訊息...');
-    fireEvent.change(inputElement, { target: { value: '' } });
+    await act(async () => {
+      fireEvent.change(inputElement, { target: { value: '' } });
+    });
     
-    // 模擬按下發送按鈕
-    const sendButton = screen.getByText('輸入');
-    fireEvent.click(sendButton);
+    // 模擬按下發送按鈕 - 使用 TestId 或找圖標
+    const sendButton = screen.getByTestId('InputIcon').closest('button');
+    // 或者可以在組件中添加 data-testid="send-button" 後這樣找:
+    // const sendButton = screen.getByTestId('send-button');
+    
+    await act(async () => {
+      fireEvent.click(sendButton);
+    });
     
     // 確認沒有發送訊息
     expect(ChatService.sendMessage).not.toHaveBeenCalled();

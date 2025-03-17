@@ -126,7 +126,7 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
                     },
                 }} 
             />
-            <FunctionButton  aria-label="輸入"
+            <FunctionButton  aria-label="輸入" data-testid="send-button" 
                 icon={<InputIcon />}
                 displayName={"輸入"}
                 onClick={handleSend}
