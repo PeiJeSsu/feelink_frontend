@@ -1,46 +1,27 @@
-import * as React from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import React from 'react';
+import { render } from '@testing-library/react';
+import ChatMessage from '../ChatMessage';
 
-export default function ChatMessage({ message, isUser, isImage }) {
-    console.log('isUser:', isUser);
+describe('ChatMessage Component', () => {
+    it('renders a text message correctly for a user', () => {
+        const { getByText } = render(
+            <ChatMessage message="Hello!" isUser={true} isImage={false} />
+        );
+        expect(getByText('Hello!')).toBeInTheDocument();
+    });
 
-    return (
-        <Box sx={{
-            display: 'flex',
-            justifyContent: isUser ? 'flex-end' : 'flex-start',
-            mb: 1,
-            width: '100%'
-        }}>
-            <Box sx={{ maxWidth: '70%' }}>
-                <Paper sx={{
-                    padding: '8px 12px',
-                    bgcolor: isUser ? "#DCE775" : "#F9FBE7",
-                    borderRadius: '12px',
-                    borderTopRightRadius: isUser ? 0 : '12px',
-                    borderTopLeftRadius: isUser ? '12px' : 0,
-                    overflow: 'hidden'
-                }}>
-                    {isImage ? (
-                        <img 
-                            src={message} 
-                            alt="上傳的圖片" 
-                            style={{
-                                width: '100%',
-                                borderRadius: '4px',
-                                display: 'block'
-                            }}
-                        />
-                    ) : (
-                        <Typography variant='body2' sx={{
-                            fontSize: "10px",
-                            textAlign: "left",
-                            display: "inline-block",
-                        }}>
-                            {message}
-                        </Typography>
-                    )}
-                </Paper>
-            </Box>
-        </Box>
-    );
-}
+    it('renders a text message correctly for another user', () => {
+        const { getByText } = render(
+            <ChatMessage message="Hi there!" isUser={false} isImage={false} />
+        );
+        expect(getByText('Hi there!')).toBeInTheDocument();
+    });
+
+    it('renders an image message correctly', () => {
+        const testImageUrl = 'https://example.com/test-image.jpg';
+        const { getByAltText } = render(
+            <ChatMessage message={testImageUrl} isUser={true} isImage={true} />
+        );
+        expect(getByAltText('上傳的圖片')).toBeInTheDocument();
+    });
+});
