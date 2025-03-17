@@ -49,7 +49,7 @@
     "coveragePathIgnorePatterns": [
       "src/index.js",
       "src/reportWebVitals.js",
-      "src/**/*.{js,jsx}"
+      "src/App.test.js"
     ],
     "coverageThreshold": {
       "global": {
