@@ -42,14 +42,7 @@ export default function ChatMessage({message, isUser, timestamp, isImage}) {
                         </Typography>
                     )}
                 </Paper>
-                <Typography variant="caption" sx={{
-                    display:'block',
-                    textAlign: isUser ? 'right' : 'left',
-                    mt:0.5,
-                    color: 'text.secondary',
-                }}>
-                    {timestamp}
-                </Typography>
+                
             </Box>
         </Box>
     );
