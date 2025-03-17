@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import ChatMessage from '../chatMessage';
+import ChatMessage from './chatMessage';
 
 describe('ChatMessage Component', () => {
     it('renders a text message correctly for a user', () => {
