@@ -1,15 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import {
-	FormControl,
-	InputLabel,
-	Select,
-	MenuItem,
-	Switch,
-	FormControlLabel,
-	Typography,
-	Slider,
-} from "@mui/material";
+import { FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel, Typography, Slider } from "@mui/material";
 import ColorPicker from "../color/ColorPicker";
 
 const ShapeSettings = ({ shapeSettings, onShapeSettingsChange }) => {
@@ -71,20 +62,13 @@ const ShapeSettings = ({ shapeSettings, onShapeSettingsChange }) => {
 			</FormControl>
 
 			<FormControlLabel
-				control={
-					<Switch
-						checked={shapeSettings.fill !== "transparent"}
-						onChange={handleFillToggle}
-					/>
-				}
+				control={<Switch checked={shapeSettings.fill !== "transparent"} onChange={handleFillToggle} />}
 				label="填充"
 				sx={{ mt: 2 }}
 			/>
 
 			<FormControlLabel
-				control={
-					<Switch checked={shapeSettings.showStroke} onChange={handleStrokeToggle} />
-				}
+				control={<Switch checked={shapeSettings.showStroke} onChange={handleStrokeToggle} />}
 				label="邊框"
 				sx={{ mt: 2 }}
 			/>

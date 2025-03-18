@@ -1,10 +1,6 @@
 import { handleMouseDownRect, handleMouseMoveRect, isTooSmallRect } from "./RectangleShape";
 import { handleMouseDownCircle, handleMouseMoveCircle, isTooSmallCircle } from "./CircleShape";
-import {
-	handleMouseDownTriangle,
-	handleMouseMoveTriangle,
-	isTooSmallTriangle,
-} from "./TriangleShape";
+import { handleMouseDownTriangle, handleMouseMoveTriangle, isTooSmallTriangle } from "./TriangleShape";
 import { handleMouseDownEllipse, handleMouseMoveEllipse, isTooSmallEllipse } from "./EllipseShape";
 import { handleMouseDownLine, handleMouseMoveLine, isTooSmallLine } from "./LineShape";
 
@@ -15,14 +11,7 @@ export const setupShapeDrawing = (canvas, shapeSettings) => {
 
 	canvas.selection = false;
 
-	canvas.off("mouse:down");
-	canvas.off("mouse:move");
-	canvas.off("mouse:up");
-	canvas.off("mouse:dblclick");
-
-	// 鼠標按下事件
 	canvas.on("mouse:down", function (e) {
-		// 檢查點擊處是否已有物件，如果有則不啟動繪圖模式
 		if (e.target) {
 			isDrawing = false;
 			return;
@@ -52,7 +41,6 @@ export const setupShapeDrawing = (canvas, shapeSettings) => {
 		}
 	});
 
-	// 鼠標移動事件
 	canvas.on("mouse:move", function (e) {
 		if (!isDrawing) return;
 
@@ -77,14 +65,10 @@ export const setupShapeDrawing = (canvas, shapeSettings) => {
 		}
 	});
 
-	// 鼠標釋放事件
 	canvas.on("mouse:up", function () {
-		// 完成繪製後檢查圖形尺寸
 		if (isDrawing && currentShape) {
-			// 檢查圖形是否太小（單點擊情況）
 			let isTooSmall = false;
 
-			// 根據不同圖形類型檢查尺寸
 			switch (shapeSettings.type) {
 				case "RECT":
 					isTooSmall = isTooSmallRect(currentShape);
@@ -106,10 +90,8 @@ export const setupShapeDrawing = (canvas, shapeSettings) => {
 			}
 
 			if (isTooSmall) {
-				// 如果太小，從畫布中移除
 				canvas.remove(currentShape);
 			} else {
-				// 尺寸足夠，啟用選擇和控制功能
 				currentShape.set({
 					selectable: true,
 					hasControls: true,
@@ -130,9 +112,7 @@ export const setupShapeDrawing = (canvas, shapeSettings) => {
 	});
 };
 
-// 停用圖形繪製
 export const disableShapeDrawing = (canvas) => {
-	// 恢復選取功能
 	canvas.selection = true;
 
 	canvas.off("mouse:down");

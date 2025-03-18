@@ -75,4 +75,3 @@ export const setupIndicatorEventListeners = (canvas, indicatorRef, createIndicat
 		},
 	};
 };
-

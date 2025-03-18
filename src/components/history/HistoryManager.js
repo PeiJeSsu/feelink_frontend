@@ -55,9 +55,7 @@ class HistoryManager {
 	}
 
 	saveState() {
-		const jsonState = JSON.stringify(
-			this.canvas.toJSON(["selectable", "erasable", "evented", "_originalSelectable"])
-		);
+		const jsonState = JSON.stringify(this.canvas.toJSON(["selectable", "erasable", "evented", "_originalSelectable"]));
 
 		if (this.currentState) {
 			this.undoStack.push(this.currentState);

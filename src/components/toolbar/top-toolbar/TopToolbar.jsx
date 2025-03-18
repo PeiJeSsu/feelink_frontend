@@ -1,13 +1,17 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Box, Paper } from "@mui/material";
 import "./TopToolbar.css";
 import TopToolbarButtons from "./TopToolbarButtons";
-import { handleSaveFile, handleLoadFile, handleFileInputChange } from "../../file/FileOperations";
+import { handleSaveFile, handleLoadFile, handleFileInputChange } from "../../../helpers/file/FileOperationHandlers";
+import { importImage } from "../../../helpers/image/ImageImport";
+import ImageExportDialog from "../../image/ImageExportDialog";
 
 const TopToolbar = ({ onClearClick, canvas, canvasReady }) => {
 	const fileInputRef = useRef(null);
+	const imageInputRef = useRef(null);
 	const historyManager = useRef(null);
+	const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
 	// 設置歷史管理器引用
 	useEffect(() => {
@@ -52,6 +56,14 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady }) => {
 		}
 	};
 
+	const handleExportClick = () => {
+		setExportDialogOpen(true);
+	};
+
+	const handleImportClick = () => {
+		imageInputRef.current?.click();
+	};
+
 	return (
 		<Box className="top-toolbar-container">
 			<Paper className="top-toolbar" elevation={3}>
@@ -64,6 +76,8 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady }) => {
 					onPasteClick={handlePaste}
 					onUndoClick={handleUndo}
 					onRedoClick={handleRedo}
+					onExportClick={handleExportClick}
+					onImportClick={handleImportClick}
 				/>
 			</Paper>
 
@@ -74,6 +88,22 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady }) => {
 				accept=".feelink"
 				onChange={(e) => handleFileInputChange(e, canvas, canvasReady)}
 			/>
+
+			<input
+				type="file"
+				ref={imageInputRef}
+				style={{ display: "none" }}
+				accept="image/*"
+				onChange={(e) => {
+					if (e.target.files?.[0]) {
+						importImage(e.target.files[0], canvas, () => {
+							e.target.value = "";
+						});
+					}
+				}}
+			/>
+
+			<ImageExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} canvas={canvas} />
 		</Box>
 	);
 };

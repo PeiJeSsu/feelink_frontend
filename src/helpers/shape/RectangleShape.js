@@ -1,7 +1,7 @@
 import * as fabric from "fabric";
 import { v4 as uuidv4 } from "uuid";
 
-export const handleMouseDownRect = (event, canvas, settings, currentShape) => {
+export const handleMouseDownRect = (event, canvas, settings) => {
     const id = uuidv4();
     const pointer = canvas.getPointer(event.e);
 

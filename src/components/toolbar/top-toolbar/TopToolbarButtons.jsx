@@ -8,6 +8,8 @@ import {
 	ContentCut,
 	ContentCopy,
 	ContentPaste,
+	Image,
+	FileUpload,
 } from "@mui/icons-material";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
@@ -21,6 +23,8 @@ const TopToolbarButtons = ({
 	onPasteClick,
 	onUndoClick,
 	onRedoClick,
+	onExportClick,
+	onImportClick,
 }) => {
 	return (
 		<Box className="top-toolbar-tools">
@@ -72,6 +76,20 @@ const TopToolbarButtons = ({
 
 			<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
+			<Tooltip title="匯入圖片" placement="bottom">
+				<IconButton onClick={onImportClick}>
+					<FileUpload />
+				</IconButton>
+			</Tooltip>
+
+			<Tooltip title="匯出圖片" placement="bottom">
+				<IconButton onClick={onExportClick}>
+					<Image />
+				</IconButton>
+			</Tooltip>
+
+			<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
 			<Tooltip title="清除畫布" placement="bottom">
 				<IconButton onClick={onClearClick}>
 					<Delete />
@@ -90,6 +108,8 @@ TopToolbarButtons.propTypes = {
 	onPasteClick: PropTypes.func.isRequired,
 	onUndoClick: PropTypes.func,
 	onRedoClick: PropTypes.func,
+	onExportClick: PropTypes.func.isRequired,
+	onImportClick: PropTypes.func.isRequired,
 };
 
 export default TopToolbarButtons;

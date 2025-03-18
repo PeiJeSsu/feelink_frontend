@@ -1,5 +1,5 @@
 import * as fabric from "fabric";
-import { convertToRGBA } from "../../utils/ColorUtils";
+import { convertToRGBA } from "../../helpers/color/ColorConvert";
 
 const createPatternCanvas = (type, settings) => {
 	const patternCanvas = document.createElement("canvas");
@@ -22,6 +22,8 @@ const createPatternCanvas = (type, settings) => {
 			ctx.lineTo(type === "VLineBrush" ? 10 : 5, type === "VLineBrush" ? 5 : 10);
 			ctx.closePath();
 			ctx.stroke();
+			break;
+		default:
 			break;
 	}
 

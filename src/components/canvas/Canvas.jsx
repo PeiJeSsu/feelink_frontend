@@ -1,47 +1,29 @@
 import React, { useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import "./Canvas.css";
-import {
-	initializeCanvas,
-	resizeCanvas,
-	clearCanvas,
-	setDrawingMode,
-	setPanningMode,
-} from "./CanvasOperations";
-import { createBrush, setupBrushEventListeners } from "../brush/BrushTools";
-import { setupShapeDrawing, disableShapeDrawing } from "../shape/ShapeTools";
-import { setupEraser, disableEraser } from "../eraser/ObjectEraserTools";
-import { setupPathEraser, disablePathEraser } from "../eraser/PathEraserTools";
+import { initializeCanvas, resizeCanvas, clearCanvas, setDrawingMode } from "../../helpers/canvas/CanvasOperations";
+import { setPanningMode } from "../../helpers/canvas/PanHelper";
+import { createBrush, setupBrushEventListeners } from "../../helpers/brush/BrushTools";
+import { setupShapeDrawing, disableShapeDrawing } from "../../helpers/shape/ShapeTools";
+import { setupEraser, disableEraser } from "../../helpers/eraser/ObjectEraserTools";
+import { setupPathEraser, disablePathEraser } from "../../helpers/eraser/PathEraserTools";
 import CanvasControls from "./CanvasControls";
 import HistoryManager from "../history/HistoryManager";
 import ChatSidebar from "../chat/ChatSidebar";
 
-const Canvas = ({
-	activeTool,
-	brushSettings,
-	shapeSettings,
-	eraserSettings,
-	clearTrigger,
-	onCanvasInit,
-}) => {
+const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clearTrigger, onCanvasInit }) => {
 	const canvasRef = useRef(null);
 	const fabricCanvasRef = useRef(null);
 	const eraserRef = useRef(null);
 	const pathEraserRef = useRef(null);
 	const historyManagerRef = useRef(null);
 
-	// 初始化畫布後傳遞引用
 	useEffect(() => {
-		// 獲取容器尺寸而不是使用固定值
 		const container = document.querySelector(".canvas-container");
 		const containerWidth = container ? container.clientWidth : window.innerWidth - 60;
 		const containerHeight = container ? container.clientHeight : window.innerHeight;
 
-		fabricCanvasRef.current = initializeCanvas(
-			canvasRef.current,
-			containerWidth,
-			containerHeight
-		);
+		fabricCanvasRef.current = initializeCanvas(canvasRef.current, containerWidth, containerHeight);
 
 		// 初始化歷史管理器
 		historyManagerRef.current = new HistoryManager(fabricCanvasRef.current);

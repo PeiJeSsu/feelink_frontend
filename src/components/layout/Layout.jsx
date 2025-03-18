@@ -57,11 +57,7 @@ const Layout = () => {
 				eraserSettings={eraserSettings}
 				onClearCanvas={handleClearCanvas}
 			/>
-			<TopToolbar
-				onClearClick={handleClearCanvas}
-				canvas={canvasRef.current}
-				canvasReady={canvasReady}
-			/>
+			<TopToolbar onClearClick={handleClearCanvas} canvas={canvasRef.current} canvasReady={canvasReady} />
 			<Canvas
 				activeTool={activeTool}
 				brushSettings={brushSettings}

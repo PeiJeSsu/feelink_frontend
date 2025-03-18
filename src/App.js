@@ -4,12 +4,12 @@ import Layout from "./components/layout/Layout";
 import theme from "./styles/theme";
 
 function App() {
-    return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Layout />
-        </ThemeProvider>
-    );
+	return (
+		<ThemeProvider theme={theme}>
+			<CssBaseline />
+			<Layout />
+		</ThemeProvider>
+	);
 }
 
 export default App;
