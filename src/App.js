@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import { Box } from "@mui/material";
-import ChatRoom from './chatRoom';
+import ChatRoom from "./ChatRoom/chatRoom"
 function App() {
   return (
     <div className="App">

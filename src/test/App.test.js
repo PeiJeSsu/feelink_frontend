@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ChatRoom from './chatRoom';
-import ChatService from './chatService';
+import ChatRoom from '../ChatRoom/chatRoom';
+import ChatService from '../ChatRoom/chatService';
 
-
-jest.mock('./chatService', () => ({
+// 模擬 ChatService 用於 ChatRoom 測試
+jest.mock('../ChatRoom/chatService', () => ({
   getChatHistory: jest.fn(),
   sendMessage: jest.fn(),
   sendImage: jest.fn()
@@ -13,12 +13,10 @@ jest.mock('./chatService', () => ({
 
 describe('ChatRoom 組件測試', () => {
   beforeEach(() => {
-
     jest.clearAllMocks();
   });
 
   test('應該正確渲染 ChatRoom 組件', async () => {
-
     ChatService.getChatHistory.mockResolvedValue([]);
     
     render(<ChatRoom />);
@@ -124,12 +122,10 @@ describe('ChatRoom 組件測試', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('載入聊天歷史錯誤:', expect.any(Error));
     });
     
-
     consoleErrorSpy.mockRestore();
   });
 
   test('當訊息為空時不應該發送', async () => {
-
     ChatService.getChatHistory.mockResolvedValue([]);
     
     render(<ChatRoom />);

@@ -1,18 +1,18 @@
 import * as React from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 
-export default function ChatMessage({message, isUser, timestamp, isImage}) {
-    console.log('isUser:', isUser); // 添加這行來檢查 isUser 值
+export default function ChatMessage({message, isUser, isImage}) {
+    console.log('isUser:', isUser); 
     
     return(
         <Box sx={{
             display:'flex',
-            justifyContent: isUser ? 'flex-end' : 'flex-start', // 這裡決定氣泡的位置
+            justifyContent: isUser ? 'flex-end' : 'flex-start', 
             mb:1,
-            width: '100%' // 確保足夠的寬度
+            width: '100%' 
         }}>
             <Box sx={{
-                maxWidth: '70%' // 限制氣泡最大寬度
+                maxWidth: '70%' 
             }}>
                 <Paper sx={{
                     padding: '8px 12px',
@@ -20,16 +20,16 @@ export default function ChatMessage({message, isUser, timestamp, isImage}) {
                     borderRadius:'12px',
                     borderTopRightRadius: isUser ? 0 : '12px',
                     borderTopLeftRadius: isUser ? '12px' : 0,
-                    overflow: 'hidden' // 確保內容不溢出
+                    overflow: 'hidden' 
                 }}>
                     {isImage ? (
                         <img 
                             src={message} 
                             alt="上傳的圖片" 
                             style={{
-                                width: '100%', // 確保圖片填滿氣泡
+                                width: '100%', 
                                 borderRadius: '4px',
-                                display: 'block' // 移除圖片下方的空白
+                                display: 'block' 
                             }}
                         />
                     ) : (
