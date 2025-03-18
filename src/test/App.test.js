@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import ChatRoom from '../ChatRoom/chatRoom';
 import ChatService from '../ChatRoom/chatService';
 
-// 模擬 ChatService 用於 ChatRoom 測試
+
 jest.mock('../ChatRoom/chatService', () => ({
   getChatHistory: jest.fn(),
   sendMessage: jest.fn(),
@@ -44,6 +44,21 @@ describe('ChatRoom 組件測試', () => {
     });
   });
 
+  test('當歷史為空陣列時應該正確處理', async () => {
+    ChatService.getChatHistory.mockResolvedValue([]);
+    
+    render(<ChatRoom />);
+    
+    await waitFor(() => {
+      expect(ChatService.getChatHistory).toHaveBeenCalled();
+    });
+    
+
+    await waitFor(() => {
+      expect(screen.queryByText('載入中...')).not.toBeInTheDocument();
+    });
+  });
+
   test('應該能夠發送訊息', async () => {
     ChatService.getChatHistory.mockResolvedValue([]);
     ChatService.sendMessage.mockResolvedValue({
@@ -74,6 +89,35 @@ describe('ChatRoom 組件測試', () => {
       expect(screen.getByText('測試訊息')).toBeInTheDocument();
       expect(screen.getByText('這是 AI 的回應')).toBeInTheDocument();
     });
+  });
+
+  test('發送訊息時發生錯誤應該正確處理', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    ChatService.getChatHistory.mockResolvedValue([]);
+    ChatService.sendMessage.mockRejectedValue(new Error('發送失敗'));
+    
+    render(<ChatRoom />);
+    
+    await waitFor(() => {
+      expect(ChatService.getChatHistory).toHaveBeenCalled();
+    });
+    
+    const inputElement = screen.getByPlaceholderText('輸入訊息...');
+    await act(async () => {
+      fireEvent.change(inputElement, { target: { value: '測試訊息' } });
+    });
+    
+    const sendButton = screen.getByTestId('InputIcon').closest('button');
+    
+    await act(async () => {
+      fireEvent.click(sendButton);
+    });
+    
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('發送訊息錯誤:', expect.any(Error));
+    });
+    
+    consoleErrorSpy.mockRestore();
   });
 
   test('應該能夠處理圖片上傳', async () => {
@@ -112,6 +156,84 @@ describe('ChatRoom 組件測試', () => {
     });
   });
 
+  test('應該能夠處理圖片和文字一起上傳', async () => {
+    ChatService.getChatHistory.mockResolvedValue([]);
+    ChatService.sendImage.mockResolvedValue({
+      content: '我收到了您的圖片和文字',
+      isUser: false,
+      isImage: false
+    });
+    
+    render(<ChatRoom />);
+    
+    await waitFor(() => {
+      expect(ChatService.getChatHistory).toHaveBeenCalled();
+    });
+    
+    const file = new File(['dummy content'], 'test-image.png', { type: 'image/png' });
+    const fileInput = document.querySelector('input[type="file"]');
+    
+
+    const inputElement = screen.getByPlaceholderText('輸入訊息...');
+    await act(async () => {
+      fireEvent.change(inputElement, { target: { value: '這是圖片說明' } });
+    });
+    
+    const mockFileReader = {
+      readAsDataURL: jest.fn(),
+      onload: null,
+      result: 'data:image/png;base64,dummyImageData'
+    };
+    
+    global.FileReader = jest.fn(() => mockFileReader);
+    
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+      mockFileReader.onload({ target: mockFileReader });
+    });
+    
+    await waitFor(() => {
+      expect(ChatService.sendImage).toHaveBeenCalledWith(file, '這是圖片說明');
+      expect(screen.getByText('這是圖片說明')).toBeInTheDocument();
+      expect(screen.getByText('我收到了您的圖片和文字')).toBeInTheDocument();
+    });
+  });
+
+  test('上傳圖片發生錯誤應該正確處理', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    ChatService.getChatHistory.mockResolvedValue([]);
+    ChatService.sendImage.mockRejectedValue(new Error('上傳圖片失敗'));
+    
+    render(<ChatRoom />);
+    
+    await waitFor(() => {
+      expect(ChatService.getChatHistory).toHaveBeenCalled();
+    });
+    
+    const file = new File(['dummy content'], 'test-image.png', { type: 'image/png' });
+    const fileInput = document.querySelector('input[type="file"]');
+    
+    const mockFileReader = {
+      readAsDataURL: jest.fn(),
+      onload: null,
+      result: 'data:image/png;base64,dummyImageData'
+    };
+    
+    global.FileReader = jest.fn(() => mockFileReader);
+    
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+      mockFileReader.onload({ target: mockFileReader });
+    });
+    
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('上傳圖片錯誤:', expect.any(Error));
+    });
+    
+    consoleErrorSpy.mockRestore();
+  });
+
   test('應該處理載入聊天歷史時的錯誤', async () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     ChatService.getChatHistory.mockRejectedValue(new Error('載入失敗'));
@@ -146,5 +268,26 @@ describe('ChatRoom 組件測試', () => {
     });
     
     expect(ChatService.sendMessage).not.toHaveBeenCalled();
+  });
+  
+  test('應該正確處理輸入區域高度變化', async () => {
+    ChatService.getChatHistory.mockResolvedValue([]);
+    
+    render(<ChatRoom />);
+    
+    await waitFor(() => {
+      expect(ChatService.getChatHistory).toHaveBeenCalled();
+    });
+    
+
+    const inputElement = screen.getByPlaceholderText('輸入訊息...');
+    
+
+    const longText = '第一行\n第二行\n第三行\n第四行';
+    await act(async () => {
+      fireEvent.change(inputElement, { target: { value: longText } });
+    });
+    
+    expect(inputElement.value).toBe(longText);
   });
 });
