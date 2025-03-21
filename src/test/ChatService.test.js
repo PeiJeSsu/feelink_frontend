@@ -1,13 +1,15 @@
 import { ChatService } from '../ChatRoom/chatService';
+import axios from 'axios';
 
-// Mock fetch
-global.fetch = jest.fn();
+// Mock axios
+jest.mock('axios');
 
 describe('ChatService', () => {
     let chatService;
 
     beforeEach(() => {
-        fetch.mockClear(); // 清除 mock
+        axios.get.mockClear();
+        axios.post.mockClear();
         chatService = new ChatService('user-123456789'); // 測試時固定 sessionId
     });
 
@@ -16,16 +18,14 @@ describe('ChatService', () => {
     });
 
     test('sendMessage 應該發送 POST 請求並返回回應', async () => {
-        const mockResponse = { content: '機器人回覆' };
-        fetch.mockResolvedValueOnce({
-            json: jest.fn().mockResolvedValue(mockResponse)
-        });
+        const mockResponse = { data: { content: '機器人回覆' } };
+        axios.post.mockResolvedValueOnce(mockResponse);
 
         const result = await chatService.sendMessage('Hello');
 
-        expect(fetch).toHaveBeenCalledWith(
-            expect.stringContaining('/chat'),
-            expect.objectContaining({ method: 'POST' })
+        expect(axios.post).toHaveBeenCalledWith(
+            'http://localhost:8080/chat',
+            expect.any(FormData)
         );
 
         expect(result).toEqual({
@@ -36,46 +36,46 @@ describe('ChatService', () => {
     });
 
     test('getChatHistory 應該發送 GET 請求並返回回應', async () => {
-        const mockResponse = [{ message: '歷史訊息' }];
-        fetch.mockResolvedValueOnce({
-            json: jest.fn().mockResolvedValue(mockResponse)
-        });
+        const mockResponse = { data: [{ message: '歷史訊息' }] };
+        axios.get.mockResolvedValueOnce(mockResponse);
     
         const result = await chatService.getChatHistory();
     
-        expect(fetch).toHaveBeenCalledWith(
-            'http://localhost:8080/history/user-123456789',
-            expect.objectContaining({ method: 'GET' }) // 確保有 method: 'GET'
+        expect(axios.get).toHaveBeenCalledWith(
+            'http://localhost:8080/history/user-123456789'
         );
     
         expect(result).toEqual([{ message: '歷史訊息' }]);
     });
     
     test('getLatestResponse 應該處理 204 回應', async () => {
-        fetch.mockResolvedValueOnce({ status: 204 });
+        const mockError = {
+            response: {
+                status: 204
+            }
+        };
+        axios.get.mockRejectedValueOnce(mockError);
 
         const result = await chatService.getLatestResponse();
 
-        expect(fetch).toHaveBeenCalledWith(
-            'http://localhost:8080/latest-response/user-123456789',
-            expect.objectContaining({ method: 'GET' })
+        expect(axios.get).toHaveBeenCalledWith(
+            'http://localhost:8080/latest-response/user-123456789'
         );
 
         expect(result).toBeNull();
     });
 
     test('getLatestResponse 應該處理正常回應', async () => {
-        const mockResponse = { content: '最新回覆' };
-        fetch.mockResolvedValueOnce({
+        const mockResponse = { 
             status: 200,
-            json: jest.fn().mockResolvedValue(mockResponse)
-        });
+            data: { content: '最新回覆' } 
+        };
+        axios.get.mockResolvedValueOnce(mockResponse);
 
         const result = await chatService.getLatestResponse();
 
-        expect(fetch).toHaveBeenCalledWith(
-            'http://localhost:8080/latest-response/user-123456789',
-            expect.objectContaining({ method: 'GET' })
+        expect(axios.get).toHaveBeenCalledWith(
+            'http://localhost:8080/latest-response/user-123456789'
         );
 
         expect(result).toEqual({ content: '最新回覆' });
@@ -83,40 +83,39 @@ describe('ChatService', () => {
 
     test('sendImage 應該發送 POST 請求並返回回應', async () => {
         const mockFile = new File(['dummy content'], 'test.png', { type: 'image/png' });
-        const mockResponse = { success: true };
+        const mockResponse = { data: { success: true } };
 
-        fetch.mockResolvedValueOnce({
-            json: jest.fn().mockResolvedValue(mockResponse),
-        });
+        axios.post.mockResolvedValueOnce(mockResponse);
 
         const result = await chatService.sendImage(mockFile, '這是一張測試圖片');
 
-        expect(fetch).toHaveBeenCalledWith(
+        expect(axios.post).toHaveBeenCalledWith(
             'http://localhost:8080/chat',
-            expect.objectContaining({
-                method: 'POST',
-                body: expect.any(FormData),
-            })
+            expect.any(FormData)
         );
 
-        expect(result).toEqual(mockResponse);
+        expect(result).toEqual({ success: true });
     });
 
     test('callApi 應該發送 POST 請求並返回回應', async () => {
-        const mockResponse = { reply: '這是 API 回應' };
+        const mockResponse = { data: { reply: '這是 API 回應' } };
         const message = '測試 API 訊息';
 
-        fetch.mockResolvedValueOnce({
-            json: jest.fn().mockResolvedValue(mockResponse),
-        });
+        axios.post.mockResolvedValueOnce(mockResponse);
 
         const result = await chatService.callApi(message);
 
-        expect(fetch).toHaveBeenCalledWith(
-            `http://localhost:8080/api-message?message=${encodeURIComponent(message)}&sessionId=user-123456789`,
-            expect.objectContaining({ method: 'POST' })
+        expect(axios.post).toHaveBeenCalledWith(
+            'http://localhost:8080/api-message',
+            null,
+            {
+                params: {
+                    message: message,
+                    sessionId: 'user-123456789'
+                }
+            }
         );
 
-        expect(result).toEqual(mockResponse);
+        expect(result).toEqual({ reply: '這是 API 回應' });
     });
 });
