@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 class ChatService {
     constructor(sessionId = null) {
         this.sessionId = sessionId || this.generateSessionId();
@@ -13,16 +15,12 @@ class ChatService {
         formData.append('userMessage', message);
         formData.append('sessionId', this.sessionId);
 
-        return fetch(`${this.baseUrl}/chat`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => ({
-            content: data.content,
-            isUser: false,
-            isImage: false
-        }));
+        return axios.post(`${this.baseUrl}/chat`, formData)
+            .then(response => ({
+                content: response.data.content,
+                isUser: false,
+                isImage: false
+            }));
     }
 
     sendImage(imageFile, message) {
@@ -32,28 +30,41 @@ class ChatService {
         formData.append('userMessage', message);
         formData.append('sessionId', this.sessionId);
 
-        return fetch(`${this.baseUrl}/chat`, {
-            method: 'POST',
-            body: formData
-        }).then(response => response.json());
+        return axios.post(`${this.baseUrl}/chat`, formData)
+            .then(response => response.data);
     }
 
     callApi(message) {
-        return fetch(`${this.baseUrl}/api-message?message=${encodeURIComponent(message)}&sessionId=${this.sessionId}`, {
-            method: 'POST'
-        }).then(response => response.json());
+        return axios.post(`${this.baseUrl}/api-message`, null, {
+            params: {
+                message: message,
+                sessionId: this.sessionId
+            }
+        }).then(response => response.data);
     }
 
     getChatHistory() {
-        return fetch(`${this.baseUrl}/history/${this.sessionId}`, { method: 'GET' })
-            .then(response => response.json());
+        return axios.get(`${this.baseUrl}/history/${this.sessionId}`)
+            .then(response => response.data);
     }
     
     getLatestResponse() {
-        return fetch(`${this.baseUrl}/latest-response/${this.sessionId}`, { method: 'GET' })
-            .then(response => response.status === 204 ? null : response.json());
+        return axios.get(`${this.baseUrl}/latest-response/${this.sessionId}`)
+            .then(response => {
+                // axios 會在沒有內容時拋出錯誤，這裡處理 204 狀態
+                if (response.status === 204) {
+                    return null;
+                }
+                return response.data;
+            })
+            .catch(error => {
+                if (error.response && error.response.status === 204) {
+                    return null;
+                }
+                throw error;
+            });
     }
 }
 
 export default new ChatService(); 
-export { ChatService }; 
+export { ChatService };
