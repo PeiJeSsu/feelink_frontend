@@ -13,3 +13,6 @@ global.ResizeObserver = class {
     unobserve() {}
     disconnect() {}
   };
+  global.crypto = {
+    randomUUID: jest.fn(() => "mocked-user-id-123"),
+  };
