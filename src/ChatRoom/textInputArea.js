@@ -10,24 +10,40 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
     const [lineCount, setLineCount] = React.useState(1);
     const textFieldRef = React.useRef(null);
     const fileInputRef = React.useRef(null);
+    const textAreaRef = React.useRef(null);
 
-    const calculateLines = (text) => {
-        if (!text) return 1;
-        const lines = text.split('\n').length;
-        return lines;
-    };
+
+    const calculateLines = React.useCallback(() => {
+        if (!textAreaRef.current) return 1;
+        
+        const textArea = textAreaRef.current;
+        const computedStyle = window.getComputedStyle(textArea);
+        const lineHeight = parseInt(computedStyle.lineHeight) || 20;
+        const paddingTop = parseInt(computedStyle.paddingTop) || 0;
+        const paddingBottom = parseInt(computedStyle.paddingBottom) || 0;
+        
+
+        const contentHeight = textArea.scrollHeight - paddingTop - paddingBottom;
+        const calculatedLines = Math.ceil(contentHeight / lineHeight);
+        
+
+        return Math.min(calculatedLines, 3);
+    }, []);
 
     const handleMessageChange = (e) => {
         const newMessage = e.target.value;
         setMessage(newMessage);
         
-        const newLineCount = calculateLines(newMessage);
-        if (newLineCount !== lineCount) {
-            setLineCount(newLineCount);
-            if (onHeightChange) {
-                onHeightChange(newLineCount);
+
+        setTimeout(() => {
+            const newLineCount = calculateLines();
+            if (newLineCount !== lineCount) {
+                setLineCount(newLineCount);
+                if (onHeightChange) {
+                    onHeightChange(newLineCount);
+                }
             }
-        }
+        }, 0);
     };
 
     const handleSend = () => {
@@ -48,10 +64,10 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file && file.type.startsWith('image/')) {
-            // 將當前訊息文字和圖片一起傳送
+
             onUploadImage(file, message);
             
-            // 清空輸入框
+
             setMessage('');
             setLineCount(1);
             if (onHeightChange) {
@@ -68,7 +84,30 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
         }
     };
 
+
     const inputHeight = `${Math.min(lineCount * 20 + 40, 100)}px`;
+
+
+    React.useEffect(() => {
+        if (!textAreaRef.current) return;
+
+
+        const resizeObserver = new ResizeObserver(() => {
+            const newLineCount = calculateLines();
+            if (newLineCount !== lineCount) {
+                setLineCount(newLineCount);
+                if (onHeightChange) {
+                    onHeightChange(newLineCount);
+                }
+            }
+        });
+
+        resizeObserver.observe(textAreaRef.current);
+        
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, [calculateLines, lineCount, onHeightChange]);
 
     return (
         <Box sx={{ 
@@ -93,6 +132,7 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
                 onKeyPress={handleKeyPress}
                 placeholder="輸入訊息..."
                 disabled={disabled}
+                inputRef={textAreaRef}
                 sx={{
                     position: "absolute",
                     bottom: "40px",
