@@ -1,0 +1,36 @@
+.chat-sidebar {
+    position: fixed;
+    top: 0;
+    right: -350px; /* 初始狀態隱藏 */
+    height: 100vh;
+    width: 350px;
+    transition: right 0.3s ease;
+    z-index: 1000;
+}
+
+.chat-sidebar.open {
+    right: 0;
+}
+
+.chat-content {
+    position: relative;
+    height: 100%;
+    background-color: #fff;
+    border-radius: 8px 0 0 8px;
+}
+
+.toggle-button {
+    position: absolute;
+    left: -28px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #fff !important;
+    border-radius: 50% 0 0 50% !important;
+    padding: 4px !important;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.chat-container {
+    height: 100%;
+    overflow-y: auto;
+} 

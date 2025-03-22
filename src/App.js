@@ -1,17 +1,15 @@
-import logo from './logo.svg';
-import './App.css';
-import { Box } from "@mui/material";
-import ChatRoom from "./ChatRoom/chatRoom"
+import { ThemeProvider } from "@mui/material";
+import CssBaseline from "@mui/material/CssBaseline";
+import Layout from "./components/layout/Layout";
+import theme from "./styles/theme";
+
 function App() {
-  return (
-    <div className="App">
-      
-      <Box sx={{ position: "relative", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <ChatRoom></ChatRoom>
-      
-      </Box>
-    </div>
-  );
+	return (
+		<ThemeProvider theme={theme}>
+			<CssBaseline />
+			<Layout />
+		</ThemeProvider>
+	);
 }
 
 export default App;

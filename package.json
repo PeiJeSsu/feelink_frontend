@@ -3,15 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@erase2d/fabric": "^1.1.7",
+    "@mui/styles": "^6.4.6",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.4.7",
     "@mui/material": "^6.4.7",
     "axios": "^1.8.3",
     "cra-template": "1.2.0",
+    "fabric": "^6.6.1",
+    "file-saver": "^2.0.5",
+    "jspdf": "^3.0.0",
+    "pdfjs-dist": "^5.0.375",
     "react": "^19.0.0",
+    "react-color": "^2.19.3",
+    "react-colorful": "^5.6.1",
     "react-dom": "^19.0.0",
+    "react-draggable": "^4.4.6",
+    "react-hotkeys-hook": "^4.6.1",
     "react-scripts": "5.0.1",
+    "uuid": "^11.1.0",
     "web-vitals": "^4.2.4"
   },
   "scripts": {
@@ -39,6 +50,7 @@
     ]
   },
   "devDependencies": {
+    "prettier": "3.5.3",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/preset-env": "^7.26.9",
     "@testing-library/jest-dom": "^6.6.3",
