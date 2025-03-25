@@ -4,7 +4,7 @@ import FunctionButton from './functionButton';
 import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import InputIcon from '@mui/icons-material/Input';
-
+import PropTypes from 'prop-types';
 export default function TextInputArea({ onSendMessage, onUploadImage, disabled, onHeightChange }) {
     const [message, setMessage] = React.useState('');
     const [lineCount, setLineCount] = React.useState(1);
@@ -63,7 +63,7 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
+        if (file?.type?.startsWith('image/')) {
 
             onUploadImage(file, message);
             
@@ -129,7 +129,7 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
                 variant="standard"
                 value={message}
                 onChange={handleMessageChange}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder="輸入訊息..."
                 disabled={disabled}
                 inputRef={textAreaRef}
@@ -207,3 +207,14 @@ export default function TextInputArea({ onSendMessage, onUploadImage, disabled, 
         </Box>
     );
 }
+TextInputArea.propTypes = {
+    onSendMessage: PropTypes.func.isRequired, 
+    onUploadImage: PropTypes.func.isRequired, 
+    disabled: PropTypes.bool, 
+    onHeightChange: PropTypes.func, 
+  };
+  
+  TextInputArea.defaultProps = {
+    disabled: false,
+    onHeightChange: null,
+  };

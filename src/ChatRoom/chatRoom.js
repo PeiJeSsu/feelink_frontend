@@ -4,15 +4,84 @@ import TextInputArea from './textInputArea';
 import { Box } from '@mui/material';
 import ChatService from './chatService';
 
+// 將圖片處理邏輯抽離成獨立函數
+const processImageUpload = (file, messageText, messages, setMessages, setLoading) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imageDataUrl = e.target.result;
+            const newId = messages.length > 0 
+                ? Math.max(...messages.map(m => m.id)) + 1 
+                : 1;
+            
+            const updatedMessages = [];
+            
+            // 如果有文字訊息，先加入顯示
+            if (messageText?.trim()) {
+                updatedMessages.push({
+                    id: newId,
+                    message: messageText,
+                    isUser: true,
+                    isImage: false
+                });
+            }
+            
+            // 顯示圖片訊息
+            const imageMessage = {
+                id: newId + (messageText ? 1 : 0),
+                message: imageDataUrl,
+                isUser: true,
+                isImage: true
+            };
+            
+            updatedMessages.push(imageMessage);
+            
+            // 更新本地訊息
+            setMessages(prevMessages => [...prevMessages, ...updatedMessages]);
+            setLoading(true);
+            
+            // 發送圖片到後端
+            ChatService.sendImage(file, messageText)
+                .then(response => {
+                    const apiMessage = {
+                        id: newId + (messageText ? 2 : 1),
+                        message: response.content,
+                        isUser: false,
+                        isImage: response.isImage || false
+                    };
+                    
+                    setMessages(prevMessages => [...prevMessages, apiMessage]);
+                    setLoading(false);
+                    resolve();
+                })
+                .catch(error => {
+                    console.error('上傳圖片錯誤:', error);
+                    setLoading(false);
+                    reject(error);
+                });
+        };
+        
+        reader.onerror = (error) => {
+            console.error('讀取圖片錯誤:', error);
+            reject(error);
+        };
+        
+        reader.readAsDataURL(file);
+    });
+};
+
 export default function ChatRoom() {
     const [messages, setMessages] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
     const [inputAreaHeight, setInputAreaHeight] = React.useState(12);
 
+    // 載入聊天歷史
     React.useEffect(() => {
-        setLoading(true);
-        ChatService.getChatHistory()
-            .then(history => {
+        const fetchChatHistory = async () => {
+            try {
+                setLoading(true);
+                const history = await ChatService.getChatHistory();
+                
                 if (history && history.length > 0) {
                     const formattedHistory = history.map((msg, index) => ({
                         id: index + 1,
@@ -22,14 +91,17 @@ export default function ChatRoom() {
                     }));
                     setMessages(formattedHistory);
                 }
-                setLoading(false);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('載入聊天歷史錯誤:', error);
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        fetchChatHistory();
     }, []);
 
+    // 發送文字訊息
     const handleSendMessage = (messageText) => {
         if (!messageText.trim()) return;
         
@@ -49,10 +121,9 @@ export default function ChatRoom() {
         
         ChatService.sendMessage(messageText)
         .then(response => {
-            // 接收 AI 的回應
             const apiMessage = {
                 id: newId + 1,
-                message: response.content,  // 使用 response.content 獲取 AI 回覆內容
+                message: response.content, 
                 isUser: false,
                 isImage: false
             };
@@ -65,60 +136,17 @@ export default function ChatRoom() {
         });
     };
 
+    // 上傳圖片
     const handleUploadImage = (file, messageText = '') => {
         if (!file) return;
         
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const imageDataUrl = e.target.result;
-            const newId = messages.length > 0 
-                ? Math.max(...messages.map(m => m.id)) + 1 
-                : 1;
-            
-            // 如果有文字訊息，先加入顯示
-            if (messageText && messageText.trim()) {
-                const textMessage = {
-                    id: newId,
-                    message: messageText,
-                    isUser: true,
-                    isImage: false
-                };
-                
-                setMessages(prevMessages => [...prevMessages, textMessage]);
-            }
-            
-            // 顯示圖片訊息
-            const imageMessage = {
-                id: newId + (messageText ? 1 : 0),
-                message: imageDataUrl,
-                isUser: true,
-                isImage: true
-            };
-            
-            setMessages(prevMessages => [...prevMessages, imageMessage]);
-            setLoading(true);
-            
-            // 發送圖片到後端
-            ChatService.sendImage(file, messageText)
-                .then(response => {
-                    // 直接處理回應
-                    const apiMessage = {
-                        id: newId + (messageText ? 2 : 1),
-                        message: response.content,
-                        isUser: false,
-                        isImage: response.isImage || false
-                    };
-                    setMessages(prevMessages => [...prevMessages, apiMessage]);
-                    setLoading(false);
-                })
-                .catch(error => {
-                    console.error('上傳圖片錯誤:', error);
-                    setLoading(false);
-                });
-        };
-        reader.readAsDataURL(file);
+        processImageUpload(file, messageText, messages, setMessages, setLoading)
+            .catch(error => {
+                console.error('圖片上傳處理失敗:', error);
+            });
     };
 
+    // 調整輸入區域高度
     const handleInputHeightChange = (lineCount) => {
         const newHeight = Math.min(12 + (lineCount - 1) * 3, 18);
         setInputAreaHeight(newHeight);

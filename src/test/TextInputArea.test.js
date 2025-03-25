@@ -76,7 +76,7 @@ describe('TextInputArea 組件測試', () => {
     });
     
     await act(async () => {
-      fireEvent.keyPress(inputElement, { key: 'Enter', code: 'Enter', charCode: 13 });
+      fireEvent.keyDown(inputElement, { key: 'Enter', preventDefault: () => {} });
     });
     
     expect(mockSendMessage).toHaveBeenCalledWith('Hello');
@@ -88,7 +88,7 @@ describe('TextInputArea 組件測試', () => {
     
     // 測試 Shift+Enter 不會發送消息
     await act(async () => {
-      fireEvent.keyPress(inputElement, { key: 'Enter', code: 'Enter', charCode: 13, shiftKey: true });
+      fireEvent.keyDown(inputElement, { key: 'Enter', shiftKey: true, preventDefault: () => {} });
     });
     
     // mockSendMessage 調用次數應該仍為 1（只有第一次調用）

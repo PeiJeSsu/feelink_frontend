@@ -1,40 +1,39 @@
 import * as React from 'react';
+import PropTypes from 'prop-types';  // ✅ 確保引入 PropTypes
 import { Box, Paper, Typography } from '@mui/material';
 
-export default function ChatMessage({message, isUser, isImage}) {
-    console.log('isUser:', isUser); 
-    
-    return(
+export default function ChatMessage({ message, isUser, isImage }) {
+    console.log('isUser:', isUser);
+
+    return (
         <Box sx={{
-            display:'flex',
-            justifyContent: isUser ? 'flex-end' : 'flex-start', 
-            mb:1,
-            width: '100%' 
+            display: 'flex',
+            justifyContent: isUser ? 'flex-end' : 'flex-start',
+            mb: 1,
+            width: '100%'
         }}>
-            <Box sx={{
-                maxWidth: '70%' 
-            }}>
+            <Box sx={{ maxWidth: '70%' }}>
                 <Paper sx={{
                     padding: '8px 12px',
                     bgcolor: isUser ? "#DCE775" : "#F9FBE7",
-                    borderRadius:'12px',
+                    borderRadius: '12px',
                     borderTopRightRadius: isUser ? 0 : '12px',
                     borderTopLeftRadius: isUser ? '12px' : 0,
-                    overflow: 'hidden' 
+                    overflow: 'hidden'
                 }}>
                     {isImage ? (
-                        <img 
-                            src={message} 
-                            alt="上傳的圖片" 
+                        <img
+                            src={message}
+                            alt="上傳的圖片"
                             style={{
-                                width: '100%', 
+                                width: '100%',
                                 borderRadius: '4px',
-                                display: 'block' 
+                                display: 'block'
                             }}
                         />
                     ) : (
                         <Typography variant='body2' sx={{
-                            fontSize:"10px",
+                            fontSize: "10px",
                             textAlign: "left",
                             display: "inline-block",
                         }}>
@@ -42,8 +41,14 @@ export default function ChatMessage({message, isUser, isImage}) {
                         </Typography>
                     )}
                 </Paper>
-                
             </Box>
         </Box>
     );
 }
+
+ChatMessage.propTypes = {
+    message: PropTypes.string.isRequired,  
+    isUser: PropTypes.bool,                
+    isImage: PropTypes.bool                
+};
+
