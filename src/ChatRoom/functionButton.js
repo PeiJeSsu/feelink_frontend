@@ -18,7 +18,7 @@ export default function FunctionButton({ displayName, onClick, disabled, icon, s
   );
 }
 FunctionButton.propTypes = {
-  displayName: PropTypes.string.isRequired, 
+  displayName: PropTypes.string, 
   onClick: PropTypes.func, 
   disabled: PropTypes.bool, 
   icon: PropTypes.node, 

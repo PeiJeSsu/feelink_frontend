@@ -4,7 +4,6 @@ import TextInputArea from './textInputArea';
 import { Box } from '@mui/material';
 import ChatService from './chatService';
 
-// 將圖片處理邏輯抽離成獨立函數
 const processImageUpload = (file, messageText, messages, setMessages, setLoading) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -57,13 +56,13 @@ const processImageUpload = (file, messageText, messages, setMessages, setLoading
                 .catch(error => {
                     console.error('上傳圖片錯誤:', error);
                     setLoading(false);
-                    reject(error);
+                    reject(new Error(`圖片上傳失敗：${error.message}`));
                 });
         };
         
         reader.onerror = (error) => {
             console.error('讀取圖片錯誤:', error);
-            reject(error);
+            reject(new Error(`讀取圖片錯誤：${error.message}`));
         };
         
         reader.readAsDataURL(file);
