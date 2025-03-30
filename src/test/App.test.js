@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ChatRoom from '../ChatRoom/chatRoom';
-import ChatService from '../ChatRoom/chatService';
+import ChatRoom from '../ChatRoom/ChatRoom';
+import ChatService from '../ChatRoom/ChatService';
 
 
-jest.mock('../ChatRoom/chatService', () => ({
+jest.mock('../ChatRoom/ChatService', () => ({
   getChatHistory: jest.fn(),
   sendMessage: jest.fn(),
   sendImage: jest.fn()

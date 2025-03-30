@@ -1,8 +1,8 @@
 const React = require('react');
 const { render, screen, fireEvent, waitFor, act } = require('@testing-library/react');
 require('@testing-library/jest-dom');
-const ChatRoom = require('../ChatRoom/chatRoom').default;
-const ChatService = require('../ChatRoom/chatService');
+const ChatRoom = require('../ChatRoom/ChatRoom').default;
+const ChatService = require('../ChatRoom/ChatService');
 const TextInputArea = require('../ChatRoom/textInputArea').default;
 
 // 模擬 ResizeObserver
@@ -21,7 +21,7 @@ class MockResizeObserver {
 
 
 
-jest.mock('../ChatRoom/chatService', () => ({
+jest.mock('../ChatRoom/ChatService', () => ({
   getChatHistory: jest.fn(),
   sendMessage: jest.fn(),
   sendImage: jest.fn()

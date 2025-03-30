@@ -1,4 +1,4 @@
-import { ChatService } from '../ChatRoom/chatService';
+import { ChatService } from '../ChatRoom/ChatService';
 import axios from 'axios';
 
 // Mock axios
