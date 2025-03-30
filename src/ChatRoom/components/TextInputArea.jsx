@@ -6,6 +6,7 @@ import InputIcon from '@mui/icons-material/Input';
 import { useTextInput } from '../hooks/UseTextInput';
 import { isValidMessage } from '../helpers/HandleTextInput';
 import { containerStyle, buttonContainerStyle, textFieldStyle } from '../styles/TextInputStyles';
+import PropTypes from "prop-types";
 
 export default function TextInputArea({ onSendMessage, onSendImage, disabled }) {
 	const{
@@ -56,3 +57,9 @@ export default function TextInputArea({ onSendMessage, onSendImage, disabled }) 
 		</Box>
 	);
 }
+
+TextInputArea.propTypes = {
+	onSendMessage: PropTypes.func.isRequired,
+	onSendImage: PropTypes.func.isRequired,
+	disabled: PropTypes.bool
+};

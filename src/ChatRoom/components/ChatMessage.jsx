@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import { chatMessageStyles } from '../styles/ChatMessageStyles';
+import PropTypes from "prop-types";
 
 export default function ChatMessage({ message, isUser, isImage }) {
     return (
@@ -19,3 +20,9 @@ export default function ChatMessage({ message, isUser, isImage }) {
         </Box>
     );
 }
+
+ChatMessage.propTypes = {
+    message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
+    isUser: PropTypes.bool.isRequired,
+    isImage: PropTypes.bool.isRequired,
+};
