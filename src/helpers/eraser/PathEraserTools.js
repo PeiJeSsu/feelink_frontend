@@ -8,11 +8,13 @@ export const setupPathEraser = (canvas, settings) => {
 	// 確保畫布處於繪圖模式
 	canvas.isDrawingMode = true;
 
-	// 創建 EraserBrush 實例
-	const eraser = new EraserBrush(canvas);
+	// 使用對象引用來存儲橡皮擦，這樣可以更新它
+	const eraserRef = {
+		current: new EraserBrush(canvas),
+	};
 
 	// 設置橡皮擦寬度
-	eraser.width = settings.size || 20;
+	eraserRef.current.width = settings.size || 20;
 
 	// 移除現有的事件監聽器
 	canvas.off("mouse:down");
@@ -24,33 +26,39 @@ export const setupPathEraser = (canvas, settings) => {
 	// 自動將所有物件設為可擦除
 	setAllObjectsErasable(canvas);
 
-	// 監聽橡皮擦開始事件
-	eraser.on("start", (e) => {
-		console.log("開始擦除");
-	});
+	// 設置橡皮擦事件
+	const setupEraserEvents = (eraser) => {
+		// 監聽橡皮擦開始事件
+		eraser.on("start", (e) => {
+			console.log("開始擦除");
+		});
 
-	// 監聽橡皮擦結束事件
-	eraser.on("end", async (e) => {
-		const { path, targets } = e.detail;
+		// 監聽橡皮擦結束事件
+		eraser.on("end", async (e) => {
+			const { path, targets } = e.detail;
 
-		try {
-			await eraser.commit({ path, targets });
+			try {
+				await eraser.commit({ path, targets });
 
-			const hasErasedObjects = targets.some((obj) => obj.clipPath instanceof ClippingGroup);
-			if (hasErasedObjects) {
-				console.log("成功擦除部分物件");
+				const hasErasedObjects = targets.some((obj) => obj.clipPath instanceof ClippingGroup);
+				if (hasErasedObjects) {
+					console.log("成功擦除部分物件");
+				}
+
+				canvas.renderAll();
+
+				// 在橡皮擦操作結束後保存狀態
+				if (canvas.historyManager) {
+					canvas.historyManager.saveState();
+				}
+			} catch (error) {
+				console.error("擦除操作失敗:", error);
 			}
+		});
+	};
 
-			canvas.renderAll();
-
-			// 在橡皮擦操作結束後保存狀態
-			if (canvas.historyManager) {
-				canvas.historyManager.saveState();
-			}
-		} catch (error) {
-			console.error("擦除操作失敗:", error);
-		}
-	});
+	// 設置初始橡皮擦事件
+	setupEraserEvents(eraserRef.current);
 
 	// 創建一個視覺指示器引用
 	let eraserIndicator = { current: null };
@@ -61,14 +69,10 @@ export const setupPathEraser = (canvas, settings) => {
 	};
 
 	// 設置指示器事件監聽器
-	const eventHandlers = setupIndicatorEventListeners(
-		canvas,
-		eraserIndicator,
-		createIndicatorAtPointer
-	);
+	const eventHandlers = setupIndicatorEventListeners(canvas, eraserIndicator, createIndicatorAtPointer);
 
 	// 將橡皮擦設置為當前畫筆
-	canvas.freeDrawingBrush = eraser;
+	canvas.freeDrawingBrush = eraserRef.current;
 
 	// 添加畫筆創建事件監聽器
 	canvas.on("path:created", () => {
@@ -79,10 +83,36 @@ export const setupPathEraser = (canvas, settings) => {
 		}
 	});
 
+	// 新增: 重新創建橡皮擦的函數
+	const recreateEraser = () => {
+		// 儲存當前寬度
+		const currentWidth = eraserRef.current.width;
+
+		// 創建新的橡皮擦
+		eraserRef.current = new EraserBrush(canvas);
+		eraserRef.current.width = currentWidth;
+
+		// 設置事件
+		setupEraserEvents(eraserRef.current);
+
+		// 更新畫布的畫筆
+		canvas.freeDrawingBrush = eraserRef.current;
+
+		// 確保所有物件都可擦除
+		setAllObjectsErasable(canvas);
+	};
+
+	// 註冊 undo/redo 後的重置函數
+	if (canvas.historyManager) {
+		canvas.historyManager.registerToolResetCallback(() => {
+			recreateEraser();
+		});
+	}
+
 	return {
 		updateSize: (newSize) => {
 			// 更新橡皮擦大小
-			eraser.width = newSize;
+			eraserRef.current.width = newSize;
 
 			// 更新視覺指示器大小
 			if (eraserIndicator.current) {
@@ -94,11 +124,20 @@ export const setupPathEraser = (canvas, settings) => {
 		},
 		// 提供清理方法
 		cleanup: () => {
+			// 取消工具重置回調
+			if (canvas.historyManager) {
+				canvas.historyManager.unregisterToolResetCallback();
+			}
+
 			eventHandlers.removeListeners();
 			if (eraserIndicator.current) {
 				canvas.remove(eraserIndicator.current);
 				eraserIndicator.current = null;
 			}
+		},
+		// 提供重置方法
+		reset: () => {
+			recreateEraser();
 		},
 	};
 };
@@ -113,9 +152,7 @@ export const disablePathEraser = (canvas) => {
 	canvas.off("mouse:out");
 
 	// 移除可能存在的橡皮擦指示器
-	const eraserIndicator = canvas
-		.getObjects()
-		.find((obj) => obj.type === "circle" && obj.fill === "rgba(255, 0, 0, 0.3)");
+	const eraserIndicator = canvas.getObjects().find((obj) => obj.type === "circle" && obj.fill === "rgba(255, 0, 0, 0.3)");
 
 	if (eraserIndicator) {
 		canvas.remove(eraserIndicator);

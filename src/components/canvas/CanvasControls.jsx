@@ -6,7 +6,6 @@ import PanControls from "./PanControls";
 import "./CanvasControls.css";
 
 const CanvasControls = ({ canvas }) => {
-	// 初始化畫布縮放級別
 	if (canvas) {
 		canvas.zoomLevel = canvas.zoomLevel || 1;
 	}

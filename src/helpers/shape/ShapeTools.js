@@ -101,7 +101,15 @@ export const setupShapeDrawing = (canvas, shapeSettings) => {
 					cornerColor: "rgba(102,153,255,0.8)",
 					cornerSize: 8,
 				});
+
 				canvas.setActiveObject(currentShape);
+				canvas.renderAll();
+
+				if (canvas.historyManager) {
+					setTimeout(() => {
+						canvas.historyManager.saveState();
+					}, 0);
+				}
 			}
 
 			canvas.renderAll();
@@ -113,6 +121,8 @@ export const setupShapeDrawing = (canvas, shapeSettings) => {
 };
 
 export const disableShapeDrawing = (canvas) => {
+	if (!canvas) return;
+
 	canvas.selection = true;
 
 	canvas.off("mouse:down");

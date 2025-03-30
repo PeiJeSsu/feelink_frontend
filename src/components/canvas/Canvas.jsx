@@ -8,7 +8,7 @@ import { setupShapeDrawing, disableShapeDrawing } from "../../helpers/shape/Shap
 import { setupEraser, disableEraser } from "../../helpers/eraser/ObjectEraserTools";
 import { setupPathEraser, disablePathEraser } from "../../helpers/eraser/PathEraserTools";
 import CanvasControls from "./CanvasControls";
-import HistoryManager from "../history/HistoryManager";
+import createHistoryManager from "../../helpers/history/HistoryManager";
 import ChatSidebar from "../chat/ChatSidebar";
 
 const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clearTrigger, onCanvasInit }) => {
@@ -25,8 +25,7 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 
 		fabricCanvasRef.current = initializeCanvas(canvasRef.current, containerWidth, containerHeight);
 
-		// 初始化歷史管理器
-		historyManagerRef.current = new HistoryManager(fabricCanvasRef.current);
+		historyManagerRef.current = createHistoryManager(fabricCanvasRef.current);
 
 		// 將歷史管理器附加到 canvas 實例上
 		fabricCanvasRef.current.historyManager = historyManagerRef.current;
