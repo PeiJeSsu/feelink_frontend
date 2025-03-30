@@ -12,7 +12,6 @@ export const useImageInteraction = (initialOffset = { x: 0, y: 0 }, initialScale
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-	// 處理滑鼠按下事件
 	const handleMouseDown = (e) => {
 		if (e.button === 1) {
 			// 中鍵
@@ -22,7 +21,6 @@ export const useImageInteraction = (initialOffset = { x: 0, y: 0 }, initialScale
 		}
 	};
 
-	// 處理滾輪縮放事件
 	const handleWheel = (e, containerRef) => {
 		if (!containerRef.current) return;
 		e.preventDefault();

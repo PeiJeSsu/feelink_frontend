@@ -12,7 +12,7 @@ import { ChevronLeft } from "@mui/icons-material";
 
 const SettingsPopover = ({ open, anchorEl, onClose, title, children }) => {
 	return (
-		<Popover
+		<Popover aria-hidden="false"
 			open={open}
 			anchorEl={anchorEl}
 			onClose={onClose}

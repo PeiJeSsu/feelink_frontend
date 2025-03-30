@@ -81,10 +81,7 @@ const LeftToolbar = ({
 				onClose={handleClose}
 				title="畫筆設置"
 			>
-				<BrushSettings
-					brushSettings={brushSettings}
-					onBrushSettingsChange={setBrushSettings}
-				/>
+				<BrushSettings brushSettings={brushSettings} onBrushSettingsChange={setBrushSettings} />
 			</SettingsPopover>
 
 			<SettingsPopover
@@ -93,10 +90,7 @@ const LeftToolbar = ({
 				onClose={handleShapeClose}
 				title="圖形設置"
 			>
-				<ShapeSettings
-					shapeSettings={shapeSettings}
-					onShapeSettingsChange={setShapeSettings}
-				/>
+				<ShapeSettings shapeSettings={shapeSettings} onShapeSettingsChange={setShapeSettings} />
 			</SettingsPopover>
 
 			<SettingsPopover
@@ -105,10 +99,7 @@ const LeftToolbar = ({
 				onClose={handleEraserClose}
 				title="橡皮擦設置"
 			>
-				<EraserSettings
-					eraserSettings={eraserSettings}
-					onEraserSettingsChange={setEraserSettings}
-				/>
+				<EraserSettings eraserSettings={eraserSettings} onEraserSettingsChange={setEraserSettings} />
 			</SettingsPopover>
 		</Paper>
 	);

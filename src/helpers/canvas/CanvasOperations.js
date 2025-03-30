@@ -47,4 +47,3 @@ export const setDrawingMode = (canvas, isDrawingMode) => {
 
 	canvas.isDrawingMode = isDrawingMode;
 };
-

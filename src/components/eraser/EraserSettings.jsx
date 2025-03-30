@@ -1,13 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import {
-	Slider,
-	Typography,
-	FormControl,
-	FormControlLabel,
-	RadioGroup,
-	Radio,
-} from "@mui/material";
+import { Slider, Typography, FormControl, FormControlLabel, RadioGroup, Radio } from "@mui/material";
 
 const EraserSettings = ({ eraserSettings, onEraserSettingsChange }) => {
 	const handleSizeChange = (event, newValue) => {
