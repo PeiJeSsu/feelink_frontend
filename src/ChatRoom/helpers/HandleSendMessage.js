@@ -120,12 +120,8 @@ const getNewId = (messages) => {
 };
 
 const saveReceiveMessage = async (id, messageText, messageImage) => {
-    try {
-        const response = await sendMessage(messageText, messageImage);
-        return createNewMessage(id, response.content, false, false);
-    } catch (error) {
-        throw error;
-    }
+    const response = await sendMessage(messageText, messageImage);
+    return createNewMessage(id, response.content, false, false);
 };
 
 const createNewMessage = (id, message, isUser, isImage) => {
