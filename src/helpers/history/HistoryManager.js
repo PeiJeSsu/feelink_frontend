@@ -33,6 +33,7 @@ const createHistoryManager = (canvas) => {
 
 		// 監聽物件移除事件
 		canvas.on("object:removed", (e) => {
+			if (canvas.isClearingAll) return;
 			if (isEraserIndicator(e.target)) return;
 			console.log("Object removed event triggered");
 			if (!isUndoRedoing) {
@@ -191,17 +192,14 @@ const createHistoryManager = (canvas) => {
 		}
 	};
 
-	// 註冊工具重置回調
 	const registerToolResetCallback = (callback) => {
 		toolResetCallback = callback;
 	};
 
-	// 取消註冊工具重置回調
 	const unregisterToolResetCallback = () => {
 		toolResetCallback = null;
 	};
 
-	// 清除歷史
 	const clear = () => {
 		undoStack = [];
 		redoStack = [];

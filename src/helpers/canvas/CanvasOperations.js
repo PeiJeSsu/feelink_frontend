@@ -28,9 +28,23 @@ export const initializeCanvas = (canvasRef, width, height) => {
 export const clearCanvas = (canvas) => {
 	if (!canvas) return;
 
+	// 加入標誌來告知 HistoryManager 這是一次整體清除操作
+	canvas.isClearingAll = true;
+
+	// 清除畫布
 	canvas.clear();
-	canvas.backgroundColor = "#ffffff";
+	canvas.backgroundColor = "#ffffff"; 
+
+	// 清除完成後移除標誌
+	canvas.isClearingAll = false;
+
+	// 立即渲染畫布
 	canvas.renderAll();
+
+	// 在清空畫布後，手動儲存空白狀態到歷史記錄
+	if (canvas.historyManager) {
+		canvas.historyManager.saveState();
+	}
 };
 
 export const resizeCanvas = (canvas, width, height) => {

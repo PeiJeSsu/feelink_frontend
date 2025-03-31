@@ -27,7 +27,6 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 
 		historyManagerRef.current = createHistoryManager(fabricCanvasRef.current);
 
-		// 將歷史管理器附加到 canvas 實例上
 		fabricCanvasRef.current.historyManager = historyManagerRef.current;
 
 		console.log("Canvas initialized with history manager:", {
@@ -129,13 +128,12 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 		}
 	}, [activeTool, brushSettings, shapeSettings, eraserSettings]);
 
-	// 響應清除觸發器
 	useEffect(() => {
 		if (clearTrigger > 0 && fabricCanvasRef.current) {
-			clearCanvas(fabricCanvasRef.current);
 			if (historyManagerRef.current) {
 				historyManagerRef.current.clear();
 			}
+			clearCanvas(fabricCanvasRef.current);
 		}
 	}, [clearTrigger]);
 
