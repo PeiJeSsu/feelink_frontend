@@ -1,12 +1,15 @@
 import { useState, useCallback, useRef } from "react";
-import { Box } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import LeftToolbar from "../toolbar/left-toolbar/LeftToolbar";
 import TopToolbar from "../toolbar/top-toolbar/TopToolbar";
 import Canvas from "../canvas/Canvas";
+import ChatRoom from "../../ChatRoom/components/ChatRoom";
 import "./Layout.css";
 
 const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
+	const [isChatOpen, setIsChatOpen] = useState(false);
 	const [brushSettings, setBrushSettings] = useState({
 		size: 5,
 		opacity: 1,
@@ -44,6 +47,10 @@ const Layout = () => {
 		setCanvasReady(true);
 	}, []);
 
+	const toggleChat = () => {
+		setIsChatOpen(!isChatOpen);
+	};
+
 	return (
 		<Box className="layout-container">
 			<LeftToolbar
@@ -66,6 +73,27 @@ const Layout = () => {
 				clearTrigger={clearTrigger}
 				onCanvasInit={setCanvasInstance}
 			/>
+			<Box className={`chat-container ${isChatOpen ? 'open' : ''}`}>
+				<ChatRoom canvas={canvasRef.current} />
+			</Box>
+			<IconButton 
+				className={`chat-toggle-button ${isChatOpen ? 'open' : ''}`}
+				onClick={toggleChat}
+				sx={{
+					position: 'fixed',
+					right: isChatOpen ? '21.5%' : '0',
+					top: '50%',
+					transform: 'translateY(-50%)',
+					backgroundColor: 'white',
+					'&:hover': {
+						backgroundColor: 'rgba(255, 255, 255, 0.8)',
+					},
+					zIndex: 1000,
+					transition: 'right 0.3s ease',
+				}}
+			>
+				{isChatOpen ? <ChevronRight /> : <ChevronLeft />}
+			</IconButton>
 		</Box>
 	);
 };

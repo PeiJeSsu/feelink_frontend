@@ -1,60 +1,131 @@
 import {sendMessage} from "./HandleSendMessageApiConn";
 
-export const handleSendTextMessage = (messageText, messages, setMessages, setLoading) => {
+export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading) => {
     if (!messageText) return;
 
-    const sendId = getNewId(messages);
-    saveSendTextMessage(sendId, messageText, setMessages, setLoading);
-    const receiveId = sendId+1;
-    saveReceiveMessage(receiveId, messageText, null, setMessages, setLoading);
+    try {
+        setLoading(true);
+        const sendId = getNewId(messages);
+        
+        // 保存發送的訊息
+        const sendMessage = createNewMessage(sendId, messageText, true, false);
+        setMessages(prevMessages => [...prevMessages, sendMessage]);
+
+        // 等待接收回應
+        const response = await saveReceiveMessage(sendId + 1, messageText, null);
+        setMessages(prevMessages => [...prevMessages, response]);
+    } catch (error) {
+        console.error('發送訊息失敗:', error);
+        const errorMessage = createNewMessage(
+            getNewId(messages) + 2,
+            "抱歉，處理訊息時發生錯誤。",
+            false,
+            false
+        );
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+        setLoading(false);
+    }
 };
 
-export const handleSendImageMessage = (messageText, messageImage, messages, setMessages, setLoading) =>{
+export const handleSendImageMessage = async (messageText, messageImage, messages, setMessages, setLoading) => {
     if (!messageText && !messageImage) return;
 
-    const sendTextId = getNewId(messages);
-    saveSendTextMessage(sendTextId, messageText, setMessages, setLoading);
-    const sendImageId = sendTextId + (messageText ? 1 : 0);
-    saveSendImageMessage(sendImageId, messageImage, setMessages, setLoading);
-    const receiveId = sendImageId+1;
-    saveReceiveMessage(receiveId, messageText, messageImage, setMessages, setLoading);
+    try {
+        setLoading(true);
+        const baseId = getNewId(messages);
+        let currentId = baseId;
+
+        // 如果有文字訊息，先發送文字
+        if (messageText) {
+            const textMessage = createNewMessage(currentId, messageText, true, false);
+            setMessages(prevMessages => [...prevMessages, textMessage]);
+            currentId++;
+        }
+
+        // 發送圖片
+        if (messageImage) {
+            const imageUrl = URL.createObjectURL(messageImage);
+            const imageMessage = createNewMessage(currentId, imageUrl, true, true);
+            setMessages(prevMessages => [...prevMessages, imageMessage]);
+            currentId++;
+        }
+
+        // 等待接收回應
+        const response = await saveReceiveMessage(currentId, messageText, messageImage);
+        setMessages(prevMessages => [...prevMessages, response]);
+    } catch (error) {
+        console.error('發送圖片失敗:', error);
+        const errorMessage = createNewMessage(
+            getNewId(messages) + 3,
+            "抱歉，處理圖片時發生錯誤。",
+            false,
+            false
+        );
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const handleSendCanvasAnalysis = async (canvasImage, messageText, messages, setMessages, setLoading) => {
+    if (!canvasImage) return;
+
+    try {
+        setLoading(true);
+        const baseId = getNewId(messages);
+        let currentId = baseId;
+
+        // 如果有文字訊息，先顯示文字
+        if (messageText) {
+            const textMessage = createNewMessage(currentId, messageText, true, false);
+            setMessages(prevMessages => [...prevMessages, textMessage]);
+            currentId++;
+        }
+        
+        // 保存畫布圖片訊息
+        const imageUrl = URL.createObjectURL(canvasImage);
+        const imageMessage = createNewMessage(currentId, imageUrl, true, true);
+        setMessages(prevMessages => [...prevMessages, imageMessage]);
+        currentId++;
+
+        // 發送到後端進行分析
+        const response = await sendMessage(messageText || "請分析這張圖片", canvasImage);
+        
+        // 保存分析結果
+        const analysisMessage = createNewMessage(
+            currentId,
+            response.content,
+            false,
+            false
+        );
+        setMessages(prevMessages => [...prevMessages, analysisMessage]);
+    } catch (error) {
+        console.error('分析失敗:', error);
+        const errorMessage = createNewMessage(
+            getNewId(messages) + 2,
+            "抱歉，分析過程中發生錯誤。",
+            false,
+            false
+        );
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+        setLoading(false);
+    }
 };
 
 const getNewId = (messages) => {
-    return messages.length > 0
-        ? Math.max(...messages.map(m => m.id)) + 1
-        : 1;
+    if (messages.length === 0) return 1;
+    return Math.max(...messages.map(m => m.id)) + 1;
 };
 
-const saveSendTextMessage = (id, messageText, setMessages, setLoading) => {
-    if (!messageText) return;
-
-    const sendTextMessage = createNewMessage(id, messageText, true, false);
-    setMessage(sendTextMessage, setMessages, setLoading, true);
-};
-
-const saveSendImageMessage = (id, messageImage, setMessages, setLoading) => {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-        const imageDataUrl = e.target.result;
-        const sendImage = createNewMessage(id, imageDataUrl, true, true);
-        setMessage(sendImage, setMessages, setLoading, true);
+const saveReceiveMessage = async (id, messageText, messageImage) => {
+    try {
+        const response = await sendMessage(messageText, messageImage);
+        return createNewMessage(id, response.content, false, false);
+    } catch (error) {
+        throw error;
     }
-
-    reader.readAsDataURL(messageImage);
-};
-
-const saveReceiveMessage = (id, messageText, messageImage, setMessages, setLoading) => {
-    sendMessage(messageText, messageImage)
-        .then(response => {
-            const receiveMessage = createNewMessage(id, response.content, false, false);
-            setMessage(receiveMessage, setMessages, setLoading, false);
-        })
-        .catch(error => {
-            console.error('發送訊息錯誤:', error);
-            setLoading(false);
-        });
 };
 
 const createNewMessage = (id, message, isUser, isImage) => {
@@ -64,9 +135,4 @@ const createNewMessage = (id, message, isUser, isImage) => {
         isUser: isUser,
         isImage: isImage
     };
-};
-
-const setMessage = (newMessage, setMessages, setLoading, isLoading) => {
-    setMessages(prevMessages => [...prevMessages, newMessage]);
-    setLoading(isLoading);
 };

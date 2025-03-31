@@ -9,7 +9,6 @@ import { setupEraser, disableEraser } from "../../helpers/eraser/ObjectEraserToo
 import { setupPathEraser, disablePathEraser } from "../../helpers/eraser/PathEraserTools";
 import CanvasControls from "./CanvasControls";
 import createHistoryManager from "../../helpers/history/HistoryManager";
-import ChatSidebar from "../chat/ChatSidebar";
 
 const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clearTrigger, onCanvasInit }) => {
 	const canvasRef = useRef(null);
@@ -152,7 +151,6 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 		<div className="canvas-wrapper">
 			<canvas ref={canvasRef} />
 			<CanvasControls canvas={fabricCanvasRef.current} />
-			<ChatSidebar />
 		</div>
 	);
 };

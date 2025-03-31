@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { handleSendImageMessage, handleSendTextMessage } from "../helpers/HandleSendMessage";
+import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis } from "../helpers/HandleSendMessage";
 
 export default function useChatMessages() {
     const [messages, setMessages] = useState([]);
@@ -13,5 +13,9 @@ export default function useChatMessages() {
         handleSendImageMessage(messageText, messageImage, messages, setMessages, setLoading);
     };
 
-    return { messages, loading, sendTextMessage, sendImageMessage };
+    const sendCanvasAnalysis = async (canvasImage, messageText) => {
+        handleSendCanvasAnalysis(canvasImage, messageText, messages, setMessages, setLoading);
+    };
+
+    return { messages, loading, sendTextMessage, sendImageMessage, sendCanvasAnalysis };
 }

@@ -4,6 +4,7 @@ const createHistoryManager = (canvas) => {
 	let isUndoRedoing = false;
 	let currentState = null;
 	let toolResetCallback = null;
+	const MAX_STACK_SIZE = 30; // 添加最大堆疊大小限制
 
 	// 檢查物件是否為橡皮擦指示器
 	const isEraserIndicator = (obj) => {
@@ -70,6 +71,10 @@ const createHistoryManager = (canvas) => {
 
 		if (currentState) {
 			undoStack.push(currentState);
+			// 如果超過最大堆疊大小，移除最舊的狀態
+			if (undoStack.length > MAX_STACK_SIZE) {
+				undoStack.shift();
+			}
 		}
 
 		currentState = jsonState;

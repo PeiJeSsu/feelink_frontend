@@ -34,6 +34,7 @@ export function useTextInput(onSendMessage, onUploadImage, disabled) {
 		sendText,
 		sendImage,
 		messageChange,
-		imageChange
+		imageChange,
+		setMessage
 	};
 }
