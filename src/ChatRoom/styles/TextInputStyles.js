@@ -1,13 +1,13 @@
 export const containerStyle = {
 	position: "relative",
 	width: "100%",
-	border: '1px solid rgba(107, 114, 128, 0.1)',
+	border: '1px solid rgba(92, 92, 92, 0.15)',
 	borderRadius: '12px',
 	padding: '12px',
 	display: 'flex',
 	flexDirection: 'column-reverse',
 	gap: '12px',
-	backgroundColor: '#FFFFFF',
+	backgroundColor: '#fffff3',
 };
 
 export const buttonContainerStyle = {
@@ -20,18 +20,18 @@ export const textFieldStyle = {
 	width: '100%',
 	'& .MuiInput-root': {
 		fontSize: '14px',
-		color: '#1F2937',
+		color: '#333333',
 		'&:before': {
-			borderBottom: '1px solid rgba(107, 114, 128, 0.1)',
+			borderBottom: '1px solid rgba(92, 92, 92, 0.2)',
 		},
 		'&:hover:not(.Mui-disabled):before': {
-			borderBottom: '1px solid rgba(124, 58, 237, 0.5)',
+			borderBottom: '1px solid rgba(247, 202, 201, 0.8)',
 		},
 		'&.Mui-focused:after': {
-			borderBottom: '2px solid #7C3AED',
+			borderBottom: '2px solid #f7cac9',
 		},
 	},
 	'& .MuiInput-input::placeholder': {
-		color: '#9CA3AF',
+		color: '#5c5c5c',
 	},
 };

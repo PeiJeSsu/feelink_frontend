@@ -128,8 +128,24 @@ const ZoomControls = ({ canvas }) => {
 					onMouseDown={handleSliderStart}
 					onTouchStart={handleSliderStart}
 					aria-labelledby="zoom-slider"
+					sx={{
+						'& .MuiSlider-track': {
+							backgroundColor: '#f7cac9',
+						},
+						'& .MuiSlider-rail': {
+							backgroundColor: 'rgba(92, 92, 92, 0.2)',
+						}
+					}}
 				/>
-				<Typography variant="caption">{Math.round(zoomLevelState * 100)}%</Typography>
+				<Typography 
+					variant="caption" 
+					sx={{ 
+						color: '#333333',
+						fontWeight: 'medium'
+					}}
+				>
+					{Math.round(zoomLevelState * 100)}%
+				</Typography>
 			</Box>
 
 			<IconButton onClick={handleZoomIn} title="放大">

@@ -9,10 +9,22 @@
 .canvas-controls-panel {
 	display: flex;
 	align-items: center;
-	background-color: rgba(255, 255, 255, 0.8);
-	border-radius: 8px;
+	background-color: rgba(245, 245, 233, 0.92);
+	border-radius: 50px;
 	padding: 5px 10px;
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+	border: 1px solid rgba(92, 92, 92, 0.1);
+	backdrop-filter: blur(10px);
+}
+
+.canvas-controls-panel .MuiIconButton-root {
+	color: #5c5c5c;
+	transition: all 0.2s ease;
+}
+
+.canvas-controls-panel .MuiIconButton-root:hover {
+	background-color: rgba(247, 202, 201, 0.2);
+	color: #333333;
 }
 
 .zoom-slider-container {
@@ -25,17 +37,26 @@
 
 .zoom-slider-container .MuiSlider-root {
 	margin-bottom: 0;
+	color: #f7cac9;
+}
+
+.zoom-slider-container .MuiSlider-thumb {
+	border: 2px solid #f7cac9;
+	background-color: #ffffff;
 }
 
 .zoom-slider-container .MuiTypography-caption {
 	margin-top: -5px;
+	color: #333333;
+	font-size: 0.75rem;
 }
 
 .zoom-controls {
 	display: flex;
 	align-items: center;
-	background-color: rgba(255, 255, 255, 0.8);
-	border-radius: 8px;
+	background-color: rgba(245, 245, 233, 0.92);
+	border-radius: 50px;
 	padding: 5px 10px;
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+	border: 1px solid rgba(92, 92, 92, 0.1);
 } 

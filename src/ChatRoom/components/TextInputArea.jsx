@@ -48,14 +48,6 @@ export default function TextInputArea({ onSendMessage, onSendImage, onAnalyzeCan
 						icon={<AnalyticsIcon />}
 						onClick={handleAnalyzeCanvas}
 						disabled={disabled}
-						sx={{ 
-							borderColor: '#6D28D9',
-							color: '#6D28D9',
-							'&:hover': {
-								borderColor: '#5B21B6',
-								backgroundColor: 'rgba(109, 40, 217, 0.04)',
-							}
-						}}
 					/>
 				</Box>
 				<FunctionButton

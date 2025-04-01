@@ -16,9 +16,10 @@
   display: flex;
   align-items: center;
   padding: 8px;
-  background-color: rgba(255, 255, 255, 0.92) !important;
+  background-color: rgba(245, 245, 233, 0.92) !important;
   border-radius: 50px !important;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(92, 92, 92, 0.1) !important;
   backdrop-filter: blur(10px);
   pointer-events: auto;
   transform: translateY(2px);
@@ -27,6 +28,13 @@
 
 .top-toolbar .MuiIconButton-root {
   margin: 0 4px;
+  color: #5c5c5c;
+  transition: all 0.2s ease;
+}
+
+.top-toolbar .MuiIconButton-root:hover {
+  background-color: rgba(247, 202, 201, 0.2);
+  color: #333333;
 }
 
 @media (max-width: 600px) {
@@ -52,4 +60,5 @@
 .top-toolbar-tools .MuiDivider-root {
   margin: 0 8px;
   height: 24px;
+  background-color: rgba(92, 92, 92, 0.15);
 } 

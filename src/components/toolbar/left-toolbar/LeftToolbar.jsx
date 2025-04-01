@@ -72,7 +72,7 @@ const LeftToolbar = ({
 	};
 
 	return (
-		<Paper className="left-toolbar-container" elevation={3}>
+		<Paper className="left-toolbar-container" elevation={8}>
 			<LeftToolbarButtons activeTool={activeTool} onToolClick={handleToolClick} />
 
 			<SettingsPopover

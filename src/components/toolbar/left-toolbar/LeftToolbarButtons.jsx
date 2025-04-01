@@ -1,51 +1,57 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip, Badge } from "@mui/material";
 import { Brush, FormatShapes, AdsClick, AutoFixHigh, PanTool } from "@mui/icons-material";
 
 const LeftToolbarButtons = ({ activeTool, onToolClick }) => {
 	return (
 		<Box className="left-toolbar-tools">
-			<Tooltip title="選擇" placement="right">
+			<Tooltip title="選擇工具" placement="right" arrow>
 				<IconButton
 					onClick={() => onToolClick("select")}
-					color={activeTool === "select" ? "primary" : "default"}
+					className={activeTool === "select" ? "Mui-selected" : ""}
 				>
 					<AdsClick />
 				</IconButton>
 			</Tooltip>
-			<Tooltip title="畫筆" placement="right">
-				<IconButton
-					id="brush-button"
-					onClick={() => onToolClick("pencil")}
-					color={activeTool === "pencil" ? "primary" : "default"}
-				>
-					<Brush />
-				</IconButton>
+			<Tooltip title="畫筆工具" placement="right" arrow>
+				<Badge color="secondary" variant="dot" invisible={activeTool !== "pencil"} overlap="circular">
+					<IconButton
+						id="brush-button"
+						onClick={() => onToolClick("pencil")}
+						className={activeTool === "pencil" ? "Mui-selected" : ""}
+					>
+						<Brush />
+					</IconButton>
+				</Badge>
 			</Tooltip>
-			<Tooltip title="圖形" placement="right">
-				<IconButton
-					id="shape-button"
-					onClick={() => onToolClick("shape")}
-					color={activeTool === "shape" ? "primary" : "default"}
-				>
-					<FormatShapes />
-				</IconButton>
+			<Tooltip title="圖形工具" placement="right" arrow>
+				<Badge color="secondary" variant="dot" invisible={activeTool !== "shape"} overlap="circular">
+					<IconButton
+						id="shape-button"
+						onClick={() => onToolClick("shape")}
+						className={activeTool === "shape" ? "Mui-selected" : ""}
+					>
+						<FormatShapes />
+					</IconButton>
+				</Badge>
 			</Tooltip>
-			<Tooltip title="橡皮擦" placement="right">
-				<IconButton
-					id="eraser-button"
-					onClick={() => onToolClick("eraser")}
-					color={activeTool === "eraser" ? "primary" : "default"}
-				>
-					<AutoFixHigh />
-				</IconButton>
+			<Tooltip title="橡皮擦工具" placement="right" arrow>
+				<Badge color="secondary" variant="dot" invisible={activeTool !== "eraser"} overlap="circular">
+					<IconButton
+						id="eraser-button"
+						onClick={() => onToolClick("eraser")}
+						className={activeTool === "eraser" ? "Mui-selected" : ""}
+					>
+						<AutoFixHigh />
+					</IconButton>
+				</Badge>
 			</Tooltip>
-			<Tooltip title="移動畫布" placement="right">
+			<Tooltip title="移動畫布工具" placement="right" arrow>
 				<IconButton
 					id="pan-button"
 					onClick={() => onToolClick("pan")}
-					color={activeTool === "pan" ? "primary" : "default"}
+					className={activeTool === "pan" ? "Mui-selected" : ""}
 				>
 					<PanTool />
 				</IconButton>

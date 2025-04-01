@@ -32,6 +32,10 @@ const SettingsPopover = ({ open, anchorEl, onClose, title, children }) => {
 					style: {
 						pointerEvents: "auto",
 						marginLeft: "14px",
+						backgroundColor: "#f5f5e9",
+						borderRadius: "12px",
+						border: "1px solid rgba(92, 92, 92, 0.15)",
+						boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)"
 					},
 				},
 			}}
@@ -39,16 +43,26 @@ const SettingsPopover = ({ open, anchorEl, onClose, title, children }) => {
 		>
 			<Box className="brush-settings-popover">
 				<Box className="popover-header">
-					<Typography variant="subtitle1" fontWeight="bold">
+					<Typography variant="subtitle1" fontWeight="bold" sx={{ color: "#333333" }}>
 						{title}
 					</Typography>
 					<Tooltip title="收起">
-						<IconButton size="small" onClick={onClose}>
+						<IconButton 
+							size="small" 
+							onClick={onClose}
+							sx={{
+								color: "#5c5c5c",
+								"&:hover": {
+									backgroundColor: "rgba(247, 202, 201, 0.2)",
+									color: "#333333"
+								}
+							}}
+						>
 							<ChevronLeft />
 						</IconButton>
 					</Tooltip>
 				</Box>
-				<Divider sx={{ my: 1 }} />
+				<Divider sx={{ my: 1, backgroundColor: "rgba(92, 92, 92, 0.15)" }} />
 				{children}
 			</Box>
 		</Popover>

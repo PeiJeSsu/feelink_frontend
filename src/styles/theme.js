@@ -3,33 +3,33 @@ import { createTheme } from "@mui/material";
 const theme = createTheme({
 	palette: {
 		primary: {
-			main: '#6D28D9', // 更深的紫色
-			light: '#8B5CF6',
-			dark: '#5B21B6',
-			contrastText: '#ffffff',
+			main: '#EB8797', // 主要粉色
+			light: '#fad9d8',
+			dark: '#e5b8b7',
+			contrastText: '#333333',
 		},
 		secondary: {
-			main: '#059669', // 更深的綠色
-			light: '#10B981',
-			dark: '#047857',
+			main: '#5c5c5c', // 深灰色
+			light: '#7e7e7e',
+			dark: '#474747',
 			contrastText: '#ffffff',
 		},
 		background: {
-			default: '#F3F4F8', // 更深的背景色
-			paper: '#FFFFFF',
-			toolbar: '#2A2B32', // 工具欄背景色
-			canvas: '#FFFFFF', // 畫布背景色
-			chat: '#F8FAFC', // 聊天室背景色
+			default: '#fffff3', // 淺米色背景
+			paper: '#f5f5e9',   // 次要背景色
+			toolbar: '#5c5c5c', // 工具欄背景色
+			canvas: '#fffff3',  // 畫布背景色
+			chat: '#f5f5e9',    // 聊天室背景色
 		},
 		text: {
-			primary: '#1E293B',
-			secondary: '#64748B',
-			toolbar: '#E2E8F0', // 工具欄文字顏色
+			primary: '#333333',
+			secondary: '#5c5c5c',
+			toolbar: '#ebebeb', // 工具欄文字顏色
 		},
-		divider: 'rgba(148, 163, 184, 0.15)',
+		divider: 'rgba(92, 92, 92, 0.15)',
 		action: {
-			hover: 'rgba(99, 102, 241, 0.08)',
-			selected: 'rgba(99, 102, 241, 0.12)',
+			hover: 'rgba(247, 202, 201, 0.08)',
+			selected: 'rgba(247, 202, 201, 0.12)',
 		}
 	},
 	shape: {

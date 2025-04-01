@@ -3,20 +3,20 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background-color: #F3F4F8;
+  background-color: #fffff3;
 }
 
 .left-toolbar {
-  background-color: #1A1B23;
-  color: #E2E8F0;
+  background-color: #5c5c5c;
+  color: #ebebeb;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   padding: 12px 8px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(235, 235, 235, 0.1);
 }
 
 .left-toolbar .MuiIconButton-root {
-  color: #94A3B8;
+  color: #ffffff;
   transition: all 0.2s ease;
   margin: 4px 0;
   padding: 12px;
@@ -25,13 +25,13 @@
 }
 
 .left-toolbar .MuiIconButton-root:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #E2E8F0;
+  background-color: rgba(247, 202, 201, 0.2);
+  color: #ffffff;
 }
 
 .left-toolbar .MuiIconButton-root.Mui-selected {
-  background-color: #6D28D9;
-  color: #FFFFFF;
+  background-color: #f7cac9;
+  color: #333333;
 }
 
 .left-toolbar .MuiIconButton-root.Mui-selected::before {
@@ -42,13 +42,13 @@
   transform: translateY(-50%);
   width: 3px;
   height: 20px;
-  background-color: #8B5CF6;
+  background-color: #f7cac9;
   border-radius: 0 3px 3px 0;
 }
 
 .left-toolbar .MuiIconButton-root:not(.Mui-selected):hover {
-  background-color: rgba(109, 40, 217, 0.1);
-  color: #8B5CF6;
+  background-color: rgba(247, 202, 201, 0.2);
+  color: #f7cac9;
 }
 
 .chat-container {
@@ -57,7 +57,7 @@
   top: 0;
   width: 21.5%;
   height: 100%;
-  background-color: #F8FAFC;
+  background-color: #f5f5e9;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   z-index: 999;
@@ -65,7 +65,7 @@
   flex-direction: column;
   padding: 16px;
   box-sizing: border-box;
-  border-left: 1px solid rgba(148, 163, 184, 0.15);
+  border-left: 1px solid rgba(92, 92, 92, 0.15);
 }
 
 .chat-container.open {
@@ -75,18 +75,18 @@
 .chat-toggle-button {
   box-shadow: -2px 0 15px rgba(0, 0, 0, 0.08) !important;
   border-radius: 20px 0 0 20px !important;
-  background-color: #F8FAFC !important;
-  color: #6D28D9 !important;
+  background-color: #f5f5e9 !important;
+  color: #f7cac9 !important;
   padding: 12px 8px !important;
   transition: all 0.2s ease !important;
 }
 
 .chat-toggle-button:hover {
-  background-color: #EEF2FF !important;
-  color: #5B21B6 !important;
+  background-color: #fffff3 !important;
+  color: #5c5c5c !important;
 }
 
 .canvas-container {
-  background-color: #FFFFFF;
+  background-color: #fffff3;
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.03);
 } 

@@ -10,7 +10,7 @@ export const chatMessageStyles = {
     },
     paper: (isUser) => ({
         padding: '8px 12px',
-        bgcolor: isUser ? "#DCE775" : "#F9FBE7",
+        bgcolor: isUser ? "#f7cac9" : "#f5f5e9",
         borderRadius: '12px',
         borderTopRightRadius: isUser ? 0 : '12px',
         borderTopLeftRadius: isUser ? '12px' : 0,
@@ -19,7 +19,8 @@ export const chatMessageStyles = {
     text: {
         fontSize: "10px",
         textAlign: "left",
-        display: "inline-block"
+        display: "inline-block",
+        color: "#333333"
     },
     image: {
         width: '100%',
