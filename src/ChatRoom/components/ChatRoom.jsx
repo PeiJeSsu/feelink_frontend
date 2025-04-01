@@ -37,13 +37,8 @@ export default function ChatRoom({ canvas }) {
                     />
                 ))}
                 {loading && (
-                    <Box sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        padding: '10px'
-                    }}>
-                        <CircularProgress size={24} color="primary" />
+                    <Box sx={chatRoomStyles.messageLoading}>
+                        <CircularProgress size={24} color="#f7cac9" />
                     </Box>
                 )}
             </Box>

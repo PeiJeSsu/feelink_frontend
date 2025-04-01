@@ -43,5 +43,11 @@ export const chatRoomStyles = {
         backgroundColor: "#f7cac9",
         borderColor: "#e5b8b7",
     },
+    messageLoading:{
+        display: 'flex',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        padding: '10px'
+    }
 };
 
