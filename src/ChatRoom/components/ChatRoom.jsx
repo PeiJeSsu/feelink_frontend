@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Box } from "@mui/material";
+import { Box ,CircularProgress } from "@mui/material";
 import {chatRoomStyles} from "../styles/ChatRoomStyles";
 import useChatMessages from "../hooks/UseChatMessages";
 import ChatMessage from "./ChatMessage";
@@ -36,7 +36,16 @@ export default function ChatRoom({ canvas }) {
                         isImage={message.isImage}
                     />
                 ))}
-                {loading && <div>載入中...</div>}
+                {loading && (
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: '10px'
+                    }}>
+                        <CircularProgress size={24} color="primary" />
+                    </Box>
+                )}
             </Box>
 
             <TextInputArea
