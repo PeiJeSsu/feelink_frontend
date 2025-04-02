@@ -4,22 +4,23 @@ import { chatMessageStyles } from '../styles/ChatMessageStyles';
 import PropTypes from "prop-types";
 import MarkdownIt from 'markdown-it';
 
-// 初始化 markdown-it 實例
 const md = new MarkdownIt({
-  html: false,       // 禁用 HTML 標籤
-  breaks: true,      // 將換行符號轉換為 <br>
-  linkify: true      // 自動將 URL 轉為連結
+  html: false,       
+  breaks: true,      
+  linkify: true     
 });
 
 export default function ChatMessage({ message, isUser, isImage }) {
   const textMessage = message || "";
   const isMarkdown = /[*_#\-`]/.test(textMessage);
 
-  // 渲染 Markdown 為 HTML
   const renderMarkdown = () => {
     if (!isMarkdown) return textMessage;
     const html = md.render(textMessage);
-    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+    return <div 
+      sx={chatMessageStyles.markdown} 
+      dangerouslySetInnerHTML={{ __html: html }} 
+    />;
   };
 
   return (
@@ -29,7 +30,9 @@ export default function ChatMessage({ message, isUser, isImage }) {
           {isImage ? (
             <img src={textMessage} alt="上傳的圖片" style={chatMessageStyles.image} />
           ) : isMarkdown ? (
-            renderMarkdown()
+            <Box sx={chatMessageStyles.markdown}>
+              <div dangerouslySetInnerHTML={{ __html: md.render(textMessage) }} />
+            </Box>
           ) : (
             <Typography variant='body2' sx={chatMessageStyles.text}>
               {textMessage}
