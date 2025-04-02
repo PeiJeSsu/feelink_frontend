@@ -17,10 +17,7 @@ export default function ChatMessage({ message, isUser, isImage }) {
   const renderMarkdown = () => {
     if (!isMarkdown) return textMessage;
     const html = md.render(textMessage);
-    return <div 
-      sx={chatMessageStyles.markdown} 
-      dangerouslySetInnerHTML={{ __html: html }} 
-    />;
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
   };
 
   return (
@@ -30,9 +27,7 @@ export default function ChatMessage({ message, isUser, isImage }) {
           {isImage ? (
             <img src={textMessage} alt="上傳的圖片" style={chatMessageStyles.image} />
           ) : isMarkdown ? (
-            <Box sx={chatMessageStyles.markdown}>
-              <div dangerouslySetInnerHTML={{ __html: md.render(textMessage) }} />
-            </Box>
+            renderMarkdown()
           ) : (
             <Typography variant='body2' sx={chatMessageStyles.text}>
               {textMessage}
