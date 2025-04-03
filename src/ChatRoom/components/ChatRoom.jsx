@@ -7,7 +7,17 @@ import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 
 export default function ChatRoom({ canvas }) {
-    const { messages, loading, sendTextMessage, sendImageMessage, sendCanvasAnalysis } = useChatMessages();
+    const { messages, loading, predefinedQuestions , sendTextMessage, sendImageMessage, sendCanvasAnalysis ,addSystemMessage} = useChatMessages();
+    
+    const questionAdded = React.useRef(false);
+    
+    React.useEffect(() => {
+        if (messages.length === 0 && !questionAdded.current) {
+            const randomQuestion = predefinedQuestions[Math.floor(Math.random() * predefinedQuestions.length)];
+            addSystemMessage(randomQuestion);
+            questionAdded.current = true; 
+        }
+    }, [messages, addSystemMessage]);
 
     const handleAnalyzeCanvas = async (messageText) => {
         if (!canvas) return;
