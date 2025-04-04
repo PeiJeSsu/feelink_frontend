@@ -6,11 +6,9 @@ export default function useChatMessages() {
     const [loading, setLoading] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState(""); 
     const predefinedQuestions = [
-        "今天過得如何？",
-        "最近有沒有遇到什麼有趣的事？",
-        "有沒有什麼想聊的話題？",
-        "今天想要畫些什麼呢？",
-        "最近有什麼讓你開心的事情嗎？"
+        "最近過得如何，有沒有發生甚麼有趣或難過的事？",
+        "今天的心情如何呢",
+        "最近有沒有讓你開心或困擾的事呢？"
     ];
 
     const sendTextMessage = (messageText) => {

@@ -12,10 +12,9 @@ export const handleSendTextMessage = async (messageText, messages, setMessages, 
         setMessages(prevMessages => [...prevMessages, sendMessage]);
 
         // 創建包含預設問題和回覆的完整訊息
-        const fullMessage = defaultQuestion 
-        ? `問題: ${defaultQuestion}\n回覆: ${messageText} 
-        \n如果回覆與問題有關，請結合問題的上下文進行回應，並提供有價值的回答，可以的話以問句回覆。如果回覆與問題無關，請忽略問題，並直接根據回覆提供適當的回答。\n
-        無論如何，請不要直接複述使用者的回覆，而是用新的方式回答。即使回覆簡短，也請試著提供有意義的回應。`
+        const fullMessage = defaultQuestion
+        ? `使用者回答了: ${messageText} 
+        \n請根據這段回覆自然地繼續對話，並試著引導對方多聊一些。可以的話，以問句結尾，讓對話更流暢。請勿重複使用者的回答，應該以新的方式回應。`
         : `${messageText}\n請基於這段訊息提供適當的回應，請勿單純重複此訊息。`;
 
         // 等待接收回應
