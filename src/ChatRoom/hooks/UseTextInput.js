@@ -3,10 +3,12 @@ import {
 	handleSendText,
 	handleSendImage,
 	handleMessageChange,
-	handleImageChange
+	handleImageChange,
+	handleAnalyzeCanvas,
+	handleAIDrawing
 } from "../helpers/HandleTextInput";
 
-export function useTextInput(onSendMessage, onUploadImage, disabled) {
+export function useTextInput(onSendMessage, onUploadImage, onAnalyzeCanvas, onAIDrawing, disabled) {
 	const [message, setMessage] = useState('');
 	const textInputRef = useRef(null);
 	const imageInputRef = useRef(null);
@@ -27,6 +29,14 @@ export function useTextInput(onSendMessage, onUploadImage, disabled) {
 		handleImageChange(e, message, setMessage, onUploadImage);
 	};
 
+	const analyzeCanvas = () => {
+		handleAnalyzeCanvas(message, setMessage, onAnalyzeCanvas);
+	};
+
+	const aiDrawing = () => {
+		handleAIDrawing(message, setMessage, onAIDrawing);
+	};
+
 	return {
 		message,
 		textInputRef,
@@ -35,6 +45,8 @@ export function useTextInput(onSendMessage, onUploadImage, disabled) {
 		sendImage,
 		messageChange,
 		imageChange,
-		setMessage
+		setMessage,
+		handleAnalyzeCanvas: analyzeCanvas,
+		handleAIDrawing: aiDrawing
 	};
 }

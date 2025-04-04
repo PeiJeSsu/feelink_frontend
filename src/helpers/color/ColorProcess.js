@@ -25,3 +25,21 @@ export const convertToRGBA = (color, opacity) => {
 
 	return color;
 };
+
+
+/**
+ * 獲取顏色的詳細資訊
+ * @param {string} hexColor - 十六進位顏色值 (#RRGGBB)
+ * @returns {Object} 包含顏色資訊的物件
+ */
+export const getColorInfo = (hexColor) => {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    const rgb = `rgb(${r}, ${g}, ${b})`;
+
+    return {
+        hex: hexColor,
+        rgb,
+    };
+}; 

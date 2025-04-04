@@ -6,34 +6,68 @@ import TopToolbarButtons from "./TopToolbarButtons";
 import { handleSaveFile, handleLoadFile, handleFileInputChange } from "../../../helpers/file/FileOperationHandlers";
 import { importImage } from "../../../helpers/image/ImageImport";
 import ImageExportDialog from "../../image/ImageExportDialog";
+import { cut, copy, paste, hasClipboardContent } from '../../../helpers/clipboard/ClipboardOperations';
 
 const TopToolbar = ({ onClearClick, canvas, canvasReady }) => {
 	const fileInputRef = useRef(null);
 	const imageInputRef = useRef(null);
 	const historyManager = useRef(null);
 	const [exportDialogOpen, setExportDialogOpen] = useState(false);
+	const [hasSelectedObject, setHasSelectedObject] = useState(false);
+	const [canPaste, setCanPaste] = useState(false);
 
-	// 設置歷史管理器引用
+	// 設置歷史管理器引用和選取狀態監聽
 	useEffect(() => {
 		if (canvas?.historyManager) {
 			historyManager.current = canvas.historyManager;
 			console.log("History manager reference updated:", historyManager.current);
 		}
+
+		// 監聽選取狀態變化
+		const handleSelection = () => {
+			setHasSelectedObject(!!canvas?.getActiveObject());
+		};
+
+		if (canvas) {
+			canvas.on('selection:created', handleSelection);
+			canvas.on('selection:updated', handleSelection);
+			canvas.on('selection:cleared', handleSelection);
+		}
+
+		return () => {
+			if (canvas) {
+				canvas.off('selection:created', handleSelection);
+				canvas.off('selection:updated', handleSelection);
+				canvas.off('selection:cleared', handleSelection);
+			}
+		};
 	}, [canvas]);
 
+	// 監聽剪貼簿狀態
+	useEffect(() => {
+		const checkClipboard = () => {
+			setCanPaste(hasClipboardContent());
+		};
+
+		// 初始檢查
+		checkClipboard();
+
+		// 定期檢查剪貼簿狀態
+		const interval = setInterval(checkClipboard, 100);
+
+		return () => clearInterval(interval);
+	}, []);
+
 	const handleCut = () => {
-		console.log("剪下");
-		// 剪下功能實現todo
+		cut(canvas);
 	};
 
 	const handleCopy = () => {
-		console.log("複製");
-		// 複製功能實現todo
+		copy(canvas);
 	};
 
 	const handlePaste = () => {
-		console.log("貼上");
-		// 貼上功能實現todo
+		paste(canvas);
 	};
 
 	const handleUndo = () => {
@@ -78,6 +112,9 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady }) => {
 					onRedoClick={handleRedo}
 					onExportClick={handleExportClick}
 					onImportClick={handleImportClick}
+					canvas={canvas}
+					hasSelectedObject={hasSelectedObject}
+					canPaste={canPaste}
 				/>
 			</Paper>
 

@@ -64,4 +64,18 @@ const theme = createTheme({
 	],
 });
 
+// fabric.js 物件控制樣式
+export const fabricObjectControls = {
+	transparentCorners: false,
+	cornerStyle: 'circle',
+	cornerColor: '#f7cac9',
+	cornerSize: 8,
+	padding: 10,
+	borderColor: '#f7cac9',
+	cornerStrokeColor: '#5c5c5c',
+	hasControls: true,
+	hasBorders: true,
+	selectable: true
+};
+
 export default theme;

@@ -61,3 +61,39 @@ export const setDrawingMode = (canvas, isDrawingMode) => {
 
 	canvas.isDrawingMode = isDrawingMode;
 };
+
+export const addImageToCanvas = (canvas, imageData) => {
+	if (!canvas || !imageData) return;
+
+	const imgObj = new Image();
+	imgObj.src = imageData;
+	imgObj.onload = () => {
+		const fabricImage = new fabric.FabricImage(imgObj);
+
+		// 取得視窗大小
+		const windowWidth = window.innerWidth;
+		const windowHeight = window.innerHeight;
+
+		// 計算縮放比例，讓圖片填滿視窗
+		const scale = Math.max(
+			windowWidth / fabricImage.width,
+			windowHeight / fabricImage.height
+		);
+
+		// 設定圖片屬性
+		fabricImage.set({
+			scaleX: scale,
+			scaleY: scale,
+			left: (windowWidth - fabricImage.width * scale) / 2,
+			top: (windowHeight - fabricImage.height * scale) / 2,
+		});
+
+		canvas.add(fabricImage);
+		canvas.setActiveObject(fabricImage);
+		canvas.renderAll();
+
+		if (canvas.historyManager) {
+			canvas.historyManager.saveState();
+		}
+	};
+};
