@@ -1,5 +1,5 @@
 import * as fabric from "fabric";
-import { convertToRGBA } from "../../helpers/color/ColorConvert";
+import { convertToRGBA } from "../../helpers/color/ColorProcess";
 
 const createPatternCanvas = (type, settings) => {
 	const patternCanvas = document.createElement("canvas");

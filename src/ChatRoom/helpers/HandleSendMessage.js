@@ -1,4 +1,8 @@
 import {sendMessage} from "./HandleSendMessageApiConn";
+import GeminiService from "../../services/GeminiService";
+import { addImageToCanvas, clearCanvas } from "../../helpers/canvas/CanvasOperations";
+
+const geminiService = new GeminiService(process.env.REACT_APP_GEMINI_API_KEY);
 
 export const handleSendTextMessage = async (
     messageText,
@@ -18,6 +22,7 @@ export const handleSendTextMessage = async (
         const sendMessage = createNewMessage(sendId, messageText, true, false);
         setMessages(prevMessages => [...prevMessages, sendMessage]);
 
+
         // 創建包含預設問題和回覆的完整訊息（加上對話次數引導邏輯）
         const fullMessage = (conversationCount === 3)
             ? `使用者回答了: ${messageText} 
@@ -26,6 +31,7 @@ export const handleSendTextMessage = async (
                             ? `使用者回答了: ${messageText} 
             \n請根據這段回覆自然地繼續對話，並試著引導對方多聊一些。可以的話，以問句結尾，讓對話更流暢。請勿重複使用者的回答，應該以新的方式回應。`
                             : `${messageText}\n請基於這段訊息提供適當的回應，請勿單純重複此訊息。`);
+
 
         // 等待接收回應
         const response = await saveReceiveMessage(sendId + 1, fullMessage, null);
@@ -92,6 +98,49 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
         const baseId = getNewId(messages);
         let currentId = baseId;
 
+        if (messageText) {
+            const textMessage = createNewMessage(currentId, messageText, true, false);
+            setMessages(prevMessages => [...prevMessages, textMessage]);
+            currentId++;
+        }
+
+        const imageUrl = URL.createObjectURL(canvasImage);
+        const imageMessage = createNewMessage(currentId, imageUrl, true, true);
+        setMessages(prevMessages => [...prevMessages, imageMessage]);
+        currentId++;
+
+        const response = await sendMessage(messageText || "請分析這張圖片", canvasImage);
+        
+        // 保存分析結果
+        const analysisMessage = createNewMessage(
+            currentId,
+            response.content,
+            false,
+            false
+        );
+        setMessages(prevMessages => [...prevMessages, analysisMessage]);
+    } catch (error) {
+        console.error('分析畫布失敗:', error);
+        const errorMessage = createNewMessage(
+            getNewId(messages) + 2,
+            "抱歉，分析畫布時發生錯誤。",
+            false,
+            false
+        );
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+        setLoading(false);
+    }
+};
+
+export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas) => {
+    if (!canvasImage) return;
+
+    try {
+        setLoading(true);
+        const baseId = getNewId(messages);
+        let currentId = baseId;
+
         // 如果有文字訊息，先顯示文字
         if (messageText) {
             const textMessage = createNewMessage(currentId, messageText, true, false);
@@ -105,22 +154,38 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
         setMessages(prevMessages => [...prevMessages, imageMessage]);
         currentId++;
 
-        // 發送到後端進行分析
-        const response = await sendMessage(messageText || "請分析這張圖片", canvasImage);
+        // 將 Blob 轉換為 base64
+        const reader = new FileReader();
+        const canvasData = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(canvasImage);
+        });
+
+        const result = await geminiService.generateImage(messageText || "請根據這張圖片生成新的內容", canvasData);
         
-        // 保存分析結果
-        const analysisMessage = createNewMessage(
-            currentId,
-            response.content,
-            false,
-            false
-        );
-        setMessages(prevMessages => [...prevMessages, analysisMessage]);
+        if (result.success) {
+            // 如果有文字回應，顯示出來
+            if (result.message) {
+                const textResponseMessage = createNewMessage(currentId, result.message, false, false);
+                setMessages(prevMessages => [...prevMessages, textResponseMessage]);
+                currentId++;
+            }
+
+            // 下載生成的圖片
+            if (result.imageData) {
+                // 將圖片添加到畫布
+                if (canvas) {
+                    clearCanvas(canvas);
+                    addImageToCanvas(canvas, `data:image/png;base64,${result.imageData}`);
+                }
+            }
+        }
     } catch (error) {
-        console.error('分析失敗:', error);
+        console.error('AI 畫圖失敗:', error);
         const errorMessage = createNewMessage(
             getNewId(messages) + 2,
-            "抱歉，分析過程中發生錯誤。",
+            "抱歉，AI 畫圖過程中發生錯誤。",
             false,
             false
         );
@@ -131,8 +196,7 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
 };
 
 const getNewId = (messages) => {
-    if (messages.length === 0) return 1;
-    return Math.max(...messages.map(m => m.id)) + 1;
+    return messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 0;
 };
 
 const saveReceiveMessage = async (id, messageText, messageImage) => {
@@ -142,9 +206,9 @@ const saveReceiveMessage = async (id, messageText, messageImage) => {
 
 const createNewMessage = (id, message, isUser, isImage) => {
     return {
-        id: id,
-        message: message,
-        isUser: isUser,
-        isImage: isImage
+        id,
+        message,
+        isUser,
+        isImage
     };
 };

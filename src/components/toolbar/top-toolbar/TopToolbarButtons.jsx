@@ -25,6 +25,9 @@ const TopToolbarButtons = ({
 	onRedoClick,
 	onExportClick,
 	onImportClick,
+	canvas,
+	hasSelectedObject,
+	canPaste,
 }) => {
 	return (
 		<Box className="top-toolbar-tools">
@@ -43,19 +46,19 @@ const TopToolbarButtons = ({
 			<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
 			<Tooltip title="剪下" placement="bottom">
-				<IconButton onClick={onCutClick}>
+				<IconButton onClick={onCutClick} disabled={!hasSelectedObject}>
 					<ContentCut />
 				</IconButton>
 			</Tooltip>
 
 			<Tooltip title="複製" placement="bottom">
-				<IconButton onClick={onCopyClick}>
+				<IconButton onClick={onCopyClick} disabled={!hasSelectedObject}>
 					<ContentCopy />
 				</IconButton>
 			</Tooltip>
 
 			<Tooltip title="貼上" placement="bottom">
-				<IconButton onClick={onPasteClick}>
+				<IconButton onClick={onPasteClick} disabled={!canvas || !canPaste}>
 					<ContentPaste />
 				</IconButton>
 			</Tooltip>
@@ -110,6 +113,9 @@ TopToolbarButtons.propTypes = {
 	onRedoClick: PropTypes.func,
 	onExportClick: PropTypes.func.isRequired,
 	onImportClick: PropTypes.func.isRequired,
+	canvas: PropTypes.object,
+	hasSelectedObject: PropTypes.bool,
+	canPaste: PropTypes.bool,
 };
 
 export default TopToolbarButtons;

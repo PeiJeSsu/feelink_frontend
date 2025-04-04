@@ -25,3 +25,17 @@ export function handleImageChange(event, message, setMessage, onUploadImage) {
 		event.target.value = '';
 	}
 }
+
+export function handleAnalyzeCanvas(message, setMessage, onAnalyzeCanvas) {
+	if (onAnalyzeCanvas) {
+		onAnalyzeCanvas(message);
+		setMessage('');
+	}
+}
+
+export function handleAIDrawing(message, setMessage, onAIDrawing) {
+	if (onAIDrawing) {
+		onAIDrawing(message);
+		setMessage('');
+	}
+}

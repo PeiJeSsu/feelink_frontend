@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis } from "../helpers/HandleSendMessage";
+import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing } from "../helpers/HandleSendMessage";
 
-export default function useChatMessages() {
+export default function useChatMessages(canvas) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState(""); 
@@ -22,9 +22,6 @@ export default function useChatMessages() {
         handleSendImageMessage(messageText, messageImage, messages, setMessages, setLoading);
     };
 
-    const sendCanvasAnalysis = async (canvasImage, messageText) => {
-        handleSendCanvasAnalysis(canvasImage, messageText, messages, setMessages, setLoading);
-    };
     const addSystemMessage = (text) => {
         setCurrentQuestion(text);
         setMessages((prevMessages) => [
@@ -32,5 +29,26 @@ export default function useChatMessages() {
             { id: Date.now(), message: text, isUser: false, isImage: false }
         ]);
     };
-    return { messages, loading, predefinedQuestions, sendTextMessage, sendImageMessage, sendCanvasAnalysis, addSystemMessage };
+
+    const sendCanvasAnalysis = async (messageText) => {
+        if (!canvas) {
+            console.error('沒有可用的畫布');
+            return;
+        }
+        const dataUrl = canvas.toDataURL('image/png');
+        const blob = await (await fetch(dataUrl)).blob();
+        await handleSendCanvasAnalysis(blob, messageText, messages, setMessages, setLoading);
+    };
+
+    const sendAIDrawing = async (messageText) => {
+        if (!canvas) {
+            console.error('沒有可用的畫布');
+            return;
+        }
+        const dataUrl = canvas.toDataURL('image/png');
+        const blob = await (await fetch(dataUrl)).blob();
+        await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas);
+    };
+
+    return { messages, loading, predefinedQuestions, sendTextMessage, sendImageMessage, sendCanvasAnalysis, sendAIDrawing, addSystemMessage };
 }
