@@ -1,13 +1,13 @@
 import * as React from "react";
-import { Box ,CircularProgress } from "@mui/material";
-import {chatRoomStyles} from "../styles/ChatRoomStyles";
+import { Box, CircularProgress } from "@mui/material";
+import { chatRoomStyles } from "../styles/ChatRoomStyles";
 import useChatMessages from "../hooks/UseChatMessages";
 import ChatMessage from "./ChatMessage";
 import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 
 export default function ChatRoom({ canvas }) {
-    const { messages, loading, predefinedQuestions , sendTextMessage, sendImageMessage, sendCanvasAnalysis ,addSystemMessage} = useChatMessages();
+const { messages, loading, predefinedQuestions, sendTextMessage, sendImageMessage, sendCanvasAnalysis, sendAIDrawing, addSystemMessage } = useChatMessages(canvas);
     
     const questionAdded = React.useRef(false);
     
@@ -18,22 +18,6 @@ export default function ChatRoom({ canvas }) {
             questionAdded.current = true; 
         }
     }, [messages, addSystemMessage]);
-
-    const handleAnalyzeCanvas = async (messageText) => {
-        if (!canvas) return;
-
-        try {
-            // 將畫布轉換為圖片
-            const dataUrl = canvas.toDataURL('image/png');
-            // 將 base64 轉換為 blob
-            const blob = await (await fetch(dataUrl)).blob();
-            
-            // 發送分析請求，包含文字訊息
-            await sendCanvasAnalysis(blob, messageText);
-        } catch (error) {
-            console.error('分析畫布時發生錯誤:', error);
-        }
-    };
 
     return (
         <Box sx={chatRoomStyles.container}>
@@ -56,7 +40,8 @@ export default function ChatRoom({ canvas }) {
             <TextInputArea
                 onSendMessage={sendTextMessage}
                 onSendImage={sendImageMessage}
-                onAnalyzeCanvas={handleAnalyzeCanvas}
+                onAnalyzeCanvas={sendCanvasAnalysis}
+                onAIDrawing={sendAIDrawing}
                 disabled={loading}
             />
         </Box>
