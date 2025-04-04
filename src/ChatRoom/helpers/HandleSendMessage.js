@@ -1,21 +1,31 @@
 import {sendMessage} from "./HandleSendMessageApiConn";
 
-export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, defaultQuestion = "") => {
+export const handleSendTextMessage = async (
+    messageText,
+    messages,
+    setMessages,
+    setLoading,
+    defaultQuestion = "",
+    conversationCount = 1 // 新增：預設為 1
+    ) => {
     if (!messageText) return;
 
     try {
         setLoading(true);
         const sendId = getNewId(messages);
-        
+
         // 保存發送的訊息
         const sendMessage = createNewMessage(sendId, messageText, true, false);
         setMessages(prevMessages => [...prevMessages, sendMessage]);
 
-        // 創建包含預設問題和回覆的完整訊息
-        const fullMessage = defaultQuestion
-        ? `使用者回答了: ${messageText} 
-        \n請根據這段回覆自然地繼續對話，並試著引導對方多聊一些。可以的話，以問句結尾，讓對話更流暢。請勿重複使用者的回答，應該以新的方式回應。`
-        : `${messageText}\n請基於這段訊息提供適當的回應，請勿單純重複此訊息。`;
+        // 創建包含預設問題和回覆的完整訊息（加上對話次數引導邏輯）
+        const fullMessage = (conversationCount === 3)
+            ? `使用者回答了: ${messageText} 
+            \n請根據這段回覆自然地繼續對話，並試著引導對方多聊一些。可以的話，以問句結尾，讓對話更流暢。請勿重複使用者的回答，應該以新的方式回應。由於你們已經聊了一會兒，也許可以邀請對方透過一幅簡單的畫來表達當下的感受(像是以要不要話張圖抒發你的感受之類的問句)，但請盡量流暢的銜接問題。`
+                        : (defaultQuestion
+                            ? `使用者回答了: ${messageText} 
+            \n請根據這段回覆自然地繼續對話，並試著引導對方多聊一些。可以的話，以問句結尾，讓對話更流暢。請勿重複使用者的回答，應該以新的方式回應。`
+                            : `${messageText}\n請基於這段訊息提供適當的回應，請勿單純重複此訊息。`);
 
         // 等待接收回應
         const response = await saveReceiveMessage(sendId + 1, fullMessage, null);
