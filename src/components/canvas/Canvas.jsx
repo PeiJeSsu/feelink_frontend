@@ -7,14 +7,24 @@ import { createBrush, setupBrushEventListeners } from "../../helpers/brush/Brush
 import { setupShapeDrawing, disableShapeDrawing } from "../../helpers/shape/ShapeTools";
 import { setupEraser, disableEraser } from "../../helpers/eraser/ObjectEraserTools";
 import { setupPathEraser, disablePathEraser } from "../../helpers/eraser/PathEraserTools";
+import { setupPaintBucket, disablePaintBucket } from "../../helpers/paintBucket/PaintBucketTools";
 import CanvasControls from "./CanvasControls";
 import createHistoryManager from "../../helpers/history/HistoryManager";
 
-const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clearTrigger, onCanvasInit }) => {
+const Canvas = ({ 
+	activeTool, 
+	brushSettings, 
+	shapeSettings, 
+	eraserSettings, 
+	paintBucketSettings,
+	clearTrigger, 
+	onCanvasInit 
+}) => {
 	const canvasRef = useRef(null);
 	const fabricCanvasRef = useRef(null);
 	const eraserRef = useRef(null);
 	const pathEraserRef = useRef(null);
+	const paintBucketRef = useRef(null);
 	const historyManagerRef = useRef(null);
 
 	useEffect(() => {
@@ -82,6 +92,7 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 			disableShapeDrawing(canvas);
 			disableEraser(canvas);
 			disablePathEraser(canvas);
+			disablePaintBucket(canvas);
 			setPanningMode(canvas, false);
 
 			// 創建並設置畫筆
@@ -93,6 +104,7 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 			setDrawingMode(canvas, false);
 			disableEraser(canvas);
 			disablePathEraser(canvas);
+			disablePaintBucket(canvas);
 			setPanningMode(canvas, false);
 
 			// 設置圖形繪製
@@ -101,6 +113,7 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 			setDrawingMode(canvas, false);
 			disableShapeDrawing(canvas);
 			disablePathEraser(canvas);
+			disablePaintBucket(canvas);
 			setPanningMode(canvas, false);
 
 			// 根據橡皮擦類型選擇不同的橡皮擦實現
@@ -111,21 +124,32 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 				// 設置物件橡皮擦
 				eraserRef.current = setupEraser(canvas, eraserSettings);
 			}
+		} else if (activeTool === "paintBucket") {
+			setDrawingMode(canvas, false);
+			disableShapeDrawing(canvas);
+			disableEraser(canvas);
+			disablePathEraser(canvas);
+			setPanningMode(canvas, false);
+
+			// 設置填充工具
+			paintBucketRef.current = setupPaintBucket(canvas, paintBucketSettings);
 		} else if (activeTool === "pan") {
 			// 啟用平移模式
 			setDrawingMode(canvas, false);
 			disableShapeDrawing(canvas);
 			disableEraser(canvas);
 			disablePathEraser(canvas);
+			disablePaintBucket(canvas);
 			setPanningMode(canvas, true);
 		} else {
 			setDrawingMode(canvas, false);
 			disableShapeDrawing(canvas);
 			disableEraser(canvas);
 			disablePathEraser(canvas);
+			disablePaintBucket(canvas);
 			setPanningMode(canvas, false);
 		}
-	}, [activeTool, brushSettings, shapeSettings, eraserSettings]);
+	}, [activeTool, brushSettings, shapeSettings, eraserSettings, paintBucketSettings]);
 
 	useEffect(() => {
 		if (clearTrigger > 0 && fabricCanvasRef.current) {
@@ -147,6 +171,14 @@ const Canvas = ({ activeTool, brushSettings, shapeSettings, eraserSettings, clea
 		}
 	}, [eraserSettings, activeTool]);
 
+	// 當填充工具設置變化時更新填充工具
+	useEffect(() => {
+		if (activeTool === "paintBucket" && paintBucketSettings && paintBucketRef.current) {
+			paintBucketRef.current.updateColor(paintBucketSettings.color);
+			paintBucketRef.current.updateTolerance(paintBucketSettings.tolerance);
+		}
+	}, [paintBucketSettings, activeTool]);
+
 	return (
 		<div className="canvas-wrapper">
 			<canvas ref={canvasRef} />
@@ -160,6 +192,7 @@ Canvas.propTypes = {
 	brushSettings: PropTypes.object.isRequired,
 	shapeSettings: PropTypes.object.isRequired,
 	eraserSettings: PropTypes.object.isRequired,
+	paintBucketSettings: PropTypes.object.isRequired,
 	clearTrigger: PropTypes.number.isRequired,
 	onCanvasInit: PropTypes.func,
 };

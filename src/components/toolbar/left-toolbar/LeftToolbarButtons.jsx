@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { Box, IconButton, Tooltip, Badge } from "@mui/material";
-import { Brush, FormatShapes, AdsClick, AutoFixHigh, PanTool } from "@mui/icons-material";
+import { Brush, FormatShapes, AdsClick, AutoFixHigh, PanTool, FormatPaint } from "@mui/icons-material";
 
 const LeftToolbarButtons = ({ activeTool, onToolClick }) => {
 	return (
@@ -33,6 +33,17 @@ const LeftToolbarButtons = ({ activeTool, onToolClick }) => {
 						className={activeTool === "shape" ? "Mui-selected" : ""}
 					>
 						<FormatShapes />
+					</IconButton>
+				</Badge>
+			</Tooltip>
+			<Tooltip title="填充工具" placement="right" arrow>
+				<Badge color="secondary" variant="dot" invisible={activeTool !== "paintBucket"} overlap="circular">
+					<IconButton
+						id="paint-bucket-button"
+						onClick={() => onToolClick("paintBucket")}
+						className={activeTool === "paintBucket" ? "Mui-selected" : ""}
+					>
+						<FormatPaint />
 					</IconButton>
 				</Badge>
 			</Tooltip>
