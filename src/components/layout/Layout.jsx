@@ -32,6 +32,11 @@ const Layout = () => {
 		type: "path",
 	});
 
+	const [paintBucketSettings, setPaintBucketSettings] = useState({
+		color: "#000000",
+		tolerance: 2,
+	});
+
 	const [clearTrigger, setClearTrigger] = useState(0);
 
 	const canvasRef = useRef(null);
@@ -62,6 +67,8 @@ const Layout = () => {
 				shapeSettings={shapeSettings}
 				setEraserSettings={setEraserSettings}
 				eraserSettings={eraserSettings}
+				setPaintBucketSettings={setPaintBucketSettings}
+				paintBucketSettings={paintBucketSettings}
 				onClearCanvas={handleClearCanvas}
 			/>
 			<TopToolbar onClearClick={handleClearCanvas} canvas={canvasRef.current} canvasReady={canvasReady} />
@@ -70,6 +77,7 @@ const Layout = () => {
 				brushSettings={brushSettings}
 				shapeSettings={shapeSettings}
 				eraserSettings={eraserSettings}
+				paintBucketSettings={paintBucketSettings}
 				clearTrigger={clearTrigger}
 				onCanvasInit={setCanvasInstance}
 			/>

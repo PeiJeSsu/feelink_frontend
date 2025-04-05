@@ -7,6 +7,7 @@ import SettingsPopover from "./SettingsPopover";
 import BrushSettings from "../../brush/BrushSettings";
 import ShapeSettings from "../../shape/ShapeSettings";
 import EraserSettings from "../../eraser/EraserSettings";
+import PaintBucketSettings from "../../paint-bucket/PaintBucketSettings";
 
 const LeftToolbar = ({
 	setActiveTool,
@@ -17,6 +18,8 @@ const LeftToolbar = ({
 	shapeSettings,
 	setEraserSettings,
 	eraserSettings,
+	setPaintBucketSettings,
+	paintBucketSettings,
 }) => {
 	const [anchorEl, setAnchorEl] = useState(null);
 	const [popoverVisible, setPopoverVisible] = useState(false);
@@ -24,6 +27,8 @@ const LeftToolbar = ({
 	const [shapePopoverVisible, setShapePopoverVisible] = useState(false);
 	const [eraserAnchorEl, setEraserAnchorEl] = useState(null);
 	const [eraserPopoverVisible, setEraserPopoverVisible] = useState(false);
+	const [paintBucketAnchorEl, setPaintBucketAnchorEl] = useState(null);
+	const [paintBucketPopoverVisible, setPaintBucketPopoverVisible] = useState(false);
 
 	useEffect(() => {
 		if (activeTool === "pencil") {
@@ -38,6 +43,10 @@ const LeftToolbar = ({
 			const eraserButton = document.getElementById("eraser-button");
 			setEraserAnchorEl(eraserButton);
 			setEraserPopoverVisible(true);
+		} else if (activeTool === "paintBucket") {
+			const paintBucketButton = document.getElementById("paint-bucket-button");
+			setPaintBucketAnchorEl(paintBucketButton);
+			setPaintBucketPopoverVisible(true);
 		}
 	}, [activeTool]);
 
@@ -56,6 +65,10 @@ const LeftToolbar = ({
 			const eraserButton = document.getElementById("eraser-button");
 			setEraserAnchorEl(eraserButton);
 			setEraserPopoverVisible(true);
+		} else if (tool === "paintBucket") {
+			const paintBucketButton = document.getElementById("paint-bucket-button");
+			setPaintBucketAnchorEl(paintBucketButton);
+			setPaintBucketPopoverVisible(true);
 		}
 	};
 
@@ -69,6 +82,10 @@ const LeftToolbar = ({
 
 	const handleEraserClose = () => {
 		setEraserPopoverVisible(false);
+	};
+
+	const handlePaintBucketClose = () => {
+		setPaintBucketPopoverVisible(false);
 	};
 
 	return (
@@ -101,6 +118,18 @@ const LeftToolbar = ({
 			>
 				<EraserSettings eraserSettings={eraserSettings} onEraserSettingsChange={setEraserSettings} />
 			</SettingsPopover>
+
+			<SettingsPopover
+				open={paintBucketPopoverVisible && activeTool === "paintBucket"}
+				anchorEl={paintBucketAnchorEl}
+				onClose={handlePaintBucketClose}
+				title="填充工具設置"
+			>
+				<PaintBucketSettings 
+					paintBucketSettings={paintBucketSettings} 
+					onPaintBucketSettingsChange={setPaintBucketSettings} 
+				/>
+			</SettingsPopover>
 		</Paper>
 	);
 };
@@ -114,6 +143,8 @@ LeftToolbar.propTypes = {
 	shapeSettings: PropTypes.object.isRequired,
 	setEraserSettings: PropTypes.func.isRequired,
 	eraserSettings: PropTypes.object.isRequired,
+	setPaintBucketSettings: PropTypes.func.isRequired,
+	paintBucketSettings: PropTypes.object.isRequired,
 };
 
 export default LeftToolbar;
