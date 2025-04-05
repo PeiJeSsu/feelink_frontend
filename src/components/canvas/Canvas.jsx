@@ -7,7 +7,7 @@ import { createBrush, setupBrushEventListeners } from "../../helpers/brush/Brush
 import { setupShapeDrawing, disableShapeDrawing } from "../../helpers/shape/ShapeTools";
 import { setupEraser, disableEraser } from "../../helpers/eraser/ObjectEraserTools";
 import { setupPathEraser, disablePathEraser } from "../../helpers/eraser/PathEraserTools";
-import { setupPaintBucket, disablePaintBucket } from "../../helpers/paintBucket/PaintBucketTools";
+import { setupPaintBucket, disablePaintBucket } from "../../helpers/paint-bucket/PaintBucketTools";
 import CanvasControls from "./CanvasControls";
 import createHistoryManager from "../../helpers/history/HistoryManager";
 
