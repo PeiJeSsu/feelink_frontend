@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import * as fabric from 'fabric';
+import * as fabric from "fabric";
 import { fill, toggleFloodFill } from '../../utils/FloodFill';
 import { Box, Button, Slider, Stack, Typography } from '@mui/material';
 
@@ -124,4 +124,4 @@ const FabricFloodFillDemo = () => {
     );
 };
 
-export default FabricFloodFillDemo; 
+export default FabricFloodFillDemo;

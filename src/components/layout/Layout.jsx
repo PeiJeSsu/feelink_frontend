@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Box, IconButton } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { ResizableBox } from 'react-resizable';
 import LeftToolbar from "../toolbar/left-toolbar/LeftToolbar";
 import TopToolbar from "../toolbar/top-toolbar/TopToolbar";
 import Canvas from "../canvas/Canvas";
@@ -10,6 +11,7 @@ import "./Layout.css";
 const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(false);
+	const [chatWidth, setChatWidth] = useState(300); 
 	const [brushSettings, setBrushSettings] = useState({
 		size: 5,
 		opacity: 1,
@@ -37,6 +39,12 @@ const Layout = () => {
 		tolerance: 2,
 	});
 
+	const [textSettings, setTextSettings] = useState({
+		fontFamily: "Arial",
+		fontSize: 24,
+		fill: "#000000"
+	});
+
 	const [clearTrigger, setClearTrigger] = useState(0);
 
 	const canvasRef = useRef(null);
@@ -56,6 +64,10 @@ const Layout = () => {
 		setIsChatOpen(!isChatOpen);
 	};
 
+	const handleResize = (e, { size }) => {
+		setChatWidth(size.width);
+	};
+
 	return (
 		<Box className="layout-container">
 			<LeftToolbar
@@ -69,6 +81,8 @@ const Layout = () => {
 				eraserSettings={eraserSettings}
 				setPaintBucketSettings={setPaintBucketSettings}
 				paintBucketSettings={paintBucketSettings}
+				setTextSettings={setTextSettings}
+				textSettings={textSettings}
 				onClearCanvas={handleClearCanvas}
 			/>
 			<TopToolbar onClearClick={handleClearCanvas} canvas={canvasRef.current} canvasReady={canvasReady} />
@@ -78,18 +92,30 @@ const Layout = () => {
 				shapeSettings={shapeSettings}
 				eraserSettings={eraserSettings}
 				paintBucketSettings={paintBucketSettings}
+				textSettings={textSettings}
 				clearTrigger={clearTrigger}
 				onCanvasInit={setCanvasInstance}
 			/>
-			<Box className={`chat-container ${isChatOpen ? 'open' : ''}`}>
-				<ChatRoom canvas={canvasRef.current} />
-			</Box>
-			<IconButton 
+			{isChatOpen && (
+				<ResizableBox 
+					className="chat-container open"
+					width={chatWidth}
+					height={Infinity}
+					minConstraints={[250, Infinity]}
+					maxConstraints={[600, Infinity]}
+					axis="x"
+					resizeHandles={['w']}
+					onResize={handleResize}
+				>
+					<ChatRoom canvas={canvasRef.current} />
+				</ResizableBox>
+			)}
+			<IconButton
 				className={`chat-toggle-button ${isChatOpen ? 'open' : ''}`}
 				onClick={toggleChat}
 				sx={{
 					position: 'fixed',
-					right: isChatOpen ? '21.5%' : '0',
+					right: isChatOpen ? `${chatWidth}px` : '0',
 					top: '50%',
 					transform: 'translateY(-50%)',
 					backgroundColor: 'white',
