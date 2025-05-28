@@ -1,8 +1,6 @@
-import {sendMessage} from "./HandleSendMessageApiConn";
-import GeminiService from "../../services/GeminiService";
-import { addImageToCanvas, clearCanvas } from "../../helpers/canvas/CanvasOperations";
-
-const geminiService = new GeminiService(process.env.REACT_APP_GEMINI_API_KEY);
+import { getNewId, createNewMessage, handleError, addMessages, convertBlobToBase64 } from "../utils/MessageUtils";
+import { sendTextToBackend, sendImageToBackend, sendCanvasAnalysisToBackend, sendAIDrawingToBackend } from "../services/MessageApiService";
+import { getFullMessage, processDrawingResult } from "../processors/MessageProcessor";
 
 export const handleSendTextMessage = async (
     messageText,
@@ -10,41 +8,29 @@ export const handleSendTextMessage = async (
     setMessages,
     setLoading,
     defaultQuestion = "",
-    conversationCount = 1 // 新增：預設為 1
-    ) => {
+    conversationCount = 1
+) => {
     if (!messageText) return;
 
     try {
         setLoading(true);
         const sendId = getNewId(messages);
 
-        // 保存發送的訊息
         const sendMessage = createNewMessage(sendId, messageText, true, false);
         setMessages(prevMessages => [...prevMessages, sendMessage]);
 
+        const fullMessage = getFullMessage(messageText, conversationCount, defaultQuestion);
 
-        // 創建包含預設問題和回覆的完整訊息（加上對話次數引導邏輯）
-        const fullMessage = (conversationCount === 3)
-            ? `使用者回答了: ${messageText} 
-            \n請根據這段回覆自然地繼續對話，並試著引導對方多聊一些。可以的話，以問句結尾，讓對話更流暢。請勿重複使用者的回答，應該以新的方式回應。由於你們已經聊了一會兒，也許可以邀請對方透過一幅簡單的畫來表達當下的感受(像是以要不要話張圖抒發你的感受之類的問句)，但請盡量流暢的銜接問題。`
-                        : (defaultQuestion
-                            ? `使用者回答了: ${messageText} 
-            \n請根據這段回覆自然地繼續對話，並試著引導對方多聊一些。可以的話，以問句結尾，讓對話更流暢。請勿重複使用者的回答，應該以新的方式回應。`
-                            : `${messageText}\n請基於這段訊息提供適當的回應，請勿單純重複此訊息。`);
-
-
-        // 等待接收回應
-        const response = await saveReceiveMessage(sendId + 1, fullMessage, null);
-        setMessages(prevMessages => [...prevMessages, response]);
+        const result = await sendTextToBackend(fullMessage);
+        
+        if (result.success) {
+            const response = createNewMessage(sendId + 1, result.content, false, false);
+            setMessages(prevMessages => [...prevMessages, response]);
+        } else {
+            throw new Error(result.error);
+        }
     } catch (error) {
-        console.error('發送訊息失敗:', error);
-        const errorMessage = createNewMessage(
-            getNewId(messages) + 2,
-            "抱歉，處理訊息時發生錯誤。",
-            false,
-            false
-        );
-        setMessages(prevMessages => [...prevMessages, errorMessage]);
+        handleError(error, '發送訊息失敗', messages, setMessages);
     } finally {
         setLoading(false);
     }
@@ -57,34 +43,18 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
         setLoading(true);
         const baseId = getNewId(messages);
         let currentId = baseId;
+        currentId = addMessages(messageText, messageImage, currentId, messages, setMessages);
 
-        // 如果有文字訊息，先發送文字
-        if (messageText) {
-            const textMessage = createNewMessage(currentId, messageText, true, false);
-            setMessages(prevMessages => [...prevMessages, textMessage]);
-            currentId++;
+        const result = await sendImageToBackend(messageText, messageImage);
+        
+        if (result.success) {
+            const response = createNewMessage(currentId, result.content, false, false);
+            setMessages(prevMessages => [...prevMessages, response]);
+        } else {
+            throw new Error(result.error);
         }
-
-        // 發送圖片
-        if (messageImage) {
-            const imageUrl = URL.createObjectURL(messageImage);
-            const imageMessage = createNewMessage(currentId, imageUrl, true, true);
-            setMessages(prevMessages => [...prevMessages, imageMessage]);
-            currentId++;
-        }
-
-        // 等待接收回應
-        const response = await saveReceiveMessage(currentId, messageText, messageImage);
-        setMessages(prevMessages => [...prevMessages, response]);
     } catch (error) {
-        console.error('發送圖片失敗:', error);
-        const errorMessage = createNewMessage(
-            getNewId(messages) + 3,
-            "抱歉，處理圖片時發生錯誤。",
-            false,
-            false
-        );
-        setMessages(prevMessages => [...prevMessages, errorMessage]);
+        handleError(error, '發送圖片失敗', messages, setMessages);
     } finally {
         setLoading(false);
     }
@@ -97,37 +67,23 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
         setLoading(true);
         const baseId = getNewId(messages);
         let currentId = baseId;
+        currentId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
 
-        if (messageText) {
-            const textMessage = createNewMessage(currentId, messageText, true, false);
-            setMessages(prevMessages => [...prevMessages, textMessage]);
-            currentId++;
-        }
-
-        const imageUrl = URL.createObjectURL(canvasImage);
-        const imageMessage = createNewMessage(currentId, imageUrl, true, true);
-        setMessages(prevMessages => [...prevMessages, imageMessage]);
-        currentId++;
-
-        const response = await sendMessage(messageText || "請分析這張圖片", canvasImage);
+        const result = await sendCanvasAnalysisToBackend(messageText, canvasImage);
         
-        // 保存分析結果
-        const analysisMessage = createNewMessage(
-            currentId,
-            response.content,
-            false,
-            false
-        );
-        setMessages(prevMessages => [...prevMessages, analysisMessage]);
+        if (result.success) {
+            const analysisMessage = createNewMessage(
+                currentId,
+                result.content,
+                false,
+                false
+            );
+            setMessages(prevMessages => [...prevMessages, analysisMessage]);
+        } else {
+            throw new Error(result.error);
+        }
     } catch (error) {
-        console.error('分析畫布失敗:', error);
-        const errorMessage = createNewMessage(
-            getNewId(messages) + 2,
-            "抱歉，分析畫布時發生錯誤。",
-            false,
-            false
-        );
-        setMessages(prevMessages => [...prevMessages, errorMessage]);
+        handleError(error, '分析畫布失敗', messages, setMessages);
     } finally {
         setLoading(false);
     }
@@ -141,74 +97,20 @@ export const handleSendAIDrawing = async (canvasImage, messageText, messages, se
         const baseId = getNewId(messages);
         let currentId = baseId;
 
-        // 如果有文字訊息，先顯示文字
-        if (messageText) {
-            const textMessage = createNewMessage(currentId, messageText, true, false);
-            setMessages(prevMessages => [...prevMessages, textMessage]);
-            currentId++;
-        }
-        
-        // 保存畫布圖片訊息
-        const imageUrl = URL.createObjectURL(canvasImage);
-        const imageMessage = createNewMessage(currentId, imageUrl, true, true);
-        setMessages(prevMessages => [...prevMessages, imageMessage]);
-        currentId++;
+        currentId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
 
-        // 將 Blob 轉換為 base64
-        const reader = new FileReader();
-        const canvasData = await new Promise((resolve, reject) => {
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(canvasImage);
-        });
+        const canvasData = await convertBlobToBase64(canvasImage);
 
-        const result = await geminiService.generateImage(messageText || "請根據這張圖片生成新的內容", canvasData);
+        const result = await sendAIDrawingToBackend(messageText, canvasData);
         
         if (result.success) {
-            // 如果有文字回應，顯示出來
-            if (result.message) {
-                const textResponseMessage = createNewMessage(currentId, result.message, false, false);
-                setMessages(prevMessages => [...prevMessages, textResponseMessage]);
-                currentId++;
-            }
-
-            // 下載生成的圖片
-            if (result.imageData) {
-                // 將圖片添加到畫布
-                if (canvas) {
-                    clearCanvas(canvas);
-                    addImageToCanvas(canvas, `data:image/png;base64,${result.imageData}`);
-                }
-            }
+            processDrawingResult(result, currentId, messages, setMessages, canvas);
+        } else {
+            throw new Error(result.error);
         }
     } catch (error) {
-        console.error('AI 畫圖失敗:', error);
-        const errorMessage = createNewMessage(
-            getNewId(messages) + 2,
-            "抱歉，AI 畫圖過程中發生錯誤。",
-            false,
-            false
-        );
-        setMessages(prevMessages => [...prevMessages, errorMessage]);
+        handleError(error, 'AI 畫圖失敗', messages, setMessages);
     } finally {
         setLoading(false);
     }
-};
-
-const getNewId = (messages) => {
-    return messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 0;
-};
-
-const saveReceiveMessage = async (id, messageText, messageImage) => {
-    const response = await sendMessage(messageText, messageImage);
-    return createNewMessage(id, response.content, false, false);
-};
-
-const createNewMessage = (id, message, isUser, isImage) => {
-    return {
-        id,
-        message,
-        isUser,
-        isImage
-    };
 };

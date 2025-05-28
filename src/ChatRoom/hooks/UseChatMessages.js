@@ -4,18 +4,18 @@ import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis
 export default function useChatMessages(canvas) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [currentQuestion, setCurrentQuestion] = useState(""); 
+    const [currentQuestion, setCurrentQuestion] = useState("");
     const [conversationCount, setConversationCount] = useState(0);
+    
     const predefinedQuestions = [
         "最近過得如何，有沒有發生甚麼有趣或難過的事？",
         "今天的心情如何呢",
         "最近有沒有讓你開心或困擾的事呢？"
     ];
-
     const sendTextMessage = (messageText) => {
         const nextCount = conversationCount + 1; 
         setConversationCount(nextCount); 
-        handleSendTextMessage(messageText, messages, setMessages, setLoading, currentQuestion,nextCount);
+        handleSendTextMessage(messageText, messages, setMessages, setLoading, currentQuestion, nextCount);
     };
 
     const sendImageMessage = (messageText, messageImage) => {
@@ -50,5 +50,14 @@ export default function useChatMessages(canvas) {
         await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas);
     };
 
-    return { messages, loading, predefinedQuestions, sendTextMessage, sendImageMessage, sendCanvasAnalysis, sendAIDrawing, addSystemMessage };
+    return { 
+        messages, 
+        loading, 
+        predefinedQuestions, 
+        sendTextMessage, 
+        sendImageMessage, 
+        sendCanvasAnalysis, 
+        sendAIDrawing, 
+        addSystemMessage,
+    };
 }
