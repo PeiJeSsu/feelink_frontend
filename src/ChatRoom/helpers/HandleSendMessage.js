@@ -2,6 +2,12 @@ import { getNewId, createNewMessage, handleError, addMessages, convertBlobToBase
 import { sendTextToBackend, sendImageToBackend, sendCanvasAnalysisToBackend, sendAIDrawingToBackend } from "../services/MessageApiService";
 import { getFullMessage, processDrawingResult } from "../processors/MessageProcessor";
 
+
+const initializeMessageId = (messages) => {
+    const baseId = getNewId(messages);
+    return baseId;
+};
+
 export const handleSendTextMessage = async (
     messageText,
     messages,
@@ -14,7 +20,7 @@ export const handleSendTextMessage = async (
 
     try {
         setLoading(true);
-        const sendId = getNewId(messages);
+        const sendId = initializeMessageId(messages);
 
         const sendMessage = createNewMessage(sendId, messageText, true, false);
         setMessages(prevMessages => [...prevMessages, sendMessage]);
@@ -41,14 +47,13 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
 
     try {
         setLoading(true);
-        const baseId = getNewId(messages);
-        let currentId = baseId;
-        currentId = addMessages(messageText, messageImage, currentId, messages, setMessages);
+        const currentId = initializeMessageId(messages);
+        const finalId = addMessages(messageText, messageImage, currentId, messages, setMessages);
 
         const result = await sendImageToBackend(messageText, messageImage);
         
         if (result.success) {
-            const response = createNewMessage(currentId, result.content, false, false);
+            const response = createNewMessage(finalId, result.content, false, false);
             setMessages(prevMessages => [...prevMessages, response]);
         } else {
             throw new Error(result.error);
@@ -65,15 +70,14 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
 
     try {
         setLoading(true);
-        const baseId = getNewId(messages);
-        let currentId = baseId;
-        currentId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
+        const currentId = initializeMessageId(messages);
+        const finalId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
 
         const result = await sendCanvasAnalysisToBackend(messageText, canvasImage);
         
         if (result.success) {
             const analysisMessage = createNewMessage(
-                currentId,
+                finalId,
                 result.content,
                 false,
                 false
@@ -94,17 +98,15 @@ export const handleSendAIDrawing = async (canvasImage, messageText, messages, se
 
     try {
         setLoading(true);
-        const baseId = getNewId(messages);
-        let currentId = baseId;
-
-        currentId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
+        const currentId = initializeMessageId(messages);
+        const finalId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
 
         const canvasData = await convertBlobToBase64(canvasImage);
 
         const result = await sendAIDrawingToBackend(messageText, canvasData);
         
         if (result.success) {
-            processDrawingResult(result, currentId, messages, setMessages, canvas);
+            processDrawingResult(result, finalId, messages, setMessages, canvas);
         } else {
             throw new Error(result.error);
         }
