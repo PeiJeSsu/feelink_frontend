@@ -1,6 +1,6 @@
-import { sendMessage } from "../helpers/HandleSendMessageApiConn"; 
+import { sendMessage } from "./HandleSendMessageApiConn"; 
 import GeminiService from "../../services/GeminiService"; 
-import { createNewMessage } from "../utils/MessageUtils";
+import { createNewMessage } from "./MessageFactory";
 
 // 初始化 Gemini 服務
 const geminiService = new GeminiService(process.env.REACT_APP_GEMINI_API_KEY);
@@ -59,7 +59,6 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage) => {
     }
 };
 
-// 發送 AI 繪圖請求到後端 (使用 Gemini 服務)
 export const sendAIDrawingToBackend = async (messageText, canvasData) => {
     try {
         const result = await geminiService.generateImage(

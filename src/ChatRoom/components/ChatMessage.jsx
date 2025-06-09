@@ -4,12 +4,6 @@ import { chatMessageStyles } from '../styles/ChatMessageStyles';
 import PropTypes from "prop-types";
 import MarkdownIt from 'markdown-it';
 
-const md = new MarkdownIt({
-  html: false,       
-  breaks: true,      
-  linkify: true     
-});
-
 export default function ChatMessage({ message, isUser, isImage }) {
   const textMessage = message || "";
   const isMarkdown = /[*_#\-`]/.test(textMessage);
@@ -38,6 +32,12 @@ export default function ChatMessage({ message, isUser, isImage }) {
     </Box>
   );
 }
+
+const md = new MarkdownIt({
+  html: false,       
+  breaks: true,      
+  linkify: true     
+});
 
 ChatMessage.propTypes = {
   message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,

@@ -1,21 +1,34 @@
-import { getNewId, createNewMessage, handleError, addMessages, convertBlobToBase64 } from "../utils/MessageUtils";
-import { sendTextToBackend, sendImageToBackend, sendCanvasAnalysisToBackend, sendAIDrawingToBackend } from "../services/MessageApiService";
-import { getFullMessage, processDrawingResult } from "../processors/MessageProcessor";
+import { createNewMessage, handleError, addMessages, convertBlobToBase64 , initializeMessageId,getFullMessage,appendMessage} from "./MessageFactory";
+import {
+  sendTextToBackend,
+  sendImageToBackend,
+  sendCanvasAnalysisToBackend,
+  sendAIDrawingToBackend
+} from './ChatMessageDeliveryService';
 
 
-const initializeMessageId = (messages) => {
-    const baseId = getNewId(messages);
-    return baseId;
+// 處理 AI 繪圖結果
+export const processDrawingResult = (result, currentId, messages, setMessages, canvas) => {
+    const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+    
+    // 如果有文字回應，顯示出來
+    if (result.message) {
+        const { createNewMessage } = require("../helpers/MessageFactory");
+        const textResponseMessage = createNewMessage(currentId, result.message, false, false);
+        setMessages(prevMessages => [...prevMessages, textResponseMessage]);
+        currentId++;
+    }
+
+    // 處理生成的圖片
+    if (result.imageData && canvas) {
+        clearCanvas(canvas);
+        addImageToCanvas(canvas, `data:image/png;base64,${result.imageData}`);
+    }
+
+    return currentId;
 };
 
-export const handleSendTextMessage = async (
-    messageText,
-    messages,
-    setMessages,
-    setLoading,
-    defaultQuestion = "",
-    conversationCount = 1
-) => {
+export const handleSendTextMessage = async (messageText,messages,setMessages,setLoading,defaultQuestion = "",conversationCount = 1) => {
     if (!messageText) return;
 
     try {
@@ -30,8 +43,8 @@ export const handleSendTextMessage = async (
         const result = await sendTextToBackend(fullMessage);
         
         if (result.success) {
-            const response = createNewMessage(sendId + 1, result.content, false, false);
-            setMessages(prevMessages => [...prevMessages, response]);
+            appendMessage(sendId + 1, result.content,setMessages);
+
         } else {
             throw new Error(result.error);
         }
@@ -53,8 +66,7 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
         const result = await sendImageToBackend(messageText, messageImage);
         
         if (result.success) {
-            const response = createNewMessage(finalId, result.content, false, false);
-            setMessages(prevMessages => [...prevMessages, response]);
+            appendMessage(finalId, result.content,setMessages);
         } else {
             throw new Error(result.error);
         }
@@ -76,13 +88,7 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
         const result = await sendCanvasAnalysisToBackend(messageText, canvasImage);
         
         if (result.success) {
-            const analysisMessage = createNewMessage(
-                finalId,
-                result.content,
-                false,
-                false
-            );
-            setMessages(prevMessages => [...prevMessages, analysisMessage]);
+            appendMessage(finalId, result.content, setMessages);
         } else {
             throw new Error(result.error);
         }

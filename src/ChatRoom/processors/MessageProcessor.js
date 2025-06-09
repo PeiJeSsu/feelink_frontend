@@ -11,23 +11,3 @@ export const getFullMessage = (messageText, conversationCount, defaultQuestion) 
     }
 };
 
-// 處理 AI 繪圖結果
-export const processDrawingResult = (result, currentId, messages, setMessages, canvas) => {
-    const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
-    
-    // 如果有文字回應，顯示出來
-    if (result.message) {
-        const { createNewMessage } = require("../utils/MessageUtils");
-        const textResponseMessage = createNewMessage(currentId, result.message, false, false);
-        setMessages(prevMessages => [...prevMessages, textResponseMessage]);
-        currentId++;
-    }
-
-    // 處理生成的圖片
-    if (result.imageData && canvas) {
-        clearCanvas(canvas);
-        addImageToCanvas(canvas, `data:image/png;base64,${result.imageData}`);
-    }
-
-    return currentId;
-};
