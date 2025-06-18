@@ -10,28 +10,14 @@ export default function ChatRoom({ canvas }) {
     const { 
         messages, 
         loading, 
-        predefinedQuestions, 
         sendTextMessage, 
         sendImageMessage, 
         sendCanvasAnalysis, 
         sendAIDrawing, 
-        addSystemMessage,
     } = useChatMessages(canvas);
-
-    const questionAdded = React.useRef(false);
-
-    React.useEffect(() => {
-        if (messages.length === 0 && !questionAdded.current) {
-            const randomQuestion = predefinedQuestions[Math.floor(Math.random() * predefinedQuestions.length)];
-            addSystemMessage(randomQuestion);
-            questionAdded.current = true; 
-        }
-    }, [messages, addSystemMessage]);
 
     return (
         <Box sx={chatRoomStyles.container}>
-            
-
             <Box sx={chatRoomStyles.chatArea}>
                 {messages.length === 0 && !loading ? (
                     <Box sx={{ 

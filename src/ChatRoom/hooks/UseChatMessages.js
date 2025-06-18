@@ -1,17 +1,43 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing } from "../helpers/HandleSendMessage";
+
+const predefinedQuestions = [
+    "最近過得如何，有沒有發生甚麼有趣或難過的事？",
+    "今天的心情如何呢",
+    "最近有沒有讓你開心或困擾的事呢？"
+];
 
 export default function useChatMessages(canvas) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState("");
     const [conversationCount, setConversationCount] = useState(0);
-    
-    const predefinedQuestions = [
-        "最近過得如何，有沒有發生甚麼有趣或難過的事？",
-        "今天的心情如何呢",
-        "最近有沒有讓你開心或困擾的事呢？"
-    ];
+    const questionAdded = useRef(false);
+
+    const convertCanvasToBlob = useCallback(async () => {
+        if (!canvas) {
+            throw new Error('沒有可用的畫布');
+        }
+        const dataUrl = canvas.toDataURL('image/png');
+        return await (await fetch(dataUrl)).blob();
+    }, [canvas]);
+
+    const addSystemMessage = useCallback((text) => {
+        setCurrentQuestion(text);
+        setMessages((prevMessages) => [
+            ...prevMessages,
+            { id: Date.now(), message: text, isUser: false, isImage: false }
+        ]);
+    }, []);
+
+    useEffect(() => {
+        if (messages.length === 0 && !questionAdded.current) {
+            const randomQuestion = predefinedQuestions[Math.floor(Math.random() * predefinedQuestions.length)];
+            addSystemMessage(randomQuestion);
+            questionAdded.current = true; 
+        }
+    }, [messages, addSystemMessage]);
+ 
     const sendTextMessage = (messageText) => {
         const nextCount = conversationCount + 1; 
         setConversationCount(nextCount); 
@@ -22,32 +48,22 @@ export default function useChatMessages(canvas) {
         handleSendImageMessage(messageText, messageImage, messages, setMessages, setLoading);
     };
 
-    const addSystemMessage = (text) => {
-        setCurrentQuestion(text);
-        setMessages((prevMessages) => [
-            ...prevMessages,
-            { id: Date.now(), message: text, isUser: false, isImage: false }
-        ]);
-    };
-
     const sendCanvasAnalysis = async (messageText) => {
-        if (!canvas) {
-            console.error('沒有可用的畫布');
-            return;
+        try {
+            const blob = await convertCanvasToBlob();
+            await handleSendCanvasAnalysis(blob, messageText, messages, setMessages, setLoading);
+        } catch (error) {
+            console.error(error.message);
         }
-        const dataUrl = canvas.toDataURL('image/png');
-        const blob = await (await fetch(dataUrl)).blob();
-        await handleSendCanvasAnalysis(blob, messageText, messages, setMessages, setLoading);
     };
 
     const sendAIDrawing = async (messageText) => {
-        if (!canvas) {
-            console.error('沒有可用的畫布');
-            return;
+        try {
+            const blob = await convertCanvasToBlob();
+            await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas);
+        } catch (error) {
+            console.error(error.message);
         }
-        const dataUrl = canvas.toDataURL('image/png');
-        const blob = await (await fetch(dataUrl)).blob();
-        await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas);
     };
 
     return { 
