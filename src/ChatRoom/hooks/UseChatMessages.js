@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing } from "../helpers/HandleSendMessage";
+import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing } from "../helpers/MessageController";
 
 const predefinedQuestions = [
     "最近過得如何，有沒有發生甚麼有趣或難過的事？",
@@ -13,30 +13,6 @@ export default function useChatMessages(canvas) {
     const [currentQuestion, setCurrentQuestion] = useState("");
     const [conversationCount, setConversationCount] = useState(0);
     const questionAdded = useRef(false);
-
-    const convertCanvasToBlob = useCallback(async () => {
-        if (!canvas) {
-            throw new Error('沒有可用的畫布');
-        }
-        const dataUrl = canvas.toDataURL('image/png');
-        return await (await fetch(dataUrl)).blob();
-    }, [canvas]);
-
-    const addSystemMessage = useCallback((text) => {
-        setCurrentQuestion(text);
-        setMessages((prevMessages) => [
-            ...prevMessages,
-            { id: Date.now(), message: text, isUser: false, isImage: false }
-        ]);
-    }, []);
-
-    useEffect(() => {
-        if (messages.length === 0 && !questionAdded.current) {
-            const randomQuestion = predefinedQuestions[Math.floor(Math.random() * predefinedQuestions.length)];
-            addSystemMessage(randomQuestion);
-            questionAdded.current = true; 
-        }
-    }, [messages, addSystemMessage]);
  
     const sendTextMessage = (messageText) => {
         const nextCount = conversationCount + 1; 
@@ -65,6 +41,30 @@ export default function useChatMessages(canvas) {
             console.error(error.message);
         }
     };
+
+    const addSystemMessage = useCallback((text) => {
+        setCurrentQuestion(text);
+        setMessages((prevMessages) => [
+            ...prevMessages,
+            { id: Date.now(), message: text, isUser: false, isImage: false }
+        ]);
+    }, []);
+
+    useEffect(() => {
+        if (messages.length === 0 && !questionAdded.current) {
+            const randomQuestion = predefinedQuestions[Math.floor(Math.random() * predefinedQuestions.length)];
+            addSystemMessage(randomQuestion);
+            questionAdded.current = true;
+        }
+    }, [messages, addSystemMessage]);
+
+    const convertCanvasToBlob = useCallback(async () => {
+        if (!canvas) {
+            throw new Error('沒有可用的畫布');
+        }
+        const dataUrl = canvas.toDataURL('image/png');
+        return await (await fetch(dataUrl)).blob();
+    }, [canvas]);
 
     return { 
         messages, 
