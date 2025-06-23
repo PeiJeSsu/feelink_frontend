@@ -6,7 +6,7 @@ import {
 	handleImageChange,
 	handleAnalyzeCanvas,
 	handleAIDrawing
-} from "../helpers/HandleTextInput";
+} from "../helpers/TextInputHandlers";
 
 export function useTextInput(onSendMessage, onUploadImage, onAnalyzeCanvas, onAIDrawing, disabled) {
 	const [message, setMessage] = useState('');
