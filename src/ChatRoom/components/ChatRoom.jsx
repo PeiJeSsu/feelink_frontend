@@ -1,12 +1,13 @@
 import * as React from "react";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, IconButton } from "@mui/material";
+import CloseIcon from '@mui/icons-material/Close';
 import { chatRoomStyles } from "../styles/ChatRoomStyles";
 import useChatMessages from "../hooks/UseChatMessages";
 import ChatMessage from "./ChatMessage";
 import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 
-export default function ChatRoom({ canvas }) {
+export default function ChatRoom({ canvas, onClose })  {
     const { 
         messages, 
         loading, 
@@ -18,6 +19,26 @@ export default function ChatRoom({ canvas }) {
 
     return (
         <Box sx={chatRoomStyles.container}>
+            <Box sx={chatRoomStyles.header}>
+                <IconButton
+                    onClick={onClose}
+                    size="medium"
+                    sx={{
+                        padding: '2px',
+                        minHeight: '20px',
+                        height: '20px',
+                        marginTop: '-6px',
+                        marginRight: '-10px',
+                        color: '#5c5c5c',
+                        '&:hover': {
+                            color: '#f7cac9',
+                            backgroundColor: 'rgba(247, 202, 201, 0.1)',
+                        },
+                    }}
+                >
+                    <CloseIcon sx={{ fontSize: '20px' }} />
+                </IconButton>
+            </Box>
             <Box sx={chatRoomStyles.chatArea}>
                 {messages.length === 0 && !loading ? (
                     <Box sx={{ 
@@ -61,5 +82,6 @@ export default function ChatRoom({ canvas }) {
 }
 
 ChatRoom.propTypes = {
-    canvas: PropTypes.object
+    canvas: PropTypes.object,
+    onClose: PropTypes.func.isRequired,
 };
