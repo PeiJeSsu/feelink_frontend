@@ -1,5 +1,4 @@
-import * as fabric from 'fabric';
-import { fill, toggleFloodFill } from '../../utils/FloodFill';
+import { fill, toggleFloodFill } from "../../utils/FloodFill";
 
 /**
  * 設置填充工具
@@ -8,25 +7,25 @@ import { fill, toggleFloodFill } from '../../utils/FloodFill';
  * @returns {Object} - 填充工具控制器
  */
 export const setupPaintBucket = (canvas, settings) => {
-  if (!canvas) return null;
+	if (!canvas) return null;
 
-  // 設置填充顏色和容差
-  fill(canvas, settings.color, settings.tolerance);
+	// 設置填充顏色和容差
+	fill(canvas, settings.color, settings.tolerance);
 
-  // 啟用填充工具
-  toggleFloodFill(true);
+	// 啟用填充工具
+	toggleFloodFill(true);
 
-  return {
-    updateColor: (color) => {
-      fill(canvas, color, settings.tolerance);
-    },
-    updateTolerance: (tolerance) => {
-      fill(canvas, settings.color, tolerance);
-    },
-    disable: () => {
-      toggleFloodFill(false);
-    }
-  };
+	return {
+		updateColor: (color) => {
+			fill(canvas, color, settings.tolerance);
+		},
+		updateTolerance: (tolerance) => {
+			fill(canvas, settings.color, tolerance);
+		},
+		disable: () => {
+			toggleFloodFill(false);
+		},
+	};
 };
 
 /**
@@ -34,6 +33,6 @@ export const setupPaintBucket = (canvas, settings) => {
  * @param {fabric.Canvas} canvas - Fabric.js 畫布實例
  */
 export const disablePaintBucket = (canvas) => {
-  if (!canvas) return;
-  toggleFloodFill(false);
-}; 
+	if (!canvas) return;
+	toggleFloodFill(false);
+};

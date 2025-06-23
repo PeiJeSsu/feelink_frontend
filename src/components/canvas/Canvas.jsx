@@ -8,6 +8,7 @@ import { setupShapeDrawing, disableShapeDrawing } from "../../helpers/shape/Shap
 import { setupEraser, disableEraser } from "../../helpers/eraser/ObjectEraserTools";
 import { setupPathEraser, disablePathEraser } from "../../helpers/eraser/PathEraserTools";
 import { setupPaintBucket, disablePaintBucket } from "../../helpers/paint-bucket/PaintBucketTools";
+import { setupTextTool, updateActiveTextbox } from "../../helpers/text/TextTools";
 import CanvasControls from "./CanvasControls";
 import createHistoryManager from "../../helpers/history/HistoryManager";
 
@@ -17,6 +18,7 @@ const Canvas = ({
 	shapeSettings, 
 	eraserSettings, 
 	paintBucketSettings,
+	textSettings,
 	clearTrigger, 
 	onCanvasInit 
 }) => {
@@ -100,6 +102,15 @@ const Canvas = ({
 
 			// 設置畫筆事件監聽器
 			setupBrushEventListeners(canvas, brushSettings);
+		} else if (activeTool === "text") {
+			setDrawingMode(canvas, false);
+			disableShapeDrawing(canvas);
+			disableEraser(canvas);
+			disablePathEraser(canvas);
+			disablePaintBucket(canvas);
+			setPanningMode(canvas, false);
+			
+			setupTextTool(canvas, textSettings);
 		} else if (activeTool === "shape") {
 			setDrawingMode(canvas, false);
 			disableEraser(canvas);
@@ -149,7 +160,7 @@ const Canvas = ({
 			disablePaintBucket(canvas);
 			setPanningMode(canvas, false);
 		}
-	}, [activeTool, brushSettings, shapeSettings, eraserSettings, paintBucketSettings]);
+	}, [activeTool, brushSettings, shapeSettings, eraserSettings, paintBucketSettings, textSettings]);
 
 	useEffect(() => {
 		if (clearTrigger > 0 && fabricCanvasRef.current) {
@@ -179,6 +190,15 @@ const Canvas = ({
 		}
 	}, [paintBucketSettings, activeTool]);
 
+	// 當文字設定變更時更新選取的文字方框
+	useEffect(() => {
+		if (!fabricCanvasRef.current) return;
+		const canvas = fabricCanvasRef.current;
+		if (activeTool === "text") {
+			updateActiveTextbox(canvas, textSettings);
+		}
+	}, [textSettings, activeTool]);
+
 	return (
 		<div className="canvas-wrapper">
 			<canvas ref={canvasRef} />
@@ -193,6 +213,7 @@ Canvas.propTypes = {
 	shapeSettings: PropTypes.object.isRequired,
 	eraserSettings: PropTypes.object.isRequired,
 	paintBucketSettings: PropTypes.object.isRequired,
+	textSettings: PropTypes.object.isRequired,
 	clearTrigger: PropTypes.number.isRequired,
 	onCanvasInit: PropTypes.func,
 };

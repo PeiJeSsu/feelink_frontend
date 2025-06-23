@@ -1,16 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import {
-	Box,
-	Slider,
-	Typography,
-	FormControl,
-	InputLabel,
-	Select,
-	MenuItem,
-	Switch,
-	FormControlLabel,
-} from "@mui/material";
+import { Box, Slider, Typography, FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel } from "@mui/material";
 import ColorPicker from "../color/ColorPicker";
 
 const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {

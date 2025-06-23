@@ -8,6 +8,7 @@ import BrushSettings from "../../brush/BrushSettings";
 import ShapeSettings from "../../shape/ShapeSettings";
 import EraserSettings from "../../eraser/EraserSettings";
 import PaintBucketSettings from "../../paint-bucket/PaintBucketSettings";
+import TextSettings from "../../text/TextSettings";
 
 const LeftToolbar = ({
 	setActiveTool,
@@ -20,6 +21,9 @@ const LeftToolbar = ({
 	eraserSettings,
 	setPaintBucketSettings,
 	paintBucketSettings,
+	setTextSettings,
+	textSettings,
+	onClearCanvas
 }) => {
 	const [anchorEl, setAnchorEl] = useState(null);
 	const [popoverVisible, setPopoverVisible] = useState(false);
@@ -29,6 +33,8 @@ const LeftToolbar = ({
 	const [eraserPopoverVisible, setEraserPopoverVisible] = useState(false);
 	const [paintBucketAnchorEl, setPaintBucketAnchorEl] = useState(null);
 	const [paintBucketPopoverVisible, setPaintBucketPopoverVisible] = useState(false);
+	const [textAnchorEl, setTextAnchorEl] = useState(null);
+	const [textPopoverVisible, setTextPopoverVisible] = useState(false);
 
 	useEffect(() => {
 		if (activeTool === "pencil") {
@@ -47,6 +53,10 @@ const LeftToolbar = ({
 			const paintBucketButton = document.getElementById("paint-bucket-button");
 			setPaintBucketAnchorEl(paintBucketButton);
 			setPaintBucketPopoverVisible(true);
+		} else if (activeTool === "text") {
+			const textButton = document.getElementById("text-button");
+			setTextAnchorEl(textButton);
+			setTextPopoverVisible(true);
 		}
 	}, [activeTool]);
 
@@ -69,6 +79,10 @@ const LeftToolbar = ({
 			const paintBucketButton = document.getElementById("paint-bucket-button");
 			setPaintBucketAnchorEl(paintBucketButton);
 			setPaintBucketPopoverVisible(true);
+		} else if (tool === "text") {
+			const textButton = document.getElementById("text-button");
+			setTextAnchorEl(textButton);
+			setTextPopoverVisible(true);
 		}
 	};
 
@@ -86,6 +100,10 @@ const LeftToolbar = ({
 
 	const handlePaintBucketClose = () => {
 		setPaintBucketPopoverVisible(false);
+	};
+
+	const handleTextClose = () => {
+		setTextPopoverVisible(false);
 	};
 
 	return (
@@ -130,6 +148,15 @@ const LeftToolbar = ({
 					onPaintBucketSettingsChange={setPaintBucketSettings} 
 				/>
 			</SettingsPopover>
+
+			<SettingsPopover
+				open={textPopoverVisible && activeTool === "text"}
+				anchorEl={textAnchorEl}
+				onClose={handleTextClose}
+				title="文字設置"
+			>
+				<TextSettings textSettings={textSettings} onTextSettingsChange={setTextSettings} />
+			</SettingsPopover>
 		</Paper>
 	);
 };
@@ -145,6 +172,9 @@ LeftToolbar.propTypes = {
 	eraserSettings: PropTypes.object.isRequired,
 	setPaintBucketSettings: PropTypes.func.isRequired,
 	paintBucketSettings: PropTypes.object.isRequired,
+	setTextSettings: PropTypes.func.isRequired,
+	textSettings: PropTypes.object.isRequired,
+	onClearCanvas: PropTypes.func.isRequired,
 };
 
 export default LeftToolbar;
