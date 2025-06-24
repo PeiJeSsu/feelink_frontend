@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Box, CircularProgress, IconButton } from "@mui/material";
+import { Box, CircularProgress, IconButton, Typography } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import { chatRoomStyles } from "../styles/ChatRoomStyles";
 import useChatMessages from "../hooks/UseChatMessages";
