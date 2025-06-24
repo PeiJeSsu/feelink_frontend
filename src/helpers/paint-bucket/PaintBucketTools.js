@@ -1,4 +1,4 @@
-import { fill, toggleFloodFill } from "../../utils/FloodFill";
+import { fill, toggleFloodFill } from "../../utils/FloodFillUtils";
 
 /**
  * 設置填充工具
