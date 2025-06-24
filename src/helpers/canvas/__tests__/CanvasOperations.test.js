@@ -201,16 +201,17 @@ describe("CanvasOperations", () => {
 		done();
 	}
 
-	function MockImageWithSize(width, height, onloadHandlerRef) {
+	function MockImageWithSize(width, height) {
 		this.width = width;
 		this.height = height;
+		this._onload = null;
 		setTimeout(() => {
-			if (onloadHandlerRef.current) onloadHandlerRef.current();
+			if (typeof this._onload === "function") this._onload();
 		}, 0);
 	}
 	Object.defineProperty(MockImageWithSize.prototype, "onload", {
 		set(fn) {
-			this._onloadHandlerRef.current = fn;
+			this._onload = fn;
 		},
 	});
 
@@ -248,9 +249,8 @@ describe("CanvasOperations", () => {
 			};
 			Object.defineProperty(window, "innerWidth", { value: 800, writable: true });
 			Object.defineProperty(window, "innerHeight", { value: 600, writable: true });
-			const onloadHandlerRef = { current: null };
 			global.Image = function () {
-				return new MockImageWithSize(100, 50, onloadHandlerRef);
+				return new MockImageWithSize(100, 50);
 			};
 			const imageData = "data:image/png;base64,xxx";
 			require("../CanvasOperations").addImageToCanvas(mockCanvas, imageData);
@@ -274,9 +274,8 @@ describe("CanvasOperations", () => {
 			};
 			Object.defineProperty(window, "innerWidth", { value: 400, writable: true });
 			Object.defineProperty(window, "innerHeight", { value: 300, writable: true });
-			const onloadHandlerRef = { current: null };
 			global.Image = function () {
-				return new MockImageWithSize(100, 100, onloadHandlerRef);
+				return new MockImageWithSize(100, 100);
 			};
 			const imageData = "data:image/png;base64,yyy";
 			require("../CanvasOperations").addImageToCanvas(mockCanvas, imageData);
