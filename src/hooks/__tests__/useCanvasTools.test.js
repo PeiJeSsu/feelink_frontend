@@ -1,6 +1,7 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import { useCanvasTools } from "../useCanvasTools";
+import PropTypes from "prop-types";
 
 jest.mock("../../helpers/canvas/CanvasOperations", () => ({ setDrawingMode: jest.fn() }));
 jest.mock("../../helpers/canvas/PanHelper", () => ({ setPanningMode: jest.fn() }));
@@ -35,6 +36,11 @@ function TestComponent({ canvas, options }) {
 	useCanvasTools(canvas, options);
 	return null;
 }
+
+TestComponent.propTypes = {
+	canvas: PropTypes.any,
+	options: PropTypes.object,
+};
 
 describe("useCanvasTools", () => {
 	beforeEach(() => {

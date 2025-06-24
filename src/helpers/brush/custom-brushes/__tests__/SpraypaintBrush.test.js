@@ -1,6 +1,5 @@
 import SpraypaintBrush from "../SpraypaintBrush";
 import * as fabric from "fabric";
-import { angleBetween, convertToImg } from "../../../../utils/BrushUtils";
 
 jest.mock("../../../../utils/BrushUtils", () => {
 	const original = jest.requireActual("../../../../utils/BrushUtils");

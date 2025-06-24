@@ -3,7 +3,6 @@ import { initializeCanvas, clearCanvas, resizeCanvas, setDrawingMode } from "../
 
 // 模擬 fabric.js Canvas 構造函數
 jest.mock("fabric", () => {
-	// 創建模擬 Canvas 實例的函數
 	const createMockCanvas = () => {
 		return {
 			renderAll: jest.fn(),
@@ -17,13 +16,17 @@ jest.mock("fabric", () => {
 	const mockFabric = {
 		Canvas: jest.fn().mockImplementation(() => {
 			const mockCanvasInstance = createMockCanvas();
-			// 確保返回的實例有所有必要的方法
 			return mockCanvasInstance;
 		}),
 		FabricObject: {
 			prototype: {
 				transparentCorners: true,
 			},
+		},
+		FabricImage: function (imgObj) {
+			this.width = imgObj.width || 100;
+			this.height = imgObj.height || 100;
+			this.set = jest.fn();
 		},
 	};
 	return mockFabric;
@@ -188,16 +191,42 @@ describe("CanvasOperations", () => {
 		});
 	});
 
+	function verifyImageAddedCommon(mockCanvas, mockFabricImage, hasHistory, done) {
+		expect(mockCanvas.add).toHaveBeenCalledWith(mockFabricImage);
+		expect(mockCanvas.setActiveObject).toHaveBeenCalledWith(mockFabricImage);
+		expect(mockCanvas.renderAll).toHaveBeenCalled();
+		if (hasHistory) {
+			expect(mockCanvas.historyManager.saveState).toHaveBeenCalled();
+		}
+		done();
+	}
+
+	function MockImageWithSize(width, height, onloadHandlerRef) {
+		this.width = width;
+		this.height = height;
+		setTimeout(() => {
+			if (onloadHandlerRef.current) onloadHandlerRef.current();
+		}, 0);
+	}
+	Object.defineProperty(MockImageWithSize.prototype, "onload", {
+		set(fn) {
+			this._onloadHandlerRef.current = fn;
+		},
+	});
+
 	describe("addImageToCanvas", () => {
 		let originalImage;
 		let originalFabricImage;
 		beforeAll(() => {
 			originalImage = global.Image;
-			originalFabricImage = fabric.FabricImage;
+			originalFabricImage = global.fabric ? global.fabric.FabricImage : undefined;
+			global.fabric = global.fabric || {};
 		});
 		afterAll(() => {
 			global.Image = originalImage;
-			fabric.FabricImage = originalFabricImage;
+			if (originalFabricImage !== undefined) {
+				global.fabric.FabricImage = originalFabricImage;
+			}
 		});
 		test("canvas 為 null 時不應報錯", () => {
 			expect(() => {
@@ -217,46 +246,24 @@ describe("CanvasOperations", () => {
 				renderAll: jest.fn(),
 				historyManager: { saveState: jest.fn() },
 			};
-			// 模擬 window 尺寸
 			Object.defineProperty(window, "innerWidth", { value: 800, writable: true });
 			Object.defineProperty(window, "innerHeight", { value: 600, writable: true });
-			// mock Image
-			let onloadHandler;
-			function MockImage() {
-				setTimeout(() => {
-					if (onloadHandler) onloadHandler();
-				}, 0);
-			}
-			Object.defineProperty(MockImage.prototype, "onload", {
-				set(fn) {
-					onloadHandler = fn;
-				},
-			});
-			global.Image = MockImage;
-			// mock fabric.FabricImage
-			const mockFabricImage = {
-				width: 100,
-				height: 50,
-				set: jest.fn(),
+			const onloadHandlerRef = { current: null };
+			global.Image = function () {
+				return new MockImageWithSize(100, 50, onloadHandlerRef);
 			};
-			fabric.FabricImage = jest.fn(() => mockFabricImage);
 			const imageData = "data:image/png;base64,xxx";
 			require("../CanvasOperations").addImageToCanvas(mockCanvas, imageData);
 			setTimeout(() => {
-				// scale = max(800/100, 600/50) = max(8, 12) = 12
-				// left = (800 - 100*12)/2 = (800-1200)/2 = -200
-				// top = (600 - 50*12)/2 = (600-600)/2 = 0
-				expect(mockFabricImage.set).toHaveBeenCalledWith({
+				expect(mockCanvas.add).toHaveBeenCalled();
+				const addedImage = mockCanvas.add.mock.calls[0][0];
+				expect(addedImage.set).toHaveBeenCalledWith({
 					scaleX: 12,
 					scaleY: 12,
 					left: -200,
 					top: 0,
 				});
-				expect(mockCanvas.add).toHaveBeenCalledWith(mockFabricImage);
-				expect(mockCanvas.setActiveObject).toHaveBeenCalledWith(mockFabricImage);
-				expect(mockCanvas.renderAll).toHaveBeenCalled();
-				expect(mockCanvas.historyManager.saveState).toHaveBeenCalled();
-				done();
+				verifyImageAddedCommon(mockCanvas, addedImage, true, done);
 			}, 10);
 		});
 		test("Image onload 時無 historyManager 也不報錯", (done) => {
@@ -267,31 +274,16 @@ describe("CanvasOperations", () => {
 			};
 			Object.defineProperty(window, "innerWidth", { value: 400, writable: true });
 			Object.defineProperty(window, "innerHeight", { value: 300, writable: true });
-			let onloadHandler;
-			function MockImage() {
-				setTimeout(() => {
-					if (onloadHandler) onloadHandler();
-				}, 0);
-			}
-			Object.defineProperty(MockImage.prototype, "onload", {
-				set(fn) {
-					onloadHandler = fn;
-				},
-			});
-			global.Image = MockImage;
-			const mockFabricImage = {
-				width: 100,
-				height: 100,
-				set: jest.fn(),
+			const onloadHandlerRef = { current: null };
+			global.Image = function () {
+				return new MockImageWithSize(100, 100, onloadHandlerRef);
 			};
-			fabric.FabricImage = jest.fn(() => mockFabricImage);
 			const imageData = "data:image/png;base64,yyy";
 			require("../CanvasOperations").addImageToCanvas(mockCanvas, imageData);
 			setTimeout(() => {
-				expect(mockCanvas.add).toHaveBeenCalledWith(mockFabricImage);
-				expect(mockCanvas.setActiveObject).toHaveBeenCalledWith(mockFabricImage);
-				expect(mockCanvas.renderAll).toHaveBeenCalled();
-				done();
+				expect(mockCanvas.add).toHaveBeenCalled();
+				const addedImage = mockCanvas.add.mock.calls[0][0];
+				verifyImageAddedCommon(mockCanvas, addedImage, false, done);
 			}, 10);
 		});
 	});

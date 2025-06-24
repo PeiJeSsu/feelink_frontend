@@ -105,15 +105,9 @@ jest.mock("fabric", () => {
 		dotWidthVariance: null,
 	});
 
-	class BaseBrush {
-		constructor() {}
-	}
-
-	class Point {
-		constructor(x = 0, y = 0) {
-			this.x = x;
-			this.y = y;
-		}
+	function Point(x = 0, y = 0) {
+		this.x = x;
+		this.y = y;
 	}
 
 	class Rect {
@@ -143,7 +137,6 @@ jest.mock("fabric", () => {
 		CircleBrush: jest.fn().mockImplementation(() => createMockBrush()),
 		SprayBrush: jest.fn().mockImplementation(() => createMockBrush()),
 		Shadow: jest.fn().mockImplementation((options) => options),
-		BaseBrush,
 		Point,
 		Rect,
 	};

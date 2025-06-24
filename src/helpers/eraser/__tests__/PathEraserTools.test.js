@@ -7,7 +7,10 @@ import * as PathEraserTools from "../PathEraserTools";
 import { createEraserIndicator, setupIndicatorEventListeners } from "../EraserIndicator";
 
 // Mock ClippingGroup 讓 instanceof 檢查可以正常工作
-class MockClippingGroup {}
+// class MockClippingGroup {}
+function MockClippingGroup() {
+	// 僅用於 instanceof 測試
+}
 global.ClippingGroup = MockClippingGroup;
 
 describe("PathEraserTools", () => {
