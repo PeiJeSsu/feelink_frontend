@@ -7,21 +7,21 @@ const TextSettings = ({ textSettings, onTextSettingsChange }) => {
 	const handleFontFamilyChange = (event) => {
 		onTextSettingsChange({
 			...textSettings,
-			fontFamily: event.target.value,
+			fontFamily: event.target.value
 		});
 	};
 
 	const handleFontSizeChange = (event, newValue) => {
 		onTextSettingsChange({
 			...textSettings,
-			fontSize: newValue,
+			fontSize: newValue
 		});
 	};
 
 	const handleColorChange = (event) => {
 		onTextSettingsChange({
 			...textSettings,
-			fill: event.target.value,
+			fill: event.target.value
 		});
 	};
 
@@ -55,7 +55,11 @@ const TextSettings = ({ textSettings, onTextSettingsChange }) => {
 				valueLabelDisplay="auto"
 			/>
 
-			<ColorPicker label="文字顏色" value={textSettings.fill} onChange={handleColorChange} />
+			<ColorPicker
+				label="文字顏色"
+				value={textSettings.fill}
+				onChange={handleColorChange}
+			/>
 		</>
 	);
 };
@@ -64,9 +68,9 @@ TextSettings.propTypes = {
 	textSettings: PropTypes.shape({
 		fontFamily: PropTypes.string.isRequired,
 		fontSize: PropTypes.number.isRequired,
-		fill: PropTypes.string.isRequired,
+		fill: PropTypes.string.isRequired
 	}).isRequired,
-	onTextSettingsChange: PropTypes.func.isRequired,
+	onTextSettingsChange: PropTypes.func.isRequired
 };
 
 export default TextSettings;

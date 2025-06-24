@@ -9,18 +9,18 @@ const ColorPicker = ({ label, value, onChange, disabled = false, sx = {} }) => {
 
 	const handleAddColor = () => {
 		if (!savedColors.includes(value)) {
-			setSavedColors((prev) => [...prev, value]);
+			setSavedColors(prev => [...prev, value]);
 		}
 	};
 
 	const handleDeleteColor = (colorToDelete, event) => {
 		event.preventDefault(); // 防止右鍵選單出現
-		setSavedColors((prev) => prev.filter((color) => color !== colorToDelete));
+		setSavedColors(prev => prev.filter(color => color !== colorToDelete));
 	};
 
 	return (
 		<Box sx={{ display: "flex", flexDirection: "column", mt: 2, ...sx }}>
-			<Box sx={{ display: "flex", alignItems: "center" }}>
+			<Box sx={{ display: "flex", alignItems: "center"}}>
 				<TextField
 					label={label}
 					type="color"
@@ -30,41 +30,35 @@ const ColorPicker = ({ label, value, onChange, disabled = false, sx = {} }) => {
 					disabled={disabled}
 				/>
 				<Tooltip title="儲存當前顏色">
-					<IconButton
+					<IconButton 
 						onClick={handleAddColor}
 						disabled={disabled}
-						sx={{
+						sx={{ 
 							color: "#5c5c5c",
 							minWidth: "20px",
 							"&:hover": {
 								backgroundColor: "rgba(247, 202, 201, 0.2)",
-								color: "#333333",
-							},
+								color: "#333333"
+							}
 						}}
 					>
 						<Add />
 					</IconButton>
 				</Tooltip>
 			</Box>
-
+			
 			{savedColors.length > 0 && (
 				<Grid2 container spacing={1} sx={{ mt: 1 }}>
 					{savedColors.map((color) => {
 						const colorInfo = getColorInfo(color);
 						return (
 							<Grid2 item key={color}>
-								<Tooltip
+								<Tooltip 
 									title={
 										<Box sx={{ p: 1 }}>
-											<Typography variant="caption" display="block">
-												十六進位: {colorInfo.hex}
-											</Typography>
-											<Typography variant="caption" display="block">
-												RGB: {colorInfo.rgb}
-											</Typography>
-											<Typography variant="caption" display="block" sx={{ mt: 1 }}>
-												右鍵點擊刪除
-											</Typography>
+											<Typography variant="caption" display="block">十六進位: {colorInfo.hex}</Typography>
+											<Typography variant="caption" display="block">RGB: {colorInfo.rgb}</Typography>
+											<Typography variant="caption" display="block" sx={{ mt: 1 }}>右鍵點擊刪除</Typography>
 										</Box>
 									}
 								>
@@ -79,8 +73,8 @@ const ColorPicker = ({ label, value, onChange, disabled = false, sx = {} }) => {
 											position: "relative",
 											"&:hover": {
 												transform: "scale(1.1)",
-												transition: "transform 0.2s",
-											},
+												transition: "transform 0.2s"
+											}
 										}}
 										onClick={() => onChange({ target: { value: color } })}
 										onContextMenu={(e) => handleDeleteColor(color, e)}

@@ -1,9 +1,7 @@
-import { clearCanvas } from "../canvas/CanvasOperations";
-
 /**
  * 從 JSON 數據加載畫布內容
  * @param {fabric.Canvas} canvas - fabric.js 畫布實例
- * @param {string} json - JSON 
+ * @param {string} json - JSON 字符串
  * @returns {boolean} - 加載是否成功
  */
 export const loadCanvasFromJSON = (canvas, json) => {
@@ -11,7 +9,7 @@ export const loadCanvasFromJSON = (canvas, json) => {
 
 	try {
 		// 清除當前畫布
-		clearCanvas(canvas);
+		canvas.clear();
 
 		// 解析 JSON 數據
 		const data = JSON.parse(json);
@@ -20,18 +18,18 @@ export const loadCanvasFromJSON = (canvas, json) => {
 		canvas.loadFromJSON(json, () => {
 			// 確保所有物件都已加載
 
-			// 如果 JSON 中包含縮放，則應用它
+			// 如果 JSON 中包含縮放級別，則應用它
 			if (data.zoomLevel) {
 				canvas.zoomLevel = data.zoomLevel;
 			} else {
-				canvas.zoomLevel = 1; // 設置默認縮放
+				canvas.zoomLevel = 1; // 設置默認縮放級別
 			}
 
-			// 如果 JSON 中包含視角變換，則應用它
+			// 如果 JSON 中包含視口變換，則應用它
 			if (data.viewportTransform) {
 				canvas.setViewportTransform(data.viewportTransform);
 			} else {
-				canvas.setViewportTransform([1, 0, 0, 1, 0, 0]); // 重置視角變換
+				canvas.setViewportTransform([1, 0, 0, 1, 0, 0]); // 重置視口變換
 			}
 
 			// 確保所有物件可選
@@ -110,3 +108,4 @@ export const loadCanvasFromFile = (canvas, file, callback) => {
 
 	reader.readAsText(file);
 };
+

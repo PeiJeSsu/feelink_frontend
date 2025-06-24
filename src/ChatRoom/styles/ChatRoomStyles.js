@@ -3,16 +3,9 @@ export const chatRoomStyles = {
         position: "relative",
         width: "100%",
         height: "100%",
-        maxHeight: "calc(100vh - 16px)",
         display: "flex",
         flexDirection: "column",
-        gap: "8px",
-    },
-    header: {
-        display: "flex",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        padding: "0",
+        gap: "12px",
     },
     chatArea: {
         border: "1px solid rgba(92, 92, 92, 0.15)",

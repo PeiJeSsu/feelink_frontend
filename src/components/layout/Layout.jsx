@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Box, IconButton } from "@mui/material";
-import { ChevronLeft } from "@mui/icons-material";
-import { ResizableBox } from "react-resizable";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { ResizableBox } from 'react-resizable';
 import LeftToolbar from "../toolbar/left-toolbar/LeftToolbar";
 import TopToolbar from "../toolbar/top-toolbar/TopToolbar";
 import Canvas from "../canvas/Canvas";
@@ -11,14 +11,12 @@ import "./Layout.css";
 const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(false);
-	const [chatWidth, setChatWidth] = useState(300);
-	const [isResizing, setIsResizing] = useState(false);
-	const resizeTimeoutRef = useRef(null);
+	const [chatWidth, setChatWidth] = useState(300); 
 	const [brushSettings, setBrushSettings] = useState({
-		type: "PencilBrush",
 		size: 5,
 		opacity: 1,
 		color: "#000000",
+		type: "PencilBrush",
 	});
 
 	const [shapeSettings, setShapeSettings] = useState({
@@ -44,7 +42,7 @@ const Layout = () => {
 	const [textSettings, setTextSettings] = useState({
 		fontFamily: "Arial",
 		fontSize: 24,
-		fill: "#000000",
+		fill: "#000000"
 	});
 
 	const [clearTrigger, setClearTrigger] = useState(0);
@@ -52,14 +50,6 @@ const Layout = () => {
 	const canvasRef = useRef(null);
 
 	const [canvasReady, setCanvasReady] = useState(false);
-
-	useEffect(() => {
-		return () => {
-			if (resizeTimeoutRef.current) {
-				clearTimeout(resizeTimeoutRef.current);
-			}
-		};
-	}, []);
 
 	const handleClearCanvas = useCallback(() => {
 		setClearTrigger((prev) => prev + 1);
@@ -74,34 +64,9 @@ const Layout = () => {
 		setIsChatOpen(!isChatOpen);
 	};
 
-	const handleResizeStart = useCallback(() => {
-		setIsResizing(true);
-		document.body.style.cursor = 'col-resize';
-	}, []);
-
-	const handleResizeStop = useCallback(() => {
-		setIsResizing(false);
-		document.body.style.cursor = '';
-	}, []);
-
-	const handleResize = useCallback((e, { size }) => {
-		if (resizeTimeoutRef.current) {
-			clearTimeout(resizeTimeoutRef.current);
-		}
-		
-		// 使用 requestAnimationFrame 來平滑更新視覺效果
-		requestAnimationFrame(() => {
-			const chatContainer = document.querySelector('.chat-container');
-			if (chatContainer) {
-				chatContainer.style.width = `${size.width}px`;
-			}
-		});
-
-		// 使用防抖動來更新實際狀態
-		resizeTimeoutRef.current = setTimeout(() => {
-			setChatWidth(size.width);
-		}, 16); 
-	}, []);
+	const handleResize = (e, { size }) => {
+		setChatWidth(size.width);
+	};
 
 	return (
 		<Box className="layout-container">
@@ -132,43 +97,37 @@ const Layout = () => {
 				onCanvasInit={setCanvasInstance}
 			/>
 			{isChatOpen && (
-				<ResizableBox
-					className={`chat-container open ${isResizing ? 'resizing' : ''}`}
+				<ResizableBox 
+					className="chat-container open"
 					width={chatWidth}
 					height={Infinity}
 					minConstraints={[250, Infinity]}
 					maxConstraints={[600, Infinity]}
 					axis="x"
-					resizeHandles={["w"]}
+					resizeHandles={['w']}
 					onResize={handleResize}
-					onResizeStart={handleResizeStart}
-					onResizeStop={handleResizeStop}
-					draggableOpts={{
-						enableUserSelectHack: false
-					}}
 				>
-					<ChatRoom canvas={canvasRef.current} onClose={() => setIsChatOpen(false)} />
+					<ChatRoom canvas={canvasRef.current} />
 				</ResizableBox>
 			)}
-			{!isChatOpen && (
-				<IconButton
-					className="chat-toggle-button"
-					onClick={toggleChat}
-					sx={{
-						position: "fixed",
-						right: "0",
-						top: "50%",
-						transform: "translateY(-50%)",
-						backgroundColor: "white",
-						"&:hover": {
-							backgroundColor: "rgba(255, 255, 255, 0.8)",
-						},
-						zIndex: 1000,
-					}}
-				>
-					<ChevronLeft />
-				</IconButton>
-			)}
+			<IconButton
+				className={`chat-toggle-button ${isChatOpen ? 'open' : ''}`}
+				onClick={toggleChat}
+				sx={{
+					position: 'fixed',
+					right: isChatOpen ? `${chatWidth}px` : '0',
+					top: '50%',
+					transform: 'translateY(-50%)',
+					backgroundColor: 'white',
+					'&:hover': {
+						backgroundColor: 'rgba(255, 255, 255, 0.8)',
+					},
+					zIndex: 1000,
+					transition: 'right 0.3s ease',
+				}}
+			>
+				{isChatOpen ? <ChevronRight /> : <ChevronLeft />}
+			</IconButton>
 		</Box>
 	);
 };
