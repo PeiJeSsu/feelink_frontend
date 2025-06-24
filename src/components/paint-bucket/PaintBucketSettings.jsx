@@ -1,3 +1,4 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Typography, Slider } from '@mui/material';
 import ColorPicker from '../color/ColorPicker';

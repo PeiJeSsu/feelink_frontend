@@ -26,38 +26,20 @@ export const convertToRGBA = (color, opacity) => {
 	return color;
 };
 
+
 /**
  * 獲取顏色的詳細資訊
  * @param {string} hexColor - 十六進位顏色值 (#RRGGBB)
  * @returns {Object} 包含顏色資訊的物件
  */
 export const getColorInfo = (hexColor) => {
-	const r = parseInt(hexColor.slice(1, 3), 16);
-	const g = parseInt(hexColor.slice(3, 5), 16);
-	const b = parseInt(hexColor.slice(5, 7), 16);
-	const rgb = `rgb(${r}, ${g}, ${b})`;
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    const rgb = `rgb(${r}, ${g}, ${b})`;
 
-	return {
-		hex: hexColor,
-		rgb,
-	};
-};
-
-/**
- * 將十六進制顏色碼轉換為 RGB 陣列
- * @param {string} hex - 十六進制顏色碼（例如：#FF0000）
- * @param {number} opacity - 透明度（0-1）
- * @returns {number[]} RGB 陣列，包含透明度
- */
-export function hexToRgb(hex, opacity) {
-	opacity = Math.round(opacity * 255) || 255;
-	hex = hex.replace("#", "");
-	const rgb = [];
-	const re = new RegExp("(.{" + hex.length / 3 + "})", "g");
-	RegExp(re)
-		.exec(hex)
-		.forEach(function (l) {
-			rgb.push(parseInt(hex.length % 2 ? l + l : l, 16));
-		});
-	return rgb.concat(opacity);
-}
+    return {
+        hex: hexColor,
+        rgb,
+    };
+}; 

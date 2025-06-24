@@ -55,28 +55,21 @@
   position: fixed;
   right: 0;
   top: 0;
-  bottom: 0;
+  height: 100%;
+  background-color: #f5f5e9;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+  z-index: 999;
   display: flex;
   flex-direction: column;
   padding: 16px;
   box-sizing: border-box;
   border-left: 1px solid rgba(92, 92, 92, 0.15);
   transform: translateX(100%);
-  will-change: transform, width;
-  backface-visibility: hidden;
-  transition: transform 0.3s ease;
-  background-color: #f5f5e9;
 }
 
 .chat-container.open {
   transform: translateX(0);
-}
-
-.chat-container.resizing {
-  transition: none;
-  * {
-    pointer-events: none;
-  }
 }
 
 /* 新增拖動把手的樣式 */
@@ -89,12 +82,9 @@
   background-color: rgba(92, 92, 92, 0.1);
   cursor: col-resize;
   transition: background-color 0.2s ease;
-  will-change: background-color;
-  touch-action: none;
 }
 
-.react-resizable-handle:hover,
-.resizing .react-resizable-handle {
+.react-resizable-handle:hover {
   background-color: rgba(247, 202, 201, 0.5);
 }
 
