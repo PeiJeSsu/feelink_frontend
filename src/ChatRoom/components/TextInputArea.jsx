@@ -6,7 +6,7 @@ import InputIcon from "@mui/icons-material/Input";
 import AnalyticsIcon from "@mui/icons-material/Analytics";
 import AssistantIcon from "@mui/icons-material/Assistant";
 import { useTextInput } from "../hooks/UseTextInput";
-import { isValidMessage } from "../helpers/HandleTextInput";
+import { isValidMessage } from "../helpers/TextInputHandlers";
 import { containerStyle, buttonContainerStyle, textFieldStyle, buttonGroupResponsive } from "../styles/TextInputStyles";
 import PropTypes from "prop-types";
 
