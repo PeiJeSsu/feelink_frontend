@@ -6,7 +6,6 @@ const PanControls = ({ canvas }) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-	// 中鍵拖曳 - 完全獨立的 effect
 	useEffect(() => {
 		if (!canvas) return;
 
@@ -21,7 +20,6 @@ const PanControls = ({ canvas }) => {
 			setIsDragging(false);
 		};
 
-		// 設置中鍵拖曳事件監聽器
 		const cleanup = setupMiddleButtonPan(canvas, setIsDragging, setDragStart, handleMouseMove, handleMouseUp);
 
 		return cleanup;

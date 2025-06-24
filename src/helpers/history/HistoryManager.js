@@ -1,233 +1,199 @@
-const createHistoryManager = (canvas) => {
-	let undoStack = [];
-	let redoStack = [];
-	let isUndoRedoing = false;
-	let currentState = null;
-	let toolResetCallback = null;
-	const MAX_STACK_SIZE = 30; // 添加最大堆疊大小限制
+import { setupHistoryEventListeners } from "./HistoryEventListeners";
+import { serializeCanvasState, deserializeCanvasState } from "./HistoryUtils";
 
-	// 檢查物件是否為橡皮擦指示器
-	const isEraserIndicator = (obj) => {
-		return obj && obj.type === "circle" && obj.fill === "rgba(255, 0, 0, 0.3)";
-	};
+/**
+ * 歷史管理器類別
+ * 負責管理畫布的復原/重做歷史
+ */
+class HistoryManager {
+	/**
+	 * @param {Object} canvas - Fabric.js 畫布實例
+	 */
+	constructor(canvas) {
+		this.canvas = canvas;
+		this.undoStack = [];
+		this.redoStack = [];
+		this.currentState = null;
+		this.toolResetCallback = null;
+		this.isUndoRedoing = false;
+		this.MAX_STACK_SIZE = 30;
+		this.cleanupListeners = null;
 
-	const setupEventListeners = () => {
-		if (!canvas) return;
+		this.initialize();
+	}
 
-		// 監聽物件修改事件
-		canvas.on("object:modified", (e) => {
-			if (isEraserIndicator(e.target)) return;
-			console.log("Object modified event triggered");
-			if (!isUndoRedoing) {
-				saveState();
-			}
-		});
+	/**
+	 * 初始化歷史管理器
+	 * @private
+	 */
+	initialize() {
+		if (!this.canvas) {
+			console.warn("HistoryManager: Canvas is not provided");
+			return;
+		}
 
-		// 監聽物件添加事件
-		canvas.on("object:added", (e) => {
-			if (isEraserIndicator(e.target)) return;
-			console.log("Object added event triggered");
-			if (!isUndoRedoing) {
-				saveState();
-			}
-		});
+		// 設置事件監聽器
+		this.cleanupListeners = setupHistoryEventListeners(
+			this.canvas,
+			() => this.saveState(),
+			() => this.isUndoRedoing
+		);
 
-		// 監聽物件移除事件
-		canvas.on("object:removed", (e) => {
-			if (canvas.isClearingAll) return;
-			if (isEraserIndicator(e.target)) return;
-			console.log("Object removed event triggered");
-			if (!isUndoRedoing) {
-				saveState();
-			}
-		});
+		// 保存初始狀態
+		this.saveState();
+		console.log("HistoryManager initialized");
+	}
 
-		// 監聽路徑創建事件（用於筆跡）
-		canvas.on("path:created", (e) => {
-			if (isEraserIndicator(e.path)) return;
-			console.log("Path created event triggered");
-			if (!isUndoRedoing) {
-				saveState();
-			}
-		});
-	};
+	/**
+	 * 保存當前畫布狀態
+	 */
+	saveState() {
+		const jsonState = serializeCanvasState(this.canvas);
+		if (!jsonState) return;
 
-	// 保存狀態
-	const saveState = () => {
-		// 在保存前過濾掉所有橡皮擦指示器
-		const objectsToSave = canvas.getObjects().filter((obj) => !isEraserIndicator(obj));
-
-		// 暫時保存原始物件列表
-		const originalObjects = [...canvas._objects];
-
-		// 設置一個只包含要保存物件的臨時列表
-		canvas._objects = objectsToSave;
-
-		// 保存畫布狀態（不包含指示器）
-		const jsonState = JSON.stringify(canvas.toJSON(["selectable", "erasable", "evented", "_originalSelectable"]));
-
-		// 恢復原始物件列表
-		canvas._objects = originalObjects;
-
-		if (currentState) {
-			undoStack.push(currentState);
+		if (this.currentState) {
+			this.undoStack.push(this.currentState);
 			// 如果超過最大堆疊大小，移除最舊的狀態
-			if (undoStack.length > MAX_STACK_SIZE) {
-				undoStack.shift();
+			if (this.undoStack.length > this.MAX_STACK_SIZE) {
+				this.undoStack.shift();
 			}
 		}
 
-		currentState = jsonState;
-
-		redoStack = [];
+		this.currentState = jsonState;
+		this.redoStack = [];
 
 		console.log("State saved:", {
 			currentState: "exists",
-			undoStackLength: undoStack.length,
-			redoStackLength: redoStack.length,
+			undoStackLength: this.undoStack.length,
+			redoStackLength: this.redoStack.length,
 		});
-	};
+	}
 
-	// 復原
-	const undo = () => {
+	/**
+	 * 執行復原操作
+	 */
+	async undo() {
 		console.log("Undo called:", {
-			undoStackLength: undoStack.length,
-			redoStackLength: redoStack.length,
+			undoStackLength: this.undoStack.length,
+			redoStackLength: this.redoStack.length,
 		});
 
-		if (undoStack.length > 0) {
-			isUndoRedoing = true;
+		if (this.undoStack.length === 0) return;
 
-			try {
-				if (currentState) {
-					redoStack.push(currentState);
-				}
-
-				currentState = undoStack.pop();
-
-				loadCanvasState(currentState);
-
-				console.log("Undo in progress:", {
-					undoStackLength: undoStack.length,
-					redoStackLength: redoStack.length,
-				});
-
-				// 新增: 如果有工具重置回調，則調用它
-				if (toolResetCallback) {
-					setTimeout(() => toolResetCallback(), 10);
-				}
-			} catch (error) {
-				console.error("Error in undo operation:", error);
-			} finally {
-				isUndoRedoing = false;
-			}
-		}
-	};
-
-	// 重做
-	const redo = () => {
-		console.log("Redo called:", {
-			undoStackLength: undoStack.length,
-			redoStackLength: redoStack.length,
-		});
-
-		if (redoStack.length > 0) {
-			isUndoRedoing = true;
-
-			try {
-				if (currentState) {
-					undoStack.push(currentState);
-				}
-
-				currentState = redoStack.pop();
-
-				loadCanvasState(currentState);
-
-				console.log("Redo in progress:", {
-					undoStackLength: undoStack.length,
-					redoStackLength: redoStack.length,
-				});
-
-				// 新增: 如果有工具重置回調，則調用它
-				if (toolResetCallback) {
-					setTimeout(() => toolResetCallback(), 10);
-				}
-			} catch (error) {
-				console.error("Error in redo operation:", error);
-			} finally {
-				isUndoRedoing = false;
-			}
-		}
-	};
-
-	// 加載畫布狀態
-	const loadCanvasState = (jsonState) => {
-		if (!jsonState) return;
-
-		console.log("Loading canvas state...");
-
-		const currentViewport = canvas.viewportTransform;
-		const currentZoom = canvas.getZoom();
-
-		canvas.clear();
+		this.isUndoRedoing = true;
 
 		try {
-			const state = JSON.parse(jsonState);
+			if (this.currentState) {
+				this.redoStack.push(this.currentState);
+			}
 
-			canvas.loadFromJSON(state, () => {
-				if (currentViewport) {
-					canvas.setViewportTransform(currentViewport);
-				}
-				if (currentZoom) {
-					canvas.setZoom(currentZoom);
-				}
+			this.currentState = this.undoStack.pop();
+			await deserializeCanvasState(this.canvas, this.currentState);
 
-				canvas.getObjects().forEach((obj) => {
-					if (obj.erasable !== undefined) {
-						obj.set("erasable", true);
-					}
-					obj.setCoords();
-				});
-
-				canvas.requestRenderAll();
-				console.log("Canvas state loaded and rendered");
+			console.log("Undo completed:", {
+				undoStackLength: this.undoStack.length,
+				redoStackLength: this.redoStack.length,
 			});
+
+			// 如果有工具重置回調，則調用它
+			if (this.toolResetCallback) {
+				setTimeout(() => this.toolResetCallback(), 10);
+			}
 		} catch (error) {
-			console.error("Error loading canvas state:", error);
+			console.error("Error in undo operation:", error);
+			// 發生錯誤時，嘗試恢復到上一個有效狀態
+			if (this.currentState) {
+				this.undoStack.push(this.currentState);
+			}
+			this.currentState = this.redoStack.pop();
+		} finally {
+			this.isUndoRedoing = false;
 		}
-	};
+	}
 
-	const registerToolResetCallback = (callback) => {
-		toolResetCallback = callback;
-	};
+	/**
+	 * 執行重做操作
+	 */
+	async redo() {
+		console.log("Redo called:", {
+			undoStackLength: this.undoStack.length,
+			redoStackLength: this.redoStack.length,
+		});
 
-	const unregisterToolResetCallback = () => {
-		toolResetCallback = null;
-	};
+		if (this.redoStack.length === 0) return;
 
-	const clear = () => {
-		undoStack = [];
-		redoStack = [];
-		currentState = null;
-		toolResetCallback = null;
+		this.isUndoRedoing = true;
+
+		try {
+			if (this.currentState) {
+				this.undoStack.push(this.currentState);
+			}
+
+			this.currentState = this.redoStack.pop();
+			await deserializeCanvasState(this.canvas, this.currentState);
+
+			console.log("Redo completed:", {
+				undoStackLength: this.undoStack.length,
+				redoStackLength: this.redoStack.length,
+			});
+
+			// 如果有工具重置回調，則調用它
+			if (this.toolResetCallback) {
+				setTimeout(() => this.toolResetCallback(), 10);
+			}
+		} catch (error) {
+			console.error("Error in redo operation:", error);
+			// 發生錯誤時，嘗試恢復到上一個有效狀態
+			if (this.currentState) {
+				this.redoStack.push(this.currentState);
+			}
+			this.currentState = this.undoStack.pop();
+		} finally {
+			this.isUndoRedoing = false;
+		}
+	}
+
+	/**
+	 * 註冊工具重置回調函數
+	 * @param {Function} callback - 工具重置回調函數
+	 */
+	registerToolResetCallback(callback) {
+		this.toolResetCallback = callback;
+	}
+
+	/**
+	 * 取消註冊工具重置回調函數
+	 */
+	unregisterToolResetCallback() {
+		this.toolResetCallback = null;
+	}
+
+	/**
+	 * 清除歷史記錄
+	 */
+	clear() {
+		this.undoStack = [];
+		this.redoStack = [];
+		this.currentState = null;
+		this.toolResetCallback = null;
 		console.log("History cleared");
-	};
+	}
 
-	// 初始化
-	setupEventListeners();
-	console.log("HistoryManager initialized");
+	/**
+	 * 銷毀歷史管理器實例
+	 */
+	dispose() {
+		if (this.cleanupListeners) {
+			this.cleanupListeners();
+			this.cleanupListeners = null;
+		}
+		this.clear();
+	}
+}
 
-	// 返回與原類相同的公共介面，並添加新方法
-	return {
-		saveState,
-		undo,
-		redo,
-		loadCanvasState,
-		clear,
-		isEraserIndicator,
-		registerToolResetCallback,
-		unregisterToolResetCallback,
-	};
+// 為了保持向後相容性，導出工廠函數
+const createHistoryManager = (canvas) => {
+	return new HistoryManager(canvas);
 };
 
 export default createHistoryManager;
