@@ -6,62 +6,65 @@ const OFFSET = 10; // 每次貼上的偏移量
 export const hasClipboardContent = () => _hasClipboardContent;
 
 export const cut = async (canvas) => {
-    if (!canvas?.getActiveObject()) return;
-    
-    const activeObject = canvas.getActiveObject();
+	if (!canvas?.getActiveObject()) return;
 
-    _clipboard = await activeObject.clone();
-    _hasClipboardContent = true;
+	const activeObject = canvas.getActiveObject();
 
-    _lastPastePosition = {
-        left: activeObject.left,
-        top: activeObject.top
-    };
+	_clipboard = await activeObject.clone();
+	_hasClipboardContent = true;
 
-    canvas.remove(activeObject);
-    canvas.requestRenderAll();
+	_lastPastePosition = {
+		left: activeObject.left,
+		top: activeObject.top,
+	};
+
+	canvas.remove(activeObject);
+	canvas.requestRenderAll();
 };
 
 export const copy = async (canvas) => {
-    if (!canvas?.getActiveObject()) return;
-    
-    const activeObject = canvas.getActiveObject();
+	if (!canvas?.getActiveObject()) {
+		_hasClipboardContent = false;
+		return;
+	}
 
-    _clipboard = await activeObject.clone();
-    _hasClipboardContent = true;
+	const activeObject = canvas.getActiveObject();
 
-    _lastPastePosition = {
-        left: activeObject.left,
-        top: activeObject.top
-    };
+	_clipboard = await activeObject.clone();
+	_hasClipboardContent = true;
+
+	_lastPastePosition = {
+		left: activeObject.left,
+		top: activeObject.top,
+	};
 };
 
 export const paste = async (canvas) => {
-    if (!canvas || !_clipboard) return;
-    
-    try {
-        const clonedObj = await _clipboard.clone();
-        
-        canvas.discardActiveObject();
-        
-        const newPosition = {
-            left: _lastPastePosition.left + OFFSET,
-            top: _lastPastePosition.top + OFFSET
-        };
-        
-        clonedObj.set({
-            left: newPosition.left,
-            top: newPosition.top,
-            evented: true,
-        });
+	if (!canvas || !_clipboard) return;
 
-        _lastPastePosition = newPosition;
- 
-        canvas.add(clonedObj);
+	try {
+		const clonedObj = await _clipboard.clone();
 
-        canvas.setActiveObject(clonedObj);
-        canvas.requestRenderAll();
-    } catch (error) {
-        console.error('貼上失敗:', error);
-    }
-}; 
+		canvas.discardActiveObject();
+
+		const newPosition = {
+			left: _lastPastePosition.left + OFFSET,
+			top: _lastPastePosition.top + OFFSET,
+		};
+
+		clonedObj.set({
+			left: newPosition.left,
+			top: newPosition.top,
+			evented: true,
+		});
+
+		_lastPastePosition = newPosition;
+
+		canvas.add(clonedObj);
+
+		canvas.setActiveObject(clonedObj);
+		canvas.requestRenderAll();
+	} catch (error) {
+		console.error("貼上失敗:", error);
+	}
+};

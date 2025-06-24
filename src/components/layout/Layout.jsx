@@ -76,31 +76,30 @@ const Layout = () => {
 
 	const handleResizeStart = useCallback(() => {
 		setIsResizing(true);
-		document.body.style.cursor = 'col-resize';
+		document.body.style.cursor = "col-resize";
 	}, []);
 
 	const handleResizeStop = useCallback(() => {
 		setIsResizing(false);
-		document.body.style.cursor = '';
+		document.body.style.cursor = "";
 	}, []);
 
 	const handleResize = useCallback((e, { size }) => {
 		if (resizeTimeoutRef.current) {
 			clearTimeout(resizeTimeoutRef.current);
 		}
-		
+
 		// 使用 requestAnimationFrame 來平滑更新視覺效果
 		requestAnimationFrame(() => {
-			const chatContainer = document.querySelector('.chat-container');
+			const chatContainer = document.querySelector(".chat-container");
 			if (chatContainer) {
 				chatContainer.style.width = `${size.width}px`;
 			}
 		});
 
-		// 使用防抖動來更新實際狀態
 		resizeTimeoutRef.current = setTimeout(() => {
 			setChatWidth(size.width);
-		}, 16); 
+		}, 16);
 	}, []);
 
 	return (
@@ -120,7 +119,12 @@ const Layout = () => {
 				textSettings={textSettings}
 				onClearCanvas={handleClearCanvas}
 			/>
-			<TopToolbar onClearClick={handleClearCanvas} canvas={canvasRef.current} canvasReady={canvasReady} />
+			<TopToolbar
+				onClearClick={handleClearCanvas}
+				canvas={canvasRef.current}
+				canvasReady={canvasReady}
+				chatWidth={isChatOpen ? chatWidth : 0}
+			/>
 			<Canvas
 				activeTool={activeTool}
 				brushSettings={brushSettings}
@@ -130,21 +134,23 @@ const Layout = () => {
 				textSettings={textSettings}
 				clearTrigger={clearTrigger}
 				onCanvasInit={setCanvasInstance}
+				chatWidth={isChatOpen ? chatWidth : 0}
+				isChatOpen={isChatOpen}
 			/>
 			{isChatOpen && (
 				<ResizableBox
-					className={`chat-container open ${isResizing ? 'resizing' : ''}`}
+					className={`chat-container open ${isResizing ? "resizing" : ""}`}
 					width={chatWidth}
 					height={Infinity}
-					minConstraints={[250, Infinity]}
-					maxConstraints={[600, Infinity]}
+					minConstraints={[265, Infinity]}
+					maxConstraints={[550, Infinity]}
 					axis="x"
 					resizeHandles={["w"]}
 					onResize={handleResize}
 					onResizeStart={handleResizeStart}
 					onResizeStop={handleResizeStop}
 					draggableOpts={{
-						enableUserSelectHack: false
+						enableUserSelectHack: false,
 					}}
 				>
 					<ChatRoom canvas={canvasRef.current} onClose={() => setIsChatOpen(false)} />

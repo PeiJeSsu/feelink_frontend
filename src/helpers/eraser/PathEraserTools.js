@@ -1,5 +1,5 @@
-import { EraserBrush, ClippingGroup } from "@erase2d/fabric";
 import { createEraserIndicator, setupIndicatorEventListeners } from "./EraserIndicator";
+import { EraserBrush, ClippingGroup } from "@erase2d/fabric";
 
 // 設置筆跡橡皮擦工具
 export const setupPathEraser = (canvas, settings) => {
@@ -37,22 +37,18 @@ export const setupPathEraser = (canvas, settings) => {
 		eraser.on("end", async (e) => {
 			const { path, targets } = e.detail;
 
-			try {
-				await eraser.commit({ path, targets });
+			await eraser.commit({ path, targets });
 
-				const hasErasedObjects = targets.some((obj) => obj.clipPath instanceof ClippingGroup);
-				if (hasErasedObjects) {
-					console.log("成功擦除部分物件");
-				}
+			const hasErasedObjects = targets.some((obj) => obj.clipPath instanceof ClippingGroup);
+			if (hasErasedObjects) {
+				console.log("成功擦除部分物件");
+			}
 
-				canvas.renderAll();
+			canvas.renderAll();
 
-				// 在橡皮擦操作結束後保存狀態
-				if (canvas.historyManager) {
-					canvas.historyManager.saveState();
-				}
-			} catch (error) {
-				console.error("擦除操作失敗:", error);
+			// 在橡皮擦操作結束後保存狀態
+			if (canvas.historyManager) {
+				canvas.historyManager.saveState();
 			}
 		});
 	};
@@ -139,6 +135,8 @@ export const setupPathEraser = (canvas, settings) => {
 		reset: () => {
 			recreateEraser();
 		},
+		// 暴露 eraserIndicator 方便測試
+		eraserIndicator,
 	};
 };
 

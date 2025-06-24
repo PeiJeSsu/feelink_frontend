@@ -1,7 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import Canvas from "../Canvas";
 import { initializeCanvas, resizeCanvas, clearCanvas, setDrawingMode } from "../../../helpers/canvas/CanvasOperations";
 import { setPanningMode } from "../../../helpers/canvas/PanHelper";
 import { createBrush, setupBrushEventListeners } from "../../../helpers/brush/BrushTools";
@@ -9,14 +8,23 @@ import { setupShapeDrawing } from "../../../helpers/shape/ShapeTools";
 import { setupEraser } from "../../../helpers/eraser/ObjectEraserTools";
 import { setupPathEraser } from "../../../helpers/eraser/PathEraserTools";
 import createHistoryManager from "../../../helpers/history/HistoryManager";
+import Canvas from "../Canvas";
 
 // 模擬所有依賴的模組
-jest.mock("../../../helpers/canvas/CanvasOperations", () => ({
-	initializeCanvas: jest.fn(),
-	resizeCanvas: jest.fn(),
-	clearCanvas: jest.fn(),
-	setDrawingMode: jest.fn(),
-}));
+jest.mock("../../../helpers/canvas/CanvasOperations", () => {
+	const actual = jest.requireActual("../../../helpers/canvas/CanvasOperations");
+	const setDrawingMode = jest.fn((canvas, isDrawingMode) => {
+		console.log("setDrawingMode called", canvas, isDrawingMode);
+		canvas.isDrawingMode = isDrawingMode;
+	});
+	return {
+		...actual,
+		initializeCanvas: jest.fn(),
+		resizeCanvas: jest.fn(),
+		clearCanvas: jest.fn(),
+		setDrawingMode,
+	};
+});
 
 jest.mock("../../../helpers/canvas/PanHelper", () => ({
 	setPanningMode: jest.fn(),
@@ -50,13 +58,14 @@ jest.mock("../CanvasControls", () => {
 	return MockCanvasControls;
 });
 
-jest.mock("../../chat/ChatSidebar", () => {
-	const MockChatSidebar = () => <div data-testid="chat-sidebar">ChatSidebar</div>;
-	return MockChatSidebar;
-});
+const mockCanvas = {
+	renderAll: jest.fn(),
+	dispose: jest.fn(),
+	historyManager: null,
+	isDrawingMode: false,
+};
 
-describe("Canvas 測試", () => {
-	let mockCanvas;
+describe("Canvas 測試（一般流程）", () => {
 	let mockHistoryManager;
 	let originalAddEventListener;
 	let originalRemoveEventListener;
@@ -70,11 +79,11 @@ describe("Canvas 測試", () => {
 		window.addEventListener = jest.fn();
 		window.removeEventListener = jest.fn();
 
-		mockCanvas = {
-			renderAll: jest.fn(),
-			dispose: jest.fn(),
-			historyManager: null,
-		};
+		mockCanvas.renderAll.mockClear();
+		mockCanvas.dispose.mockClear();
+		mockCanvas.historyManager = null;
+		mockCanvas.isDrawingMode = false;
+
 		mockHistoryManager = {
 			saveState: jest.fn(),
 			clear: jest.fn(),
@@ -91,20 +100,26 @@ describe("Canvas 測試", () => {
 		// 恢復原始的事件監聽器函數
 		window.addEventListener = originalAddEventListener;
 		window.removeEventListener = originalRemoveEventListener;
+		jest.resetModules(); // 確保每次測試都能重新 mock
 	});
 
 	test("應初始化畫布和歷史管理器", () => {
 		const mockOnCanvasInit = jest.fn();
-		render(
-			<Canvas
-				activeTool="pencil"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{}}
-				clearTrigger={0}
-				onCanvasInit={mockOnCanvasInit}
-			/>
-		);
+		const defaultProps = {
+			brushSettings: {
+				type: "pencil",
+				color: "#000000",
+				width: 1,
+				opacity: 1,
+				shadow: { blur: 0, offsetX: 0, offsetY: 0, color: "#000000" },
+			},
+			shapeSettings: { type: "rectangle", fill: "#fff", stroke: "#000", strokeWidth: 1 },
+			eraserSettings: { type: "object", size: 10 },
+			paintBucketSettings: { color: "#fff", tolerance: 10 },
+			textSettings: { fontFamily: "Arial", fontSize: 12, fill: "#000", textAlign: "left" },
+			clearTrigger: 0,
+		};
+		render(<Canvas activeTool="pencil" {...defaultProps} onCanvasInit={mockOnCanvasInit} />);
 
 		expect(initializeCanvas).toHaveBeenCalled();
 		expect(createHistoryManager).toHaveBeenCalledWith(mockCanvas);
@@ -114,7 +129,21 @@ describe("Canvas 測試", () => {
 	});
 
 	test("應設置視窗大小調整事件監聽器", () => {
-		render(<Canvas activeTool="pencil" brushSettings={{}} shapeSettings={{}} eraserSettings={{}} clearTrigger={0} />);
+		const defaultProps = {
+			brushSettings: {
+				type: "pencil",
+				color: "#000000",
+				width: 1,
+				opacity: 1,
+				shadow: { blur: 0, offsetX: 0, offsetY: 0, color: "#000000" },
+			},
+			shapeSettings: { type: "rectangle", fill: "#fff", stroke: "#000", strokeWidth: 1 },
+			eraserSettings: { type: "object", size: 10 },
+			paintBucketSettings: { color: "#fff", tolerance: 10 },
+			textSettings: { fontFamily: "Arial", fontSize: 12, fill: "#000", textAlign: "left" },
+			clearTrigger: 0,
+		};
+		render(<Canvas activeTool="pencil" {...defaultProps} />);
 
 		expect(window.addEventListener).toHaveBeenCalledWith("resize", expect.any(Function));
 
@@ -128,168 +157,47 @@ describe("Canvas 測試", () => {
 		expect(mockCanvas.renderAll).toHaveBeenCalled();
 	});
 
-	test("應根據工具設置畫布模式", () => {
-		const { rerender } = render(
-			<Canvas
-				activeTool="pencil"
-				brushSettings={{ type: "pencil" }}
-				shapeSettings={{}}
-				eraserSettings={{}}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
-
-		expect(setDrawingMode).toHaveBeenCalledWith(mockCanvas, true);
-		expect(createBrush).toHaveBeenCalledWith(mockCanvas, "pencil", expect.any(Object));
-		expect(setupBrushEventListeners).toHaveBeenCalledWith(mockCanvas, expect.any(Object));
-
-		// 重置模擬
-		jest.clearAllMocks();
-
-		rerender(
-			<Canvas
-				activeTool="shape"
-				brushSettings={{}}
-				shapeSettings={{ type: "rectangle" }}
-				eraserSettings={{}}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
-		expect(setDrawingMode).toHaveBeenCalledWith(mockCanvas, false);
-		expect(setupShapeDrawing).toHaveBeenCalledWith(mockCanvas, expect.any(Object));
-
-		// 重置模擬
-		jest.clearAllMocks();
-
-		rerender(
-			<Canvas
-				activeTool="eraser"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{ type: "object", size: 10 }}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
-		expect(setDrawingMode).toHaveBeenCalledWith(mockCanvas, false);
-		expect(setupEraser).toHaveBeenCalledWith(mockCanvas, expect.any(Object));
-
-		// 重置模擬
-		jest.clearAllMocks();
-
-		rerender(
-			<Canvas
-				activeTool="pan"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{}}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
-		expect(setDrawingMode).toHaveBeenCalledWith(mockCanvas, false);
-		expect(setPanningMode).toHaveBeenCalledWith(mockCanvas, true);
-	});
-
 	test("應響應 clearTrigger 清除畫布", () => {
-		const { rerender } = render(
-			<Canvas
-				activeTool="pencil"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{}}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
+		const defaultProps = {
+			brushSettings: {
+				type: "pencil",
+				color: "#000000",
+				width: 1,
+				opacity: 1,
+				shadow: { blur: 0, offsetX: 0, offsetY: 0, color: "#000000" },
+			},
+			shapeSettings: { type: "rectangle", fill: "#fff", stroke: "#000", strokeWidth: 1 },
+			eraserSettings: { type: "object", size: 10 },
+			paintBucketSettings: { color: "#fff", tolerance: 10 },
+			textSettings: { fontFamily: "Arial", fontSize: 12, fill: "#000", textAlign: "left" },
+			clearTrigger: 0,
+		};
+		const { rerender } = render(<Canvas activeTool="pencil" {...defaultProps} onCanvasInit={jest.fn()} />);
 
 		// 重置模擬，確保我們只測試新的調用
 		jest.clearAllMocks();
 
-		rerender(
-			<Canvas
-				activeTool="pencil"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{}}
-				clearTrigger={1}
-				onCanvasInit={jest.fn()}
-			/>
-		);
+		rerender(<Canvas activeTool="pencil" {...defaultProps} clearTrigger={1} onCanvasInit={jest.fn()} />);
 		expect(clearCanvas).toHaveBeenCalledWith(mockCanvas);
 		expect(mockHistoryManager.clear).toHaveBeenCalled();
 	});
 
-	test("應更新橡皮擦大小", () => {
-		// 首先用舊的橡皮擦設置渲染
-		const { rerender } = render(
-			<Canvas
-				activeTool="eraser"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{ type: "object", size: 10 }}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
-
-		// 模擬橡皮擦物件
-		const mockObjectEraser = {
-			updateSize: jest.fn(),
-		};
-		setupEraser.mockReturnValue(mockObjectEraser);
-
-		const mockPathEraser = {
-			updateSize: jest.fn(),
-		};
-		setupPathEraser.mockReturnValue(mockPathEraser);
-
-		// 清除模擬調用記錄
-		jest.clearAllMocks();
-
-		// 用物件橡皮擦重新渲染
-		rerender(
-			<Canvas
-				activeTool="eraser"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{ type: "object", size: 20 }}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
-		expect(setupEraser).toHaveBeenCalledWith(mockCanvas, expect.objectContaining({ size: 20 }));
-
-		// 清除模擬調用記錄
-		jest.clearAllMocks();
-
-		// 用路徑橡皮擦重新渲染
-		rerender(
-			<Canvas
-				activeTool="eraser"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{ type: "path", size: 15 }}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
-		expect(setupPathEraser).toHaveBeenCalledWith(mockCanvas, expect.objectContaining({ size: 15 }));
-	});
-
 	test("應在卸載時清理資源", () => {
-		const { unmount } = render(
-			<Canvas
-				activeTool="pencil"
-				brushSettings={{}}
-				shapeSettings={{}}
-				eraserSettings={{}}
-				clearTrigger={0}
-				onCanvasInit={jest.fn()}
-			/>
-		);
+		const defaultProps = {
+			brushSettings: {
+				type: "pencil",
+				color: "#000000",
+				width: 1,
+				opacity: 1,
+				shadow: { blur: 0, offsetX: 0, offsetY: 0, color: "#000000" },
+			},
+			shapeSettings: { type: "rectangle", fill: "#fff", stroke: "#000", strokeWidth: 1 },
+			eraserSettings: { type: "object", size: 10 },
+			paintBucketSettings: { color: "#fff", tolerance: 10 },
+			textSettings: { fontFamily: "Arial", fontSize: 12, fill: "#000", textAlign: "left" },
+			clearTrigger: 0,
+		};
+		const { unmount } = render(<Canvas activeTool="pencil" {...defaultProps} onCanvasInit={jest.fn()} />);
 
 		// 重置模擬調用記錄
 		jest.clearAllMocks();

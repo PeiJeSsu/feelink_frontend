@@ -1,13 +1,13 @@
-import * as React from 'react';
-import { Box, TextField, Tooltip } from '@mui/material';
-import FunctionButton from './FunctionButton';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import InputIcon from '@mui/icons-material/Input';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import AssistantIcon from '@mui/icons-material/Assistant';
-import { useTextInput } from '../hooks/UseTextInput';
-import { isValidMessage } from '../helpers/TextInputHandlers';
-import { containerStyle, buttonContainerStyle, textFieldStyle } from '../styles/TextInputStyles';
+import * as React from "react";
+import { Box, TextField, Tooltip } from "@mui/material";
+import FunctionButton from "./FunctionButton";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import InputIcon from "@mui/icons-material/Input";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
+import AssistantIcon from "@mui/icons-material/Assistant";
+import { useTextInput } from "../hooks/UseTextInput";
+import { isValidMessage } from "../helpers/TextInputHandlers";
+import { containerStyle, buttonContainerStyle, textFieldStyle, buttonGroupResponsive } from "../styles/TextInputStyles";
 import PropTypes from "prop-types";
 
 export default function TextInputArea({ onSendMessage, onSendImage, onAnalyzeCanvas, onAIDrawing, disabled }) {
@@ -20,27 +20,16 @@ export default function TextInputArea({ onSendMessage, onSendImage, onAnalyzeCan
 		messageChange,
 		imageChange,
 		handleAnalyzeCanvas,
-		handleAIDrawing
+		handleAIDrawing,
 	} = useTextInput(onSendMessage, onSendImage, onAnalyzeCanvas, onAIDrawing, disabled);
 
 	return (
 		<Box sx={containerStyle}>
 			<Box sx={buttonContainerStyle}>
-				<input
-					type="file"
-					accept="image/*"
-					ref={imageInputRef}
-					style={{ display: 'none' }}
-					onChange={imageChange}
-				/>
-				<Box sx={{ display: 'flex', gap: '8px' }}>
+				<input type="file" accept="image/*" ref={imageInputRef} style={{ display: "none" }} onChange={imageChange} />
+				<Box sx={{ display: "flex", gap: "8px", ...buttonGroupResponsive }}>
 					<Tooltip title="上傳圖片">
-						<FunctionButton
-							aria-label="上傳圖片"
-							icon={<AssignmentIcon />}
-							onClick={sendImage}
-							disabled={disabled}
-						/>
+						<FunctionButton aria-label="上傳圖片" icon={<AssignmentIcon />} onClick={sendImage} disabled={disabled} />
 					</Tooltip>
 					<Tooltip title="分析畫布">
 						<FunctionButton
@@ -89,5 +78,5 @@ TextInputArea.propTypes = {
 	onSendImage: PropTypes.func.isRequired,
 	onAnalyzeCanvas: PropTypes.func.isRequired,
 	onAIDrawing: PropTypes.func.isRequired,
-	disabled: PropTypes.bool
+	disabled: PropTypes.bool,
 };

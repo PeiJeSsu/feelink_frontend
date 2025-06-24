@@ -1,120 +1,120 @@
 .layout-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  background-color: #fffff3;
+	display: flex;
+	height: 100vh;
+	width: 100vw;
+	overflow: hidden;
+	background-color: #fffff3;
 }
 
 .left-toolbar {
-  background-color: #5c5c5c;
-  color: #ebebeb;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  padding: 12px 8px;
-  border-right: 1px solid rgba(235, 235, 235, 0.1);
+	background-color: #5c5c5c;
+	color: #ebebeb;
+	box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	padding: 12px 8px;
+	border-right: 1px solid rgba(235, 235, 235, 0.1);
 }
 
 .left-toolbar .MuiIconButton-root {
-  color: #ffffff;
-  transition: all 0.2s ease;
-  margin: 4px 0;
-  padding: 12px;
-  border-radius: 12px;
-  position: relative;
+	color: #ffffff;
+	transition: all 0.2s ease;
+	margin: 4px 0;
+	padding: 12px;
+	border-radius: 12px;
+	position: relative;
 }
 
 .left-toolbar .MuiIconButton-root:hover {
-  background-color: rgba(247, 202, 201, 0.2);
-  color: #ffffff;
+	background-color: rgba(247, 202, 201, 0.2);
+	color: #ffffff;
 }
 
 .left-toolbar .MuiIconButton-root.Mui-selected {
-  background-color: #f7cac9;
-  color: #333333;
+	background-color: #f7cac9;
+	color: #333333;
 }
 
 .left-toolbar .MuiIconButton-root.Mui-selected::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  background-color: #f7cac9;
-  border-radius: 0 3px 3px 0;
+	content: "";
+	position: absolute;
+	left: -8px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 3px;
+	height: 20px;
+	background-color: #f7cac9;
+	border-radius: 0 3px 3px 0;
 }
 
 .left-toolbar .MuiIconButton-root:not(.Mui-selected):hover {
-  background-color: rgba(247, 202, 201, 0.2);
-  color: #f7cac9;
+	background-color: rgba(247, 202, 201, 0.2);
+	color: #f7cac9;
 }
 
 .chat-container {
-  position: fixed;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  box-sizing: border-box;
-  border-left: 1px solid rgba(92, 92, 92, 0.15);
-  transform: translateX(100%);
-  will-change: transform, width;
-  backface-visibility: hidden;
-  transition: transform 0.3s ease;
-  background-color: #f5f5e9;
+	position: fixed;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 16px;
+	box-sizing: border-box;
+	border-left: 1px solid rgba(92, 92, 92, 0.15);
+	transform: translateX(100%);
+	will-change: transform, width;
+	backface-visibility: hidden;
+	transition: transform 0.3s ease;
+	background-color: #f5f5e9;
 }
 
 .chat-container.open {
-  transform: translateX(0);
+	transform: translateX(0);
 }
 
 .chat-container.resizing {
-  transition: none;
-  * {
-    pointer-events: none;
-  }
+	transition: none;
+	* {
+		pointer-events: none;
+	}
 }
 
 /* 新增拖動把手的樣式 */
 .react-resizable-handle {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background-color: rgba(92, 92, 92, 0.1);
-  cursor: col-resize;
-  transition: background-color 0.2s ease;
-  will-change: background-color;
-  touch-action: none;
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 10px;
+	background-color: rgba(92, 92, 92, 0.1);
+	cursor: col-resize;
+	transition: background-color 0.2s ease;
+	will-change: background-color;
+	touch-action: none;
 }
 
 .react-resizable-handle:hover,
 .resizing .react-resizable-handle {
-  background-color: rgba(247, 202, 201, 0.5);
+	background-color: rgba(23, 20, 20, 0.5);
 }
 
 .chat-toggle-button {
-  box-shadow: -2px 0 15px rgba(0, 0, 0, 0.08) !important;
-  border-radius: 20px 0 0 20px !important;
-  background-color: #f5f5e9 !important;
-  color: #f7cac9 !important;
-  padding: 12px 8px !important;
-  transition: all 0.2s ease !important;
+	box-shadow: -2px 0 15px rgba(0, 0, 0, 0.08) !important;
+	border-radius: 20px 0 0 20px !important;
+	background-color: #f5f5e9 !important;
+	color: #f7cac9 !important;
+	padding: 12px 8px !important;
+	transition: all 0.2s ease !important;
 }
 
 .chat-toggle-button:hover {
-  background-color: #fffff3 !important;
-  color: #5c5c5c !important;
+	background-color: #fffff3 !important;
+	color: #5c5c5c !important;
 }
 
 .canvas-container {
-  background-color: #fffff3;
-  flex: 1;
-  position: relative;
-  overflow: hidden;
+	background-color: #fffff3;
+	flex: 1;
+	position: relative;
+	overflow: hidden;
 }

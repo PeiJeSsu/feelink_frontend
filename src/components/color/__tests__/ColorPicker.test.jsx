@@ -22,6 +22,22 @@ jest.mock("@mui/material", () => {
 				</div>
 			);
 		},
+		Grid2: function Grid2(props) {
+			return <div data-testid="mui-grid2">{props.children}</div>;
+		},
+		IconButton: function IconButton(props) {
+			return (
+				<button data-testid="mui-iconbutton" onClick={props.onClick} disabled={props.disabled}>
+					{props.children}
+				</button>
+			);
+		},
+		Tooltip: function Tooltip(props) {
+			return <div data-testid="mui-tooltip">{props.children}</div>;
+		},
+		Typography: function Typography(props) {
+			return <span data-testid="mui-typography">{props.children}</span>;
+		},
 	};
 });
 
@@ -40,7 +56,8 @@ describe("ColorPicker 組件測試", () => {
 	test("應正確渲染顏色選擇器", () => {
 		render(<ColorPicker {...defaultProps} />);
 
-		expect(screen.getByTestId("mui-box")).toBeInTheDocument();
+		const boxes = screen.getAllByTestId("mui-box");
+		expect(boxes.length).toBeGreaterThan(0);
 		expect(screen.getByTestId("mui-textfield")).toBeInTheDocument();
 		expect(screen.getByText("測試顏色")).toBeInTheDocument();
 	});

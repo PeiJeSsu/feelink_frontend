@@ -1,4 +1,4 @@
-import { convertToRGBA } from "../ColorConvert";
+import { convertToRGBA } from "../ColorProcess";
 
 describe("ColorConvert 測試", () => {
 	// 測試處理 null/undefined 顏色值
@@ -34,7 +34,7 @@ describe("ColorConvert 測試", () => {
 		expect(convertToRGBA("rgb(255, 0, 0)", 0.5)).toBe("rgba(255, 0, 0, 0.5)");
 		expect(convertToRGBA("rgb(0, 255, 0)", 0.7)).toBe("rgba(0, 255, 0, 0.7)");
 		expect(convertToRGBA("rgb(0, 0, 255)", 0.9)).toBe("rgba(0, 0, 255, 0.9)");
-		
+
 		// 不同空格格式
 		expect(convertToRGBA("rgb(255,0,0)", 0.5)).toBe("rgba(255, 0, 0, 0.5)");
 		expect(convertToRGBA("rgb( 255 , 0 , 0 )", 0.5)).toBe("rgba(255, 0, 0, 0.5)");
@@ -45,7 +45,7 @@ describe("ColorConvert 測試", () => {
 		// 缺少值的 RGB
 		const invalidRgb = "rgb(255, 0)";
 		expect(convertToRGBA(invalidRgb, 0.5)).toBe(invalidRgb);
-		
+
 		// 格式錯誤的 RGB
 		const malformedRgb = "rgb(255, 0, abc)";
 		expect(convertToRGBA(malformedRgb, 0.5)).toBe(malformedRgb);
@@ -55,8 +55,8 @@ describe("ColorConvert 測試", () => {
 	test("應直接返回不支持的顏色格式", () => {
 		const namedColor = "red";
 		expect(convertToRGBA(namedColor, 0.5)).toBe(namedColor);
-		
+
 		const hslColor = "hsl(0, 100%, 50%)";
 		expect(convertToRGBA(hslColor, 0.5)).toBe(hslColor);
 	});
-}); 
+});

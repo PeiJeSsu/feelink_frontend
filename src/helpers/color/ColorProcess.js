@@ -52,12 +52,18 @@ export const getColorInfo = (hexColor) => {
 export function hexToRgb(hex, opacity) {
 	opacity = Math.round(opacity * 255) || 255;
 	hex = hex.replace("#", "");
-	const rgb = [];
-	const re = new RegExp("(.{" + hex.length / 3 + "})", "g");
-	RegExp(re)
-		.exec(hex)
-		.forEach(function (l) {
-			rgb.push(parseInt(hex.length % 2 ? l + l : l, 16));
-		});
-	return rgb.concat(opacity);
+	if (hex.length === 6) {
+		const r = parseInt(hex.slice(0, 2), 16);
+		const g = parseInt(hex.slice(2, 4), 16);
+		const b = parseInt(hex.slice(4, 6), 16);
+		return [r, g, b, opacity];
+	}
+	// fallback: 支援 3 位元 hex
+	if (hex.length === 3) {
+		const r = parseInt(hex[0] + hex[0], 16);
+		const g = parseInt(hex[1] + hex[1], 16);
+		const b = parseInt(hex[2] + hex[2], 16);
+		return [r, g, b, opacity];
+	}
+	return [0, 0, 0, opacity];
 }

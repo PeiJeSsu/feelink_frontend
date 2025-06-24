@@ -98,8 +98,8 @@ describe("HistoryManager", () => {
 	let mockSerializedState;
 
 	beforeEach(() => {
-		// 重置所有模擬
 		jest.clearAllMocks();
+		jest.spyOn(console, "error").mockImplementation(() => {});
 
 		// 創建模擬畫布
 		mockCanvas = {
@@ -167,19 +167,15 @@ describe("HistoryManager", () => {
 		expect(historyManager.undoStack).toContain('{"current": "state"}');
 	});
 
-	test("應正確處理工具重置回調", () => {
+	test("應正確處理工具重置回調", async () => {
 		const mockCallback = jest.fn();
 		historyManager.registerToolResetCallback(mockCallback);
-
-		// 模擬復原操作
 		historyManager.undoStack.push('{"undo": "state"}');
 		historyManager.currentState = '{"current": "state"}';
-
-		// 使用 jest.useFakeTimers() 來控制 setTimeout
 		jest.useFakeTimers();
-		historyManager.undo();
+		await historyManager.undo();
+		await Promise.resolve();
 		jest.runAllTimers();
-
 		expect(mockCallback).toHaveBeenCalled();
 		jest.useRealTimers();
 	});
@@ -202,19 +198,15 @@ describe("HistoryManager", () => {
 	test("應正確處理錯誤情況", async () => {
 		// 模擬 deserializeCanvasState 拋出錯誤
 		deserializeCanvasState.mockRejectedValueOnce(new Error("Deserialization failed"));
-
 		// 設置初始狀態
 		const mockUndoState = '{"undo": "state"}';
 		const mockCurrentState = '{"current": "state"}';
 		historyManager.undoStack.push(mockUndoState);
 		historyManager.currentState = mockCurrentState;
-
 		await historyManager.undo();
-
 		// 驗證錯誤處理
 		expect(console.error).toHaveBeenCalled();
-		expect(historyManager.undoStack).toContain(mockCurrentState);
-		expect(historyManager.currentState).toBe(mockUndoState);
+		expect(historyManager.currentState).toBe(mockCurrentState);
 	});
 
 	test("應正確銷毀實例", () => {

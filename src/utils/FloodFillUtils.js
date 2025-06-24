@@ -40,7 +40,7 @@ const PixelParams = {
 	}),
 };
 
-const FloodFill = {
+export const FloodFill = {
 	withinTolerance: function (array1, offset, array2, tolerance) {
 		const length = array2.length;
 		for (let i = 0; i < length; i++) {

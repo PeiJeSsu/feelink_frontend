@@ -4,7 +4,8 @@
  * @returns {boolean} 是否為橡皮擦指示器
  */
 export const isEraserIndicator = (obj) => {
-	return obj && obj.type === "circle" && obj.fill === "rgba(255, 0, 0, 0.3)";
+	if (!obj) return false;
+	return obj.type === "circle" && obj.fill === "rgba(255, 0, 0, 0.3)";
 };
 
 /**
