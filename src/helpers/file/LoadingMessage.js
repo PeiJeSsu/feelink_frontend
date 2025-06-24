@@ -26,4 +26,3 @@ export const showLoadingMessage = (message = "正在加載文件...") => {
 export const hideLoadingMessage = (loadingMessage) => {
 	loadingMessage?.parentNode?.removeChild(loadingMessage);
 };
-
