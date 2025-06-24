@@ -1,4 +1,4 @@
-import { handleSendTextMessage, handleSendImageMessage } from "../helpers/HandleSendMessage";
+import { handleSendTextMessage, handleSendImageMessage } from "../helpers/MessageController";
 
 const mockSetMessages = jest.fn();
 const mockSetLoading = jest.fn();
