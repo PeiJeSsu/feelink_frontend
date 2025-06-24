@@ -13,6 +13,8 @@ const Canvas = ({
 	textSettings,
 	clearTrigger,
 	onCanvasInit,
+	chatWidth = 0,
+	isChatOpen = false,
 }) => {
 	// 初始化畫布
 	const { canvasRef, fabricCanvasRef } = useCanvasInitialization({
@@ -31,9 +33,9 @@ const Canvas = ({
 	});
 
 	return (
-		<div className="canvas-wrapper">
+		<div className="canvas-wrapper" style={{ position: "relative", flex: 1 }}>
 			<canvas ref={canvasRef} />
-			<CanvasControls canvas={fabricCanvasRef.current} />
+			<CanvasControls canvas={fabricCanvasRef.current} chatWidth={chatWidth} isChatOpen={isChatOpen} />
 		</div>
 	);
 };
@@ -56,7 +58,7 @@ Canvas.propTypes = {
 			"SketchyBrush",
 			"WebBrush",
 			"SquaresBrush",
-			"SpraypaintBrush"
+			"SpraypaintBrush",
 		]).isRequired,
 		color: PropTypes.string.isRequired,
 		width: PropTypes.number.isRequired,
@@ -65,8 +67,8 @@ Canvas.propTypes = {
 			blur: PropTypes.number,
 			offsetX: PropTypes.number,
 			offsetY: PropTypes.number,
-			color: PropTypes.string
-		})
+			color: PropTypes.string,
+		}),
 	}).isRequired,
 	shapeSettings: PropTypes.shape({
 		type: PropTypes.string.isRequired,
@@ -90,6 +92,8 @@ Canvas.propTypes = {
 	}).isRequired,
 	clearTrigger: PropTypes.number.isRequired,
 	onCanvasInit: PropTypes.func,
+	chatWidth: PropTypes.number,
+	isChatOpen: PropTypes.bool,
 };
 
 export default Canvas;

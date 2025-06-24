@@ -13,6 +13,17 @@ jest.mock("../../../helpers/canvas/ZoomHelper", () => ({
 	resetCanvasView: jest.fn(),
 }));
 
+// 模擬 Material-UI 的 useTheme 和 useMediaQuery
+jest.mock("@mui/material", () => ({
+	...jest.requireActual("@mui/material"),
+	useTheme: () => ({
+		breakpoints: {
+			down: () => "sm",
+		},
+	}),
+	useMediaQuery: () => false,
+}));
+
 describe("ZoomControls 測試", () => {
 	let mockCanvas;
 	const originalUseRef = React.useRef;
@@ -29,6 +40,13 @@ describe("ZoomControls 測試", () => {
 
 		// 重置所有模擬函數
 		jest.clearAllMocks();
+
+		// 模擬 window.innerWidth
+		Object.defineProperty(window, "innerWidth", {
+			writable: true,
+			configurable: true,
+			value: 1200,
+		});
 	});
 
 	afterEach(() => {
@@ -48,6 +66,24 @@ describe("ZoomControls 測試", () => {
 
 		// 確認顯示的百分比值
 		expect(screen.getByText("100%")).toBeInTheDocument();
+	});
+
+	test("應正確處理聊天框開啟狀態", () => {
+		render(<ZoomControls canvas={mockCanvas} chatWidth={300} isChatOpen={true} />);
+
+		// 確認組件正常渲染
+		expect(screen.getByTitle("縮小")).toBeInTheDocument();
+		expect(screen.getByTitle("放大")).toBeInTheDocument();
+		expect(screen.getByTitle("重置視圖")).toBeInTheDocument();
+	});
+
+	test("應正確處理聊天框關閉狀態", () => {
+		render(<ZoomControls canvas={mockCanvas} chatWidth={0} isChatOpen={false} />);
+
+		// 確認組件正常渲染
+		expect(screen.getByTitle("縮小")).toBeInTheDocument();
+		expect(screen.getByTitle("放大")).toBeInTheDocument();
+		expect(screen.getByTitle("重置視圖")).toBeInTheDocument();
 	});
 
 	test("點擊縮小按鈕應調用 zoomOut", () => {

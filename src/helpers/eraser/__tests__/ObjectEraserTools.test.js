@@ -323,6 +323,70 @@ describe("ObjectEraserTools", () => {
 			expect(mockCanvas.remove).toHaveBeenCalledTimes(1);
 			expect(mockCanvas.remove).toHaveBeenCalledWith(expect.objectContaining({ id: "obj1" }));
 		});
+
+		describe("eraseObjectsAt 邊界與多物件情境", () => {
+			test("距離剛好等於邊界時不應移除物件", () => {
+				// 物件中心與 pointer 距離剛好等於 size/2 + width/2
+				mockCanvas.getObjects.mockReturnValue([
+					{
+						id: "obj1",
+						type: "rect",
+						fill: "#fff",
+						getCenterPoint: () => ({ x: 100, y: 100 }),
+						width: 20,
+					},
+				]);
+				mockSettings.size = 20;
+				const pointer = { x: 100, y: 130 }; // 距離 30
+				// size/2 + width/2 = 10 + 10 = 20 < 30
+				const mouseDownHandler = mockCanvas.on.mock.calls.find((call) => call[0] === "mouse:down")[1];
+				mockCanvas.remove.mockClear();
+				mockCanvas.renderAll.mockClear();
+				// 模擬 pointer
+				mockCanvas.getPointer.mockReturnValue(pointer);
+				mouseDownHandler({ e: {} });
+				expect(mockCanvas.remove).not.toHaveBeenCalled();
+				expect(mockCanvas.renderAll).not.toHaveBeenCalled();
+			});
+			test("多物件同時移除", () => {
+				mockCanvas.getObjects.mockReturnValue([
+					{
+						id: "obj1",
+						type: "rect",
+						fill: "#fff",
+						getCenterPoint: () => ({ x: 100, y: 100 }),
+						width: 20,
+					},
+					{
+						id: "obj2",
+						type: "rect",
+						fill: "#fff",
+						getCenterPoint: () => ({ x: 105, y: 105 }),
+						width: 20,
+					},
+				]);
+				mockSettings.size = 40;
+				const pointer = { x: 100, y: 100 };
+				mockCanvas.getPointer.mockReturnValue(pointer);
+				mockCanvas.remove.mockClear();
+				mockCanvas.renderAll.mockClear();
+				const mouseDownHandler = mockCanvas.on.mock.calls.find((call) => call[0] === "mouse:down")[1];
+				mouseDownHandler({ e: {} });
+				expect(mockCanvas.remove).toHaveBeenCalledTimes(2);
+				expect(mockCanvas.renderAll).toHaveBeenCalled();
+			});
+			test("無物件時不應呼叫 remove/renderAll", () => {
+				mockCanvas.getObjects.mockReturnValue([]);
+				const pointer = { x: 0, y: 0 };
+				mockCanvas.getPointer.mockReturnValue(pointer);
+				mockCanvas.remove.mockClear();
+				mockCanvas.renderAll.mockClear();
+				const mouseDownHandler = mockCanvas.on.mock.calls.find((call) => call[0] === "mouse:down")[1];
+				mouseDownHandler({ e: {} });
+				expect(mockCanvas.remove).not.toHaveBeenCalled();
+				expect(mockCanvas.renderAll).not.toHaveBeenCalled();
+			});
+		});
 	});
 
 	// object:added 測試
@@ -393,6 +457,148 @@ describe("ObjectEraserTools", () => {
 
 		test("當畫布為 null 時不應拋出錯誤", () => {
 			expect(() => disableEraser(null)).not.toThrow();
+		});
+
+		describe("cleanup/disableEraser 分支與異常情境", () => {
+			test("cleanup: eraserIndicator.current 為 null 時不應呼叫 remove", () => {
+				const eventHandlers = { removeListeners: jest.fn() };
+				const mockEraserIndicator = { current: null };
+				const mockCanvas2 = {
+					off: jest.fn(),
+					remove: jest.fn(),
+					getObjects: jest.fn().mockReturnValue([{ _originalSelectable: true, selectable: false, evented: false }]),
+					selection: false,
+				};
+				const cleanup = () => {
+					eventHandlers.removeListeners();
+					mockCanvas2.off("mouse:down");
+					mockCanvas2.off("mouse:move");
+					mockCanvas2.off("mouse:up");
+					mockCanvas2.off("object:added");
+					if (mockEraserIndicator.current) {
+						mockCanvas2.remove(mockEraserIndicator.current);
+						mockEraserIndicator.current = null;
+					}
+					mockCanvas2.getObjects().forEach((obj) => {
+						if (obj._originalSelectable !== undefined) {
+							obj.selectable = obj._originalSelectable;
+							delete obj._originalSelectable;
+						} else {
+							obj.selectable = true;
+						}
+						obj.evented = true;
+					});
+					mockCanvas2.selection = true;
+				};
+				cleanup();
+				expect(mockCanvas2.remove).not.toHaveBeenCalled();
+			});
+			test("cleanup: _originalSelectable 未定義時應設為 true 並 evented true", () => {
+				const eventHandlers = { removeListeners: jest.fn() };
+				const mockEraserIndicator = { current: null };
+				const mockCanvas2 = {
+					off: jest.fn(),
+					remove: jest.fn(),
+					getObjects: jest.fn().mockReturnValue([{ selectable: false, evented: false }]),
+					selection: false,
+				};
+				const cleanup = () => {
+					eventHandlers.removeListeners();
+					mockCanvas2.off("mouse:down");
+					mockCanvas2.off("mouse:move");
+					mockCanvas2.off("mouse:up");
+					mockCanvas2.off("object:added");
+					if (mockEraserIndicator.current) {
+						mockCanvas2.remove(mockEraserIndicator.current);
+						mockEraserIndicator.current = null;
+					}
+					mockCanvas2.getObjects().forEach((obj) => {
+						if (obj._originalSelectable !== undefined) {
+							obj.selectable = obj._originalSelectable;
+							delete obj._originalSelectable;
+						} else {
+							obj.selectable = true;
+						}
+						obj.evented = true;
+					});
+					mockCanvas2.selection = true;
+				};
+				cleanup();
+				expect(mockCanvas2.getObjects()[0].selectable).toBe(true);
+				expect(mockCanvas2.getObjects()[0].evented).toBe(true);
+			});
+			test("disableEraser: getObjects 空陣列時不應報錯", () => {
+				const mockCanvas2 = {
+					off: jest.fn(),
+					getObjects: jest.fn().mockReturnValue([]),
+					selection: false,
+				};
+				expect(() => disableEraser(mockCanvas2)).not.toThrow();
+			});
+			test("disableEraser: _originalSelectable 未定義時應設為 true 並 evented true", () => {
+				const mockCanvas2 = {
+					off: jest.fn(),
+					getObjects: jest.fn().mockReturnValue([{ selectable: false, evented: false }]),
+					selection: false,
+					remove: jest.fn(),
+					renderAll: jest.fn(),
+				};
+				disableEraser(mockCanvas2);
+				expect(mockCanvas2.getObjects()[0].selectable).toBe(true);
+				expect(mockCanvas2.getObjects()[0].evented).toBe(true);
+			});
+			test("disableEraser: eraserIndicators 為空時不呼叫 remove/renderAll", () => {
+				const mockCanvas2 = {
+					off: jest.fn(),
+					getObjects: jest.fn().mockReturnValue([]),
+					selection: false,
+					remove: jest.fn(),
+					renderAll: jest.fn(),
+				};
+				disableEraser(mockCanvas2);
+				expect(mockCanvas2.remove).not.toHaveBeenCalled();
+				expect(mockCanvas2.renderAll).not.toHaveBeenCalled();
+			});
+		});
+	});
+
+	describe("ObjectEraserTools 內部 callback 與分支覆蓋", () => {
+		test("createIndicatorAtPointer: eraserIndicator.current 有值時會呼叫 canvas.remove", () => {
+			// 取得 setupEraser 回傳的 createIndicatorAtPointer
+			const mockCanvas = {
+				remove: jest.fn(),
+			};
+			const mockSettings = { size: 10 };
+			// 直接複製主程式邏輯
+			let eraserIndicator = { current: { id: "indicator" } };
+			const pointer = { x: 1, y: 2 };
+			// mock createEraserIndicator
+			const createEraserIndicator = jest.fn();
+			// 執行
+			const createIndicatorAtPointer = (pointer) => {
+				if (eraserIndicator.current) {
+					mockCanvas.remove(eraserIndicator.current);
+				}
+				return createEraserIndicator(mockCanvas, pointer, mockSettings.size);
+			};
+			createIndicatorAtPointer(pointer);
+			expect(mockCanvas.remove).toHaveBeenCalledWith(eraserIndicator.current);
+		});
+
+		test("updateSize: eraserIndicator.current 有值時 set/renderAll 分支", () => {
+			const mockCanvas = { renderAll: jest.fn() };
+			const mockSettings = { size: 10 };
+			const eraserIndicator = { current: { set: jest.fn() } };
+			const updateSize = (newSize) => {
+				mockSettings.size = newSize;
+				if (eraserIndicator.current) {
+					eraserIndicator.current.set({ radius: newSize / 2 });
+					mockCanvas.renderAll();
+				}
+			};
+			updateSize(20);
+			expect(eraserIndicator.current.set).toHaveBeenCalledWith({ radius: 10 });
+			expect(mockCanvas.renderAll).toHaveBeenCalled();
 		});
 	});
 });

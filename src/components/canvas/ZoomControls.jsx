@@ -1,16 +1,36 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
-import { Box, IconButton, Slider, Typography } from "@mui/material";
+import { Box, IconButton, Slider, Typography, useTheme, useMediaQuery } from "@mui/material";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { zoomIn, zoomOut, setZoomLevel, handleWheelZoom, resetCanvasView } from "../../helpers/canvas/ZoomHelper";
 import "./CanvasControls.css";
 
-const ZoomControls = ({ canvas }) => {
+const ZoomControls = ({ canvas, chatWidth = 0, isChatOpen = false }) => {
 	const [zoomLevelState, setZoomLevelState] = useState(1);
 	const [isDragging, setIsDragging] = useState(false);
+	const [showSlider, setShowSlider] = useState(true);
 	const zoomUpdateTimer = useRef(null);
+	const controlsRef = useRef(null);
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+	useEffect(() => {
+		const updateLayout = () => {
+			const windowWidth = window.innerWidth;
+			const leftToolbarWidth = 64;
+			const chatOffset = isChatOpen ? chatWidth : 0;
+			const availableSpace = windowWidth - leftToolbarWidth - chatOffset;
+
+			// 如果可用空間小於 350px 或在移動裝置上，則隱藏slider
+			setShowSlider(availableSpace > 350 && !isMobile);
+		};
+
+		updateLayout();
+		window.addEventListener("resize", updateLayout);
+		return () => window.removeEventListener("resize", updateLayout);
+	}, [isChatOpen, chatWidth, isMobile]);
 
 	// 設置滾輪縮放 - 獨立的 effect，只依賴於 canvas
 	useEffect(() => {
@@ -112,41 +132,59 @@ const ZoomControls = ({ canvas }) => {
 	}, [canvas, zoomLevelState]);
 
 	return (
-		<Box className="canvas-controls-panel">
+		<Box ref={controlsRef} className="canvas-controls-panel">
 			<IconButton onClick={handleZoomOut} title="縮小">
 				<ZoomOutIcon />
 			</IconButton>
 
-			<Box className="zoom-slider-container">
-				<Slider
-					value={zoomLevelState}
-					min={0.1}
-					max={5}
-					step={0.1}
-					onChange={handleZoomSliderChange}
-					onChangeCommitted={handleSliderEnd}
-					onMouseDown={handleSliderStart}
-					onTouchStart={handleSliderStart}
-					aria-labelledby="zoom-slider"
+			{showSlider ? (
+				<Box className="zoom-slider-container">
+					<Slider
+						value={zoomLevelState}
+						min={0.1}
+						max={5}
+						step={0.1}
+						onChange={handleZoomSliderChange}
+						onChangeCommitted={handleSliderEnd}
+						onMouseDown={handleSliderStart}
+						onTouchStart={handleSliderStart}
+						aria-labelledby="zoom-slider"
+						sx={{
+							"& .MuiSlider-track": {
+								backgroundColor: "#f7cac9",
+							},
+							"& .MuiSlider-rail": {
+								backgroundColor: "rgba(92, 92, 92, 0.2)",
+							},
+						}}
+					/>
+					<Typography
+						variant="caption"
+						sx={{
+							color: "#333333",
+							fontWeight: "medium",
+							minWidth: 40,
+							textAlign: "center",
+							mx: 1,
+						}}
+					>
+						{Math.round(zoomLevelState * 100)}%
+					</Typography>
+				</Box>
+			) : (
+				<Typography
+					variant="caption"
 					sx={{
-						'& .MuiSlider-track': {
-							backgroundColor: '#f7cac9',
-						},
-						'& .MuiSlider-rail': {
-							backgroundColor: 'rgba(92, 92, 92, 0.2)',
-						}
-					}}
-				/>
-				<Typography 
-					variant="caption" 
-					sx={{ 
-						color: '#333333',
-						fontWeight: 'medium'
+						color: "#333333",
+						fontWeight: "medium",
+						minWidth: 40,
+						textAlign: "center",
+						mx: 1,
 					}}
 				>
 					{Math.round(zoomLevelState * 100)}%
 				</Typography>
-			</Box>
+			)}
 
 			<IconButton onClick={handleZoomIn} title="放大">
 				<ZoomInIcon />
@@ -161,6 +199,8 @@ const ZoomControls = ({ canvas }) => {
 
 ZoomControls.propTypes = {
 	canvas: PropTypes.object,
+	chatWidth: PropTypes.number,
+	isChatOpen: PropTypes.bool,
 };
 
 export default ZoomControls;

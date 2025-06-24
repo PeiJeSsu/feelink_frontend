@@ -1,5 +1,10 @@
 import { loadCanvasFromJSON, loadCanvasFromFile } from "../LoadCanvas";
 
+// 先 mock clearCanvas，避免副作用
+jest.mock("../../canvas/CanvasOperations", () => ({
+	clearCanvas: jest.fn(),
+}));
+
 // 模擬 FileReader
 const mockFileReader = {
 	readAsText: jest.fn(),
@@ -26,7 +31,9 @@ describe("LoadCanvas 測試", () => {
 		// 創建模擬 canvas
 		mockCanvas = {
 			clear: jest.fn(),
-			loadFromJSON: jest.fn(),
+			loadFromJSON: jest.fn((json, callback) => {
+				if (callback) callback();
+			}),
 			setViewportTransform: jest.fn(),
 			getObjects: jest.fn().mockReturnValue([{ type: "rect" }, { type: "circle" }]),
 			selection: false,
@@ -73,15 +80,15 @@ describe("LoadCanvas 測試", () => {
 				zoomLevel: 1.5,
 				viewportTransform: [1.5, 0, 0, 1.5, 100, 100],
 			});
-
 			const result = loadCanvasFromJSON(mockCanvas, jsonWithZoom);
-
-			// 取得 loadFromJSON 的回調函數並執行
+			expect(mockCanvas.loadFromJSON).toHaveBeenCalled();
+			if (mockCanvas.loadFromJSON.mock.calls.length === 0) throw new Error("loadFromJSON 未被呼叫");
 			const callback = mockCanvas.loadFromJSON.mock.calls[0][1];
+			expect(typeof callback).toBe("function");
 			callback();
-
 			expect(result).toBe(true);
-			expect(mockCanvas.clear).toHaveBeenCalled();
+			const { clearCanvas } = require("../../canvas/CanvasOperations");
+			expect(clearCanvas).toHaveBeenCalledWith(mockCanvas);
 			expect(mockCanvas.loadFromJSON).toHaveBeenCalledWith(jsonWithZoom, expect.any(Function));
 			expect(mockCanvas.zoomLevel).toBe(1.5);
 			expect(mockCanvas.setViewportTransform).toHaveBeenCalledWith([1.5, 0, 0, 1.5, 100, 100]);
@@ -94,13 +101,12 @@ describe("LoadCanvas 測試", () => {
 			const simpleJson = JSON.stringify({
 				objects: [],
 			});
-
 			const result = loadCanvasFromJSON(mockCanvas, simpleJson);
-
-			// 取得 loadFromJSON 的回調函數並執行
+			expect(mockCanvas.loadFromJSON).toHaveBeenCalled();
+			if (mockCanvas.loadFromJSON.mock.calls.length === 0) throw new Error("loadFromJSON 未被呼叫");
 			const callback = mockCanvas.loadFromJSON.mock.calls[0][1];
+			expect(typeof callback).toBe("function");
 			callback();
-
 			expect(result).toBe(true);
 			expect(mockCanvas.zoomLevel).toBe(1);
 			expect(mockCanvas.setViewportTransform).toHaveBeenCalledWith([1, 0, 0, 1, 0, 0]);
@@ -110,19 +116,19 @@ describe("LoadCanvas 測試", () => {
 			const simpleJson = JSON.stringify({
 				objects: [{ type: "rect" }, { type: "circle" }],
 			});
-
+			// 先設置 getObjects 回傳的物件
+			const obj1 = { type: "rect" };
+			const obj2 = { type: "circle" };
+			mockCanvas.getObjects.mockReturnValue([obj1, obj2]);
 			loadCanvasFromJSON(mockCanvas, simpleJson);
-
-			// 取得 loadFromJSON 的回調函數並執行
+			if (mockCanvas.loadFromJSON.mock.calls.length === 0) throw new Error("loadFromJSON 未被呼叫");
 			const callback = mockCanvas.loadFromJSON.mock.calls[0][1];
+			expect(typeof callback).toBe("function");
 			callback();
-
-			// 檢查每個物件是否被正確設置
-			const objects = mockCanvas.getObjects();
-			expect(objects[0].selectable).toBe(true);
-			expect(objects[0].evented).toBe(true);
-			expect(objects[1].selectable).toBe(true);
-			expect(objects[1].evented).toBe(true);
+			expect(obj1.selectable).toBe(true);
+			expect(obj1.evented).toBe(true);
+			expect(obj2.selectable).toBe(true);
+			expect(obj2.evented).toBe(true);
 		});
 	});
 
@@ -149,12 +155,8 @@ describe("LoadCanvas 測試", () => {
 		test("成功讀取文件時應調用 loadCanvasFromJSON 並執行回調", () => {
 			const mockFile = new Blob(['{"objects":[]}'], { type: "application/json" });
 			const callback = jest.fn();
-
 			loadCanvasFromFile(mockCanvas, mockFile, callback);
-
-			// 模擬文件讀取成功
 			mockFileReader.onload({ target: { result: '{"objects":[]}' } });
-
 			expect(callback).toHaveBeenCalledWith(true);
 			expect(mockSetTimeout).toHaveBeenCalledWith(expect.any(Function), 100);
 		});

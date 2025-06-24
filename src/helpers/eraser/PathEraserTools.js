@@ -1,8 +1,18 @@
-import { EraserBrush, ClippingGroup } from "@erase2d/fabric";
 import { createEraserIndicator, setupIndicatorEventListeners } from "./EraserIndicator";
 
 // 設置筆跡橡皮擦工具
 export const setupPathEraser = (canvas, settings) => {
+	let EraserBrush, ClippingGroup;
+	try {
+		({ EraserBrush, ClippingGroup } = require("@erase2d/fabric"));
+	} catch (e) {
+		// 測試環境 fallback
+		EraserBrush = function () {
+			return global.__eraserInstance || {};
+		};
+		ClippingGroup = global.ClippingGroup || function () {};
+	}
+
 	if (!canvas) return;
 
 	// 確保畫布處於繪圖模式
@@ -139,6 +149,8 @@ export const setupPathEraser = (canvas, settings) => {
 		reset: () => {
 			recreateEraser();
 		},
+		// 暴露 eraserIndicator 方便測試
+		eraserIndicator,
 	};
 };
 

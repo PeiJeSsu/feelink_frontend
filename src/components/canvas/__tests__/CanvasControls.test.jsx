@@ -4,7 +4,11 @@ import CanvasControls from "../CanvasControls";
 
 // 模擬子組件
 jest.mock("../ZoomControls", () => {
-	const MockZoomControls = (_props) => <div data-testid="zoom-controls">縮放控制項</div>;
+	const MockZoomControls = (props) => (
+		<div data-testid="zoom-controls" data-chat-width={props.chatWidth} data-is-chat-open={props.isChatOpen}>
+			縮放控制項
+		</div>
+	);
 	MockZoomControls.displayName = "ZoomControls";
 	return MockZoomControls;
 });
@@ -42,5 +46,24 @@ describe("CanvasControls 測試", () => {
 
 	test("當 canvas 為 null 時不應拋出錯誤", () => {
 		expect(() => render(<CanvasControls canvas={null} />)).not.toThrow();
+	});
+
+	test("應正確傳遞聊天框相關props給ZoomControls", () => {
+		const chatWidth = 300;
+		const isChatOpen = true;
+
+		render(<CanvasControls canvas={{}} chatWidth={chatWidth} isChatOpen={isChatOpen} />);
+
+		const zoomControls = screen.getByTestId("zoom-controls");
+		expect(zoomControls.getAttribute("data-chat-width")).toBe(chatWidth.toString());
+		expect(zoomControls.getAttribute("data-is-chat-open")).toBe(isChatOpen.toString());
+	});
+
+	test("應正確處理默認的聊天框props", () => {
+		render(<CanvasControls canvas={{}} />);
+
+		const zoomControls = screen.getByTestId("zoom-controls");
+		expect(zoomControls.getAttribute("data-chat-width")).toBe("0");
+		expect(zoomControls.getAttribute("data-is-chat-open")).toBe("false");
 	});
 });

@@ -187,4 +187,126 @@ describe("CanvasOperations", () => {
 			expect(() => setDrawingMode(null, true)).not.toThrow();
 		});
 	});
+
+	describe("addImageToCanvas", () => {
+		let originalImage;
+		let originalFabricImage;
+		beforeAll(() => {
+			originalImage = global.Image;
+			originalFabricImage = fabric.FabricImage;
+		});
+		afterAll(() => {
+			global.Image = originalImage;
+			fabric.FabricImage = originalFabricImage;
+		});
+		test("canvas 為 null 時不應報錯", () => {
+			expect(() => {
+				require("../CanvasOperations").addImageToCanvas(null, "data:image/png;base64,xxx");
+			}).not.toThrow();
+		});
+		test("imageData 為 null 時不應報錯", () => {
+			const mockCanvas = {};
+			expect(() => {
+				require("../CanvasOperations").addImageToCanvas(mockCanvas, null);
+			}).not.toThrow();
+		});
+		test("Image onload 正常流程，應正確加入圖片並設屬性與呼叫 renderAll/saveState", (done) => {
+			const mockCanvas = {
+				add: jest.fn(),
+				setActiveObject: jest.fn(),
+				renderAll: jest.fn(),
+				historyManager: { saveState: jest.fn() },
+			};
+			// 模擬 window 尺寸
+			Object.defineProperty(window, "innerWidth", { value: 800, writable: true });
+			Object.defineProperty(window, "innerHeight", { value: 600, writable: true });
+			// mock Image
+			let onloadHandler;
+			function MockImage() {
+				setTimeout(() => {
+					if (onloadHandler) onloadHandler();
+				}, 0);
+			}
+			Object.defineProperty(MockImage.prototype, "onload", {
+				set(fn) {
+					onloadHandler = fn;
+				},
+			});
+			global.Image = MockImage;
+			// mock fabric.FabricImage
+			const mockFabricImage = {
+				width: 100,
+				height: 50,
+				set: jest.fn(),
+			};
+			fabric.FabricImage = jest.fn(() => mockFabricImage);
+			const imageData = "data:image/png;base64,xxx";
+			require("../CanvasOperations").addImageToCanvas(mockCanvas, imageData);
+			setTimeout(() => {
+				// scale = max(800/100, 600/50) = max(8, 12) = 12
+				// left = (800 - 100*12)/2 = (800-1200)/2 = -200
+				// top = (600 - 50*12)/2 = (600-600)/2 = 0
+				expect(mockFabricImage.set).toHaveBeenCalledWith({
+					scaleX: 12,
+					scaleY: 12,
+					left: -200,
+					top: 0,
+				});
+				expect(mockCanvas.add).toHaveBeenCalledWith(mockFabricImage);
+				expect(mockCanvas.setActiveObject).toHaveBeenCalledWith(mockFabricImage);
+				expect(mockCanvas.renderAll).toHaveBeenCalled();
+				expect(mockCanvas.historyManager.saveState).toHaveBeenCalled();
+				done();
+			}, 10);
+		});
+		test("Image onload 時無 historyManager 也不報錯", (done) => {
+			const mockCanvas = {
+				add: jest.fn(),
+				setActiveObject: jest.fn(),
+				renderAll: jest.fn(),
+			};
+			Object.defineProperty(window, "innerWidth", { value: 400, writable: true });
+			Object.defineProperty(window, "innerHeight", { value: 300, writable: true });
+			let onloadHandler;
+			function MockImage() {
+				setTimeout(() => {
+					if (onloadHandler) onloadHandler();
+				}, 0);
+			}
+			Object.defineProperty(MockImage.prototype, "onload", {
+				set(fn) {
+					onloadHandler = fn;
+				},
+			});
+			global.Image = MockImage;
+			const mockFabricImage = {
+				width: 100,
+				height: 100,
+				set: jest.fn(),
+			};
+			fabric.FabricImage = jest.fn(() => mockFabricImage);
+			const imageData = "data:image/png;base64,yyy";
+			require("../CanvasOperations").addImageToCanvas(mockCanvas, imageData);
+			setTimeout(() => {
+				expect(mockCanvas.add).toHaveBeenCalledWith(mockFabricImage);
+				expect(mockCanvas.setActiveObject).toHaveBeenCalledWith(mockFabricImage);
+				expect(mockCanvas.renderAll).toHaveBeenCalled();
+				done();
+			}, 10);
+		});
+	});
+
+	describe("clearCanvas 無 historyManager 分支", () => {
+		test("clearCanvas: 沒有 historyManager 也不報錯", () => {
+			const mockCanvas = {
+				clear: jest.fn(),
+				renderAll: jest.fn(),
+				backgroundColor: "#000000",
+			};
+			require("../CanvasOperations").clearCanvas(mockCanvas);
+			expect(mockCanvas.clear).toHaveBeenCalled();
+			expect(mockCanvas.backgroundColor).toBe("#ffffff");
+			expect(mockCanvas.renderAll).toHaveBeenCalled();
+		});
+	});
 });
