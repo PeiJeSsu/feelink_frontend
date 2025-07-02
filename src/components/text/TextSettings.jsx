@@ -38,8 +38,8 @@ const TextSettings = ({ textSettings, onTextSettingsChange }) => {
 				>
 					<MenuItem value="Arial">Arial</MenuItem>
 					<MenuItem value="Times New Roman">Times New Roman</MenuItem>
-					<MenuItem value="微軟正黑體">微軟正黑體</MenuItem>
-					<MenuItem value="標楷體">標楷體</MenuItem>
+					<MenuItem value='"Noto Sans TC", "Microsoft JhengHei", "微軟正黑體", "PingFang TC", "Hiragino Sans TC", "Heiti TC", "Apple LiGothic Medium", sans-serif'>微軟正黑體</MenuItem>
+					<MenuItem value='"Noto Serif TC", "DFKai-SB", "標楷體", "BiauKai", "Kaiti TC", serif'>標楷體</MenuItem>
 				</Select>
 			</FormControl>
 
