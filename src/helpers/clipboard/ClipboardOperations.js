@@ -20,8 +20,8 @@ export const cut = async (canvas) => {
         top: activeObject.top,
     };
 
-    // 檢查是否為 ActiveSelection 多物件
-    if (activeObject instanceof fabric.ActiveSelection) {
+    // 檢查是否為 ActiveSelection 多物件（使用 forEachObject 方法檢查）
+    if (activeObject instanceof fabric.ActiveSelection || (activeObject.forEachObject && typeof activeObject.forEachObject === 'function')) {
         // 多物件剪下需要逐一刪除所有物件
         const objectsToRemove = [];
         activeObject.forEachObject((obj) => {
@@ -63,6 +63,11 @@ export const paste = async (canvas) => {
 
     try {
         const clonedObj = await _clipboard.clone();
+
+        // 如果原始物件是 ActiveSelection，確保 clone 後的物件保持正確的原型
+        if (_clipboard instanceof fabric.ActiveSelection || (_clipboard.forEachObject && typeof _clipboard.forEachObject === 'function')) {
+            Object.setPrototypeOf(clonedObj, fabric.ActiveSelection.prototype);
+        }
 
         canvas.discardActiveObject();
 

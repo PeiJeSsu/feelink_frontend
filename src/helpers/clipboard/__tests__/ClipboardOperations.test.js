@@ -1,4 +1,5 @@
 import * as ClipboardOperations from "../ClipboardOperations";
+import * as fabric from "fabric";
 
 jest.mock('fabric', () => ({
 	ActiveSelection: jest.fn().mockImplementation((objects, options) => ({
@@ -80,21 +81,30 @@ describe("ClipboardOperations", () => {
 	});
 
 	it("cut: 多物件剪下", async () => {
-		const fabric = require('fabric');
-		const activeSelection = {
+		const fabric = jest.requireActual('fabric');
+		
+		// 創建一個真正的 ActiveSelection 類型的物件
+		const activeSelection = new fabric.ActiveSelection([], {
 			left: 10,
 			top: 20,
-			clone: jest.fn().mockResolvedValue({
-				set: jest.fn(),
-				clone: jest.fn().mockResolvedValue({ set: jest.fn(), clone: jest.fn() }),
-			}),
-			forEachObject: jest.fn((callback) => {
-				callback({ id: 'obj1' });
-				callback({ id: 'obj2' });
-			}),
-		};
-		Object.setPrototypeOf(activeSelection, fabric.ActiveSelection.prototype);
+		});
+		
+		// Mock 必要的方法
+		activeSelection.clone = jest.fn().mockResolvedValue({
+			set: jest.fn(),
+			clone: jest.fn().mockResolvedValue({ set: jest.fn(), clone: jest.fn() }),
+		});
+		
+		activeSelection.forEachObject = jest.fn((callback) => {
+			callback({ id: 'obj1' });
+			callback({ id: 'obj2' });
+		});
+		
 		canvas.getActiveObject.mockReturnValue(activeSelection);
+		canvas.discardActiveObject.mockClear();
+		canvas.remove.mockClear();
+		canvas.requestRenderAll.mockClear();
+		
 		await ClipboardOperations.cut(canvas);
 		expect(activeSelection.clone).toHaveBeenCalled();
 		expect(canvas.discardActiveObject).toHaveBeenCalled();
