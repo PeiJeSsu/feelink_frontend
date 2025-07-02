@@ -42,7 +42,7 @@ const Layout = () => {
 	});
 
 	const [textSettings, setTextSettings] = useState({
-		fontFamily: "Arial",
+		fontFamily: "Arial, sans-serif",
 		fontSize: 24,
 		fill: "#000000",
 	});
