@@ -1,5 +1,12 @@
 import * as ClipboardOperations from "../ClipboardOperations";
 
+jest.mock('fabric', () => ({
+	ActiveSelection: jest.fn().mockImplementation((objects, options) => ({
+		objects,
+		canvas: options.canvas,
+	}))
+}));
+
 describe("ClipboardOperations", () => {
 	let canvas, obj;
 	beforeEach(() => {
@@ -62,14 +69,89 @@ describe("ClipboardOperations", () => {
 
 	it("paste: 貼上失敗時應捕捉錯誤", async () => {
 		await ClipboardOperations.copy(canvas);
-		const errorObj = { clone: jest.fn().mockRejectedValue(new Error("fail")), set: jest.fn() };
-		// 模擬 clipboard 內容
-		await ClipboardOperations.paste({
+		const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+		const errorCanvas = {
 			...canvas,
-			add: jest.fn(),
-			setActiveObject: jest.fn(),
-			requestRenderAll: jest.fn(),
-			discardActiveObject: jest.fn(),
+			discardActiveObject: jest.fn(() => { throw new Error('Test error'); }),
+		};
+		await ClipboardOperations.paste(errorCanvas);
+		expect(consoleErrorSpy).toHaveBeenCalledWith("貼上失敗:", expect.any(Error));
+		consoleErrorSpy.mockRestore();
+	});
+
+	it("cut: 多物件剪下", async () => {
+		const fabric = require('fabric');
+		const activeSelection = {
+			left: 10,
+			top: 20,
+			clone: jest.fn().mockResolvedValue({
+				set: jest.fn(),
+				clone: jest.fn().mockResolvedValue({ set: jest.fn(), clone: jest.fn() }),
+			}),
+			forEachObject: jest.fn((callback) => {
+				callback({ id: 'obj1' });
+				callback({ id: 'obj2' });
+			}),
+		};
+		Object.setPrototypeOf(activeSelection, fabric.ActiveSelection.prototype);
+		canvas.getActiveObject.mockReturnValue(activeSelection);
+		await ClipboardOperations.cut(canvas);
+		expect(activeSelection.clone).toHaveBeenCalled();
+		expect(canvas.discardActiveObject).toHaveBeenCalled();
+		expect(canvas.remove).toHaveBeenCalledTimes(2);
+		expect(canvas.remove).toHaveBeenCalledWith({ id: 'obj1' });
+		expect(canvas.remove).toHaveBeenCalledWith({ id: 'obj2' });
+		expect(canvas.requestRenderAll).toHaveBeenCalled();
+		expect(ClipboardOperations.hasClipboardContent()).toBe(true);
+	});
+
+	it("paste: 多物件貼上", async () => {
+		const fabric = require('fabric');
+		jest.clearAllMocks();
+		const mockClonedActiveSelection = {
+			type: 'activeSelection', 
+			set: jest.fn(),
+			forEachObject: jest.fn((callback) => {
+				callback({ id: 'obj1' });
+				callback({ id: 'obj2' });
+			}),
+			setCoords: jest.fn(),
+			canvas: null,
+		};
+		Object.setPrototypeOf(mockClonedActiveSelection, fabric.ActiveSelection.prototype);
+		const mockOriginalSelection = {
+			left: 5,
+			top: 5,
+			clone: jest.fn().mockImplementation(async () => {
+				return {
+					...mockClonedActiveSelection,
+					clone: jest.fn().mockResolvedValue(mockClonedActiveSelection)
+				};
+			}),
+		};
+		Object.setPrototypeOf(mockOriginalSelection, fabric.ActiveSelection.prototype);
+		canvas.getActiveObject.mockReturnValue(mockOriginalSelection);
+		await ClipboardOperations.copy(canvas);
+		canvas.discardActiveObject = jest.fn();
+		canvas.add = jest.fn();
+		canvas.setActiveObject = jest.fn();
+		canvas.requestRenderAll = jest.fn();
+		await ClipboardOperations.paste(canvas);
+		expect(mockClonedActiveSelection.set).toHaveBeenCalledWith({
+			left: 15,
+			top: 15,
+			evented: true,
 		});
+		expect(mockClonedActiveSelection.forEachObject).toHaveBeenCalled();
+		expect(mockClonedActiveSelection.setCoords).toHaveBeenCalled();
+		expect(canvas.add).toHaveBeenCalledTimes(2);
+		expect(canvas.add).toHaveBeenCalledWith({ id: 'obj1' });
+		expect(canvas.add).toHaveBeenCalledWith({ id: 'obj2' });
+		expect(fabric.ActiveSelection).toHaveBeenCalledWith(
+			[{ id: 'obj1' }, { id: 'obj2' }], 
+			{ canvas }
+		);
+		expect(canvas.setActiveObject).toHaveBeenCalled();
+		expect(canvas.requestRenderAll).toHaveBeenCalled();
 	});
 });
