@@ -23,9 +23,18 @@
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
+  /* 只在平移模式下禁用觸控 */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .canvas-container .canvas-wrapper {
   width: 100% !important;
   height: 100% !important;
+}
+
+/* 只在平移模式下部分禁用觸控操作 */
+.canvas-container.pan-mode canvas,
+.canvas-container.pan-mode .canvas-wrapper {
+  touch-action: pinch-zoom; /* 允許兩指縮放，但禁用平移 */
 }

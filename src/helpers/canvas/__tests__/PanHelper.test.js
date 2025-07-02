@@ -43,6 +43,30 @@ describe("PanHelper", () => {
 			// 驗證返回的新拖曳起點
 			expect(result).toEqual({ x: 150, y: 120 });
 		});
+
+		test("應正確處理觸控事件", () => {
+			const dragStart = { x: 100, y: 100 };
+			const touchEvent = { 
+				touches: [{ clientX: 150, clientY: 120 }]
+			};
+
+			// 模擬 canvas 物件
+			const mockCanvas = {
+				viewportTransform: [1, 0, 0, 1, 50, 50],
+				setViewportTransform: jest.fn(),
+			};
+
+			// 調用函數
+			const result = handleMiddleButtonPan(mockCanvas, touchEvent, dragStart);
+
+			// 驗證視角更新
+			expect(mockCanvas.viewportTransform[4]).toBe(100);
+			expect(mockCanvas.viewportTransform[5]).toBe(70);
+			expect(mockCanvas.setViewportTransform).toHaveBeenCalledWith(mockCanvas.viewportTransform);
+
+			// 驗證返回的新拖曳起點
+			expect(result).toEqual({ x: 150, y: 120 });
+		});
 	});
 
 	// 測試 setupMiddleButtonPan 函數
@@ -107,7 +131,7 @@ describe("PanHelper", () => {
 				handleMouseUpMock
 			);
 
-			// 驗證事件監聽器已設置
+			// 驗證事件監聽器已設置 (只有滑鼠事件)
 			expect(mockCanvas.upperCanvasEl.addEventListener).toHaveBeenCalledWith("mousedown", expect.any(Function));
 			expect(addEventListenerSpy).toHaveBeenCalledWith("mousemove", handleMouseMoveMock);
 			expect(addEventListenerSpy).toHaveBeenCalledWith("mouseup", handleMouseUpMock);
@@ -115,7 +139,7 @@ describe("PanHelper", () => {
 			// 調用清理函數
 			cleanupFn();
 
-			// 驗證事件監聽器已移除
+			// 驗證事件監聽器已移除 (只有滑鼠事件)
 			expect(mockCanvas.upperCanvasEl.removeEventListener).toHaveBeenCalledWith("mousedown", expect.any(Function));
 			expect(removeEventListenerSpy).toHaveBeenCalledWith("mousemove", handleMouseMoveMock);
 			expect(removeEventListenerSpy).toHaveBeenCalledWith("mouseup", handleMouseUpMock);

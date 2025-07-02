@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { useEffect } from "react";
 import "./Canvas.css";
 import CanvasControls from "./CanvasControls";
 import { useCanvasInitialization } from "../../hooks/useCanvasInitialization";
@@ -31,6 +32,18 @@ const Canvas = ({
 		paintBucketSettings,
 		textSettings,
 	});
+
+	// 動態設置平移模式的 CSS 類
+	useEffect(() => {
+		const canvasContainer = document.querySelector('.canvas-container');
+		if (canvasContainer) {
+			if (activeTool === 'pan') {
+				canvasContainer.classList.add('pan-mode');
+			} else {
+				canvasContainer.classList.remove('pan-mode');
+			}
+		}
+	}, [activeTool]);
 
 	return (
 		<div className="canvas-wrapper" style={{ position: "relative", flex: 1 }}>
