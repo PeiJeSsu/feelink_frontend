@@ -20,8 +20,8 @@ export const cut = async (canvas) => {
         top: activeObject.top,
     };
 
-    // 檢查是否為 ActiveSelection 多物件（使用 forEachObject 方法檢查）
-    if (activeObject instanceof fabric.ActiveSelection || (activeObject.forEachObject && typeof activeObject.forEachObject === 'function')) {
+    // 檢查是否為 ActiveSelection 多物件
+    if (isMultiObject(activeObject)) {
         // 多物件剪下需要逐一刪除所有物件
         const objectsToRemove = [];
         activeObject.forEachObject((obj) => {
