@@ -145,7 +145,7 @@ export function normalize(point, thickness) {
 	return point;
 }
 
-export default {
+const BrushUtils = {
 	colorValues,
 	convertToImg,
 	getRandom,
@@ -153,3 +153,5 @@ export default {
 	angleBetween,
 	normalize,
 };
+
+export default BrushUtils;
