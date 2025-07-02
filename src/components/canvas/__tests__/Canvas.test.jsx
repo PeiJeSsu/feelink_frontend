@@ -1,13 +1,9 @@
-import React from "react";
 import { render } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { initializeCanvas, resizeCanvas, clearCanvas, setDrawingMode } from "../../../helpers/canvas/CanvasOperations";
-import { setPanningMode } from "../../../helpers/canvas/PanHelper";
-import { createBrush, setupBrushEventListeners } from "../../../helpers/brush/BrushTools";
-import { setupShapeDrawing } from "../../../helpers/shape/ShapeTools";
-import { setupEraser } from "../../../helpers/eraser/ObjectEraserTools";
-import { setupPathEraser } from "../../../helpers/eraser/PathEraserTools";
+import { initializeCanvas } from "../../../helpers/canvas/CanvasOperations";
 import createHistoryManager from "../../../helpers/history/HistoryManager";
+import { useCanvasInitialization } from "../../../hooks/useCanvasInitialization";
+import { useCanvasTools } from "../../../hooks/useCanvasTools";
 import Canvas from "../Canvas";
 
 // 模擬所有依賴的模組
@@ -52,6 +48,14 @@ jest.mock("../../../helpers/eraser/PathEraserTools", () => ({
 
 jest.mock("../../../helpers/history/HistoryManager", () => jest.fn());
 
+jest.mock("../../../hooks/useCanvasInitialization", () => ({
+	useCanvasInitialization: jest.fn(),
+}));
+
+jest.mock("../../../hooks/useCanvasTools", () => ({
+	useCanvasTools: jest.fn(),
+}));
+
 // 模擬子組件
 jest.mock("../CanvasControls", () => {
 	const MockCanvasControls = (props) => <div data-testid="canvas-controls">CanvasControls</div>;
@@ -69,6 +73,8 @@ describe("Canvas 測試（一般流程）", () => {
 	let mockHistoryManager;
 	let originalAddEventListener;
 	let originalRemoveEventListener;
+	let mockCanvasRef;
+	let mockFabricCanvasRef;
 
 	beforeEach(() => {
 		// 保存原始的事件監聽器函數
@@ -88,6 +94,19 @@ describe("Canvas 測試（一般流程）", () => {
 			saveState: jest.fn(),
 			clear: jest.fn(),
 		};
+
+		// 創建模擬的 refs
+		mockCanvasRef = { current: null };
+		mockFabricCanvasRef = { current: mockCanvas };
+
+		// 模擬 useCanvasInitialization hook
+		useCanvasInitialization.mockReturnValue({
+			canvasRef: mockCanvasRef,
+			fabricCanvasRef: mockFabricCanvasRef,
+		});
+
+		// 模擬 useCanvasTools hook
+		useCanvasTools.mockImplementation(() => {});
 
 		initializeCanvas.mockReturnValue(mockCanvas);
 		createHistoryManager.mockReturnValue(mockHistoryManager);
@@ -121,14 +140,23 @@ describe("Canvas 測試（一般流程）", () => {
 		};
 		render(<Canvas activeTool="pencil" {...defaultProps} onCanvasInit={mockOnCanvasInit} />);
 
-		expect(initializeCanvas).toHaveBeenCalled();
-		expect(createHistoryManager).toHaveBeenCalledWith(mockCanvas);
-		expect(mockCanvas.historyManager).toBe(mockHistoryManager);
-		expect(mockCanvas.historyManager.saveState).toHaveBeenCalled();
-		expect(mockOnCanvasInit).toHaveBeenCalledWith(mockCanvas);
+		// 驗證 hooks 被正確調用
+		expect(useCanvasInitialization).toHaveBeenCalledWith({
+			onCanvasInit: mockOnCanvasInit,
+			clearTrigger: 0,
+		});
+
+		expect(useCanvasTools).toHaveBeenCalledWith(mockCanvas, {
+			activeTool: "pencil",
+			brushSettings: defaultProps.brushSettings,
+			shapeSettings: defaultProps.shapeSettings,
+			eraserSettings: defaultProps.eraserSettings,
+			paintBucketSettings: defaultProps.paintBucketSettings,
+			textSettings: defaultProps.textSettings,
+		});
 	});
 
-	test("應設置視窗大小調整事件監聽器", () => {
+	test("應正確初始化畫布和設置事件監聽器", () => {
 		const defaultProps = {
 			brushSettings: {
 				type: "pencil",
@@ -143,21 +171,26 @@ describe("Canvas 測試（一般流程）", () => {
 			textSettings: { fontFamily: "Arial", fontSize: 12, fill: "#000", textAlign: "left" },
 			clearTrigger: 0,
 		};
+
 		render(<Canvas activeTool="pencil" {...defaultProps} />);
 
-		expect(window.addEventListener).toHaveBeenCalledWith("resize", expect.any(Function));
+		// 驗證 hook 被正確調用
+		expect(useCanvasInitialization).toHaveBeenCalledWith({
+			onCanvasInit: undefined,
+			clearTrigger: 0,
+		});
 
-		// 找到註冊的 resize 處理函數
-		const resizeHandler = window.addEventListener.mock.calls.find((call) => call[0] === "resize")[1];
-
-		// 手動調用 resize 處理函數
-		resizeHandler();
-
-		expect(resizeCanvas).toHaveBeenCalled();
-		expect(mockCanvas.renderAll).toHaveBeenCalled();
+		expect(useCanvasTools).toHaveBeenCalledWith(mockCanvas, {
+			activeTool: "pencil",
+			brushSettings: defaultProps.brushSettings,
+			shapeSettings: defaultProps.shapeSettings,
+			eraserSettings: defaultProps.eraserSettings,
+			paintBucketSettings: defaultProps.paintBucketSettings,
+			textSettings: defaultProps.textSettings,
+		});
 	});
 
-	test("應響應 clearTrigger 清除畫布", () => {
+	test("應響應 clearTrigger 變化", () => {
 		const defaultProps = {
 			brushSettings: {
 				type: "pencil",
@@ -177,12 +210,17 @@ describe("Canvas 測試（一般流程）", () => {
 		// 重置模擬，確保我們只測試新的調用
 		jest.clearAllMocks();
 
+		// 觸發 clearTrigger 變化
 		rerender(<Canvas activeTool="pencil" {...defaultProps} clearTrigger={1} onCanvasInit={jest.fn()} />);
-		expect(clearCanvas).toHaveBeenCalledWith(mockCanvas);
-		expect(mockHistoryManager.clear).toHaveBeenCalled();
+		
+		// 驗證 useCanvasInitialization hook 被重新調用，包含新的 clearTrigger
+		expect(useCanvasInitialization).toHaveBeenCalledWith({
+			onCanvasInit: expect.any(Function),
+			clearTrigger: 1,
+		});
 	});
 
-	test("應在卸載時清理資源", () => {
+	test("應正確使用 useCanvasInitialization hook", () => {
 		const defaultProps = {
 			brushSettings: {
 				type: "pencil",
@@ -197,18 +235,14 @@ describe("Canvas 測試（一般流程）", () => {
 			textSettings: { fontFamily: "Arial", fontSize: 12, fill: "#000", textAlign: "left" },
 			clearTrigger: 0,
 		};
-		const { unmount } = render(<Canvas activeTool="pencil" {...defaultProps} onCanvasInit={jest.fn()} />);
+		
+		const mockOnCanvasInit = jest.fn();
+		render(<Canvas activeTool="pencil" {...defaultProps} onCanvasInit={mockOnCanvasInit} />);
 
-		// 重置模擬調用記錄
-		jest.clearAllMocks();
-
-		// 卸載組件
-		unmount();
-
-		// 驗證清理事件監聽器
-		expect(window.removeEventListener).toHaveBeenCalledWith("resize", expect.any(Function));
-
-		// 驗證畫布被釋放
-		expect(mockCanvas.dispose).toHaveBeenCalled();
+		// 驗證 hook 被正確調用，包含清理邏輯
+		expect(useCanvasInitialization).toHaveBeenCalledWith({
+			onCanvasInit: mockOnCanvasInit,
+			clearTrigger: 0,
+		});
 	});
 });

@@ -1,4 +1,4 @@
-import { handleWheelZoom, zoomIn, zoomOut, setZoomLevel, resetCanvasView, MIN_ZOOM, MAX_ZOOM } from "../ZoomHelper";
+import { handleWheelZoom, zoomIn, zoomOut, setZoomLevel, resetCanvasView, setupPinchZoom, MIN_ZOOM, MAX_ZOOM } from "../ZoomHelper";
 
 describe("ZoomHelper", () => {
 	// 模擬 canvas 物件
@@ -243,6 +243,71 @@ describe("ZoomHelper", () => {
 			expect(mockCanvas.zoomLevel).toBe(1);
 			expect(mockCanvas.setViewportTransform).toHaveBeenCalledWith([1, 0, 0, 1, 0, 0]);
 			expect(mockCanvas.renderAll).toHaveBeenCalled();
+		});
+	});
+
+	// 測試 setupPinchZoom 函數
+	describe("setupPinchZoom", () => {
+		let mockCanvasElement;
+
+		beforeEach(() => {
+			// 創建模擬 canvas 元素
+			mockCanvasElement = {
+				addEventListener: jest.fn(),
+				removeEventListener: jest.fn(),
+				getBoundingClientRect: jest.fn(() => ({ left: 0, top: 0 })),
+			};
+
+			// 為 mockCanvas 添加 upperCanvasEl
+			mockCanvas.upperCanvasEl = mockCanvasElement;
+			mockCanvas.isDrawingMode = false;
+		});
+
+		test("當 canvas 為 null 時應返回無操作清理函數", () => {
+			const cleanupFn = setupPinchZoom(null);
+			expect(typeof cleanupFn).toBe("function");
+			expect(() => cleanupFn()).not.toThrow();
+		});
+
+		test("應正確設置觸控事件監聽器", () => {
+			const cleanupFn = setupPinchZoom(mockCanvas);
+
+			// 驗證事件監聽器已設置
+			expect(mockCanvasElement.addEventListener).toHaveBeenCalledWith("touchstart", expect.any(Function), { passive: false });
+			expect(mockCanvasElement.addEventListener).toHaveBeenCalledWith("touchmove", expect.any(Function), { passive: false });
+			expect(mockCanvasElement.addEventListener).toHaveBeenCalledWith("touchend", expect.any(Function), { passive: false });
+
+			// 調用清理函數
+			cleanupFn();
+
+			// 驗證事件監聽器已移除
+			expect(mockCanvasElement.removeEventListener).toHaveBeenCalledWith("touchstart", expect.any(Function));
+			expect(mockCanvasElement.removeEventListener).toHaveBeenCalledWith("touchmove", expect.any(Function));
+			expect(mockCanvasElement.removeEventListener).toHaveBeenCalledWith("touchend", expect.any(Function));
+		});
+
+		test("當繪圖模式開啟時不應觸發縮放", () => {
+			mockCanvas.isDrawingMode = true;
+			const cleanupFn = setupPinchZoom(mockCanvas);
+
+			// 獲取 touchstart 處理函數
+			const touchStartHandler = mockCanvasElement.addEventListener.mock.calls.find(call => call[0] === 'touchstart')[1];
+
+			// 模擬兩指觸控事件
+			const touchEvent = {
+				touches: [
+					{ clientX: 100, clientY: 100 },
+					{ clientX: 200, clientY: 200 }
+				],
+				preventDefault: jest.fn(),
+			};
+
+			touchStartHandler(touchEvent);
+
+			// 在繪圖模式下應該不阻止默認行為
+			expect(touchEvent.preventDefault).not.toHaveBeenCalled();
+
+			cleanupFn();
 		});
 	});
 });

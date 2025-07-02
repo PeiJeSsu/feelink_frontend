@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { useEffect, useRef } from "react";
 import "./Canvas.css";
 import CanvasControls from "./CanvasControls";
 import { useCanvasInitialization } from "../../hooks/useCanvasInitialization";
@@ -16,6 +17,9 @@ const Canvas = ({
 	chatWidth = 0,
 	isChatOpen = false,
 }) => {
+	// 創建容器的 ref
+	const containerRef = useRef(null);
+
 	// 初始化畫布
 	const { canvasRef, fabricCanvasRef } = useCanvasInitialization({
 		onCanvasInit,
@@ -32,10 +36,23 @@ const Canvas = ({
 		textSettings,
 	});
 
+	// 動態設置平移模式的 CSS 類
+	useEffect(() => {
+		if (containerRef.current) {
+			if (activeTool === 'pan') {
+				containerRef.current.classList.add('pan-mode');
+			} else {
+				containerRef.current.classList.remove('pan-mode');
+			}
+		}
+	}, [activeTool]);
+
 	return (
-		<div className="canvas-wrapper" style={{ position: "relative", flex: 1 }}>
-			<canvas ref={canvasRef} />
-			<CanvasControls canvas={fabricCanvasRef.current} chatWidth={chatWidth} isChatOpen={isChatOpen} />
+		<div ref={containerRef} className="canvas-container">
+			<div className="canvas-wrapper" style={{ position: "relative", flex: 1 }}>
+				<canvas ref={canvasRef} />
+				<CanvasControls canvas={fabricCanvasRef.current} chatWidth={chatWidth} isChatOpen={isChatOpen} />
+			</div>
 		</div>
 	);
 };

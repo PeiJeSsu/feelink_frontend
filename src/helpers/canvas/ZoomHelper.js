@@ -111,3 +111,98 @@ export const resetCanvasView = (canvas) => {
 	// 重新渲染畫布
 	canvas.renderAll();
 };
+
+/**
+ * 計算兩個觸控點之間的距離
+ * @param {Touch} touch1 - 第一個觸控點
+ * @param {Touch} touch2 - 第二個觸控點
+ * @returns {number} 距離
+ */
+const getTouchDistance = (touch1, touch2) => {
+	const dx = touch1.clientX - touch2.clientX;
+	const dy = touch1.clientY - touch2.clientY;
+	return Math.sqrt(dx * dx + dy * dy);
+};
+
+/**
+ * 計算兩個觸控點的中心點
+ * @param {Touch} touch1 - 第一個觸控點
+ * @param {Touch} touch2 - 第二個觸控點
+ * @param {DOMRect} canvasRect - 畫布的邊界矩形
+ * @returns {Object} 中心點座標 {x, y}
+ */
+const getTouchCenter = (touch1, touch2, canvasRect) => {
+	const x = (touch1.clientX + touch2.clientX) / 2 - canvasRect.left;
+	const y = (touch1.clientY + touch2.clientY) / 2 - canvasRect.top;
+	return { x, y };
+};
+
+/**
+ * 設置兩指縮放事件監聽器
+ * @param {Object} canvas - fabric.js 畫布實例
+ * @returns {Function} 清理函數
+ */
+export const setupPinchZoom = (canvas) => {
+	if (!canvas) return () => {};
+
+	let initialDistance = 0;
+	let initialZoom = 1;
+	let isPinching = false;
+
+	const handleTouchStart = (e) => {
+		if (e.touches.length === 2) {
+			// 只在非繪圖模式下允許兩指縮放
+			if (!canvas.isDrawingMode) {
+				isPinching = true;
+				initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
+				initialZoom = canvas.getZoom();
+				e.preventDefault();
+			}
+		}
+	};
+
+	const handleTouchMove = (e) => {
+		if (isPinching && e.touches.length === 2 && !canvas.isDrawingMode) {
+			e.preventDefault();
+			
+			const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+			const scale = currentDistance / initialDistance;
+			let newZoom = initialZoom * scale;
+
+			// 限制縮放範圍
+			newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+
+			// 四捨五入到小數點後一位，保持與其他縮放功能一致
+			newZoom = Math.round(newZoom * 10) / 10;
+
+			// 計算縮放中心點
+			const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
+			const center = getTouchCenter(e.touches[0], e.touches[1], canvasRect);
+
+			// 應用縮放
+			canvas.zoomToPoint(center, newZoom);
+			canvas.zoomLevel = newZoom;
+			canvas.renderAll();
+		}
+	};
+
+	const handleTouchEnd = (e) => {
+		if (e.touches.length < 2) {
+			isPinching = false;
+			initialDistance = 0;
+		}
+	};
+
+	// 添加事件監聽器
+	const canvasElement = canvas.upperCanvasEl;
+	canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+	canvasElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+	canvasElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+	// 返回清理函數
+	return () => {
+		canvasElement.removeEventListener('touchstart', handleTouchStart);
+		canvasElement.removeEventListener('touchmove', handleTouchMove);
+		canvasElement.removeEventListener('touchend', handleTouchEnd);
+	};
+};
