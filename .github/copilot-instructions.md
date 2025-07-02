@@ -1,1 +1,1 @@
-- When performing a code review, respond in Traditional Chinese using Taiwanese wording and expressions.
+- When performing a code review, respond in Traditional Chinese using wording and expressions commonly used in Taiwan for all summary, overview, and inline comments.
