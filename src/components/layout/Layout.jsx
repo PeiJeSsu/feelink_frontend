@@ -42,9 +42,10 @@ const Layout = () => {
 	});
 
 	const [textSettings, setTextSettings] = useState({
-		fontFamily: "Arial",
+		fontFamily: '"Noto Sans TC", sans-serif',
 		fontSize: 24,
 		fill: "#000000",
+		fontWeight: "400",
 	});
 
 	const [clearTrigger, setClearTrigger] = useState(0);
@@ -60,6 +61,28 @@ const Layout = () => {
 			}
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!canvasReady || !canvasRef.current) return;
+		const canvas = canvasRef.current;
+		function handleSelection() {
+			const activeObject = canvas.getActiveObject?.();
+			if (activeObject && activeObject.type === "textbox") {
+				setTextSettings({
+					fontFamily: activeObject.fontFamily || '"Noto Sans TC", sans-serif',
+					fontSize: activeObject.fontSize || 24,
+					fill: activeObject.fill || "#000000",
+					fontWeight: activeObject.fontWeight || "400",
+				});
+			}
+		}
+		canvas.on("selection:created", handleSelection);
+		canvas.on("selection:updated", handleSelection);
+		return () => {
+			canvas.off("selection:created", handleSelection);
+			canvas.off("selection:updated", handleSelection);
+		};
+	}, [canvasReady]);
 
 	const handleClearCanvas = useCallback(() => {
 		setClearTrigger((prev) => prev + 1);
@@ -118,6 +141,7 @@ const Layout = () => {
 				setTextSettings={setTextSettings}
 				textSettings={textSettings}
 				onClearCanvas={handleClearCanvas}
+				canvas={canvasRef.current}
 			/>
 			<TopToolbar
 				onClearClick={handleClearCanvas}
