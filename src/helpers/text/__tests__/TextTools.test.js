@@ -54,15 +54,40 @@ describe("TextTools", () => {
 			const target = { type: "rect" };
 			expect(cb({ target })).toBeUndefined();
 		});
-		it("點擊空白處應建立新 textbox 並進入編輯", () => {
-			const mockTextbox = { enterEditing: jest.fn() };
-			jest.spyOn(require("fabric"), "Textbox").mockImplementation(() => mockTextbox);
+		it("點擊空白處應建立新 textbox 並正確套用 fontWeight 預設 400", () => {
+			const mockTextbox = { enterEditing: jest.fn(), set: jest.fn() };
+			jest.spyOn(require("fabric"), "Textbox").mockImplementation((text, opts) => {
+				expect(opts.fontWeight).toBe("400");
+				return mockTextbox;
+			});
 			TextTools.setupTextTool(canvas, settings);
 			const cb = canvas.on.mock.calls.find(([event]) => event === "mouse:down")[1];
 			cb({ target: null, e: {} });
 			expect(canvas.add).toHaveBeenCalledWith(mockTextbox);
 			expect(canvas.setActiveObject).toHaveBeenCalledWith(mockTextbox);
 			expect(mockTextbox.enterEditing).toHaveBeenCalled();
+			expect(canvas.requestRenderAll).toHaveBeenCalled();
+		});
+		it("點擊空白處應建立新 textbox 並正確套用 fontWeight 設定值", () => {
+			const mockTextbox = { enterEditing: jest.fn(), set: jest.fn() };
+			const customSettings = { ...settings, fontWeight: "700" };
+			jest.spyOn(require("fabric"), "Textbox").mockImplementation((text, opts) => {
+				expect(opts.fontWeight).toBe("700");
+				return mockTextbox;
+			});
+			TextTools.setupTextTool(canvas, customSettings);
+			const cb = canvas.on.mock.calls.find(([event]) => event === "mouse:down")[1];
+			cb({ target: null, e: {} });
+		});
+		it("object:added 事件應監聽 text:changed 並 re-render", () => {
+			const obj = { type: "textbox", text: "abc", set: jest.fn(), on: jest.fn() };
+			TextTools.setupTextTool(canvas, settings);
+			const cb = canvas.on.mock.calls.find(([event]) => event === "object:added")[1];
+			cb({ target: obj });
+			// 模擬 text:changed 事件
+			const changedCb = obj.on.mock.calls.find(([event]) => event === "changed")[1];
+			changedCb();
+			expect(obj.set).toHaveBeenCalledWith({ text: "abc" });
 			expect(canvas.requestRenderAll).toHaveBeenCalled();
 		});
 		it("建立新 textbox 時有 historyManager 應 saveState", (done) => {
@@ -88,15 +113,17 @@ describe("TextTools", () => {
 			canvas.getActiveObject.mockReturnValue({ type: "rect" });
 			expect(TextTools.updateActiveTextbox(canvas, settings)).toBeUndefined();
 		});
-		it("應正確更新 textbox 屬性並維持編輯狀態", () => {
+		it("應正確更新 textbox 屬性並維持編輯狀態 (未指定 fontWeight)", () => {
 			const textbox = {
 				type: "textbox",
 				isEditing: true,
 				exitEditing: jest.fn(),
 				enterEditing: jest.fn(),
 				set: jest.fn(),
+				text: "abc",
 			};
 			canvas.getActiveObject.mockReturnValue(textbox);
+			global.requestAnimationFrame = (cb) => cb();
 			TextTools.updateActiveTextbox(canvas, settings);
 			expect(textbox.exitEditing).toHaveBeenCalled();
 			expect(textbox.set).toHaveBeenCalledWith({
@@ -104,9 +131,35 @@ describe("TextTools", () => {
 				fontSize: settings.fontSize,
 				fill: settings.fill,
 				cursorColor: settings.fill,
+				fontWeight: "normal",
 			});
 			expect(textbox.enterEditing).toHaveBeenCalled();
 			expect(canvas.requestRenderAll).toHaveBeenCalled();
+			// 應再次 set 文字內容
+			expect(textbox.set).toHaveBeenCalledWith({ text: "abc" });
+		});
+		it("應正確更新 textbox 屬性並維持編輯狀態 (有指定 fontWeight)", () => {
+			const textbox = {
+				type: "textbox",
+				isEditing: true,
+				exitEditing: jest.fn(),
+				enterEditing: jest.fn(),
+				set: jest.fn(),
+				text: "abc",
+			};
+			canvas.getActiveObject.mockReturnValue(textbox);
+			global.requestAnimationFrame = (cb) => cb();
+			const settingsWithWeight = { ...settings, fontWeight: "700" };
+			TextTools.updateActiveTextbox(canvas, settingsWithWeight);
+			expect(textbox.set).toHaveBeenCalledWith({
+				fontFamily: settings.fontFamily,
+				fontSize: settings.fontSize,
+				fill: settings.fill,
+				cursorColor: settings.fill,
+				fontWeight: "700",
+			});
+			// 應再次 set 文字內容
+			expect(textbox.set).toHaveBeenCalledWith({ text: "abc" });
 		});
 		it("未處於編輯狀態時不呼叫 exit/enterEditing", () => {
 			const textbox = {
@@ -115,8 +168,10 @@ describe("TextTools", () => {
 				exitEditing: jest.fn(),
 				enterEditing: jest.fn(),
 				set: jest.fn(),
+				text: "abc",
 			};
 			canvas.getActiveObject.mockReturnValue(textbox);
+			global.requestAnimationFrame = (cb) => cb();
 			TextTools.updateActiveTextbox(canvas, settings);
 			expect(textbox.exitEditing).not.toHaveBeenCalled();
 			expect(textbox.enterEditing).not.toHaveBeenCalled();
