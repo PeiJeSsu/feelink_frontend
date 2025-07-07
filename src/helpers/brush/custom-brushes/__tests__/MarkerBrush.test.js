@@ -72,9 +72,7 @@ describe("MarkerBrush", () => {
 	});
 
 	it("建構時應設置 canvas context 屬性", () => {
-		mockCtx.globalAlpha = 0.7;
-		mockCtx.lineJoin = "round";
-		mockCtx.lineCap = "round";
+		const _ = new MarkerBrush(mockCanvas, { opacity: 0.7 });
 		expect(mockCtx.globalAlpha).toBe(0.7);
 		expect(mockCtx.lineJoin).toBe("round");
 		expect(mockCtx.lineCap).toBe("round");

@@ -94,32 +94,7 @@ const testCleanup = () => {
 			removeListeners: jest.fn(),
 		};
 
-		const cleanup = () => {
-			eventHandlers.removeListeners();
-			mockCanvas.off("mouse:down");
-			mockCanvas.off("mouse:move");
-			mockCanvas.off("mouse:up");
-			mockCanvas.off("object:added");
-
-			if (mockEraserIndicator.current) {
-				mockCanvas.remove(mockEraserIndicator.current);
-				mockEraserIndicator.current = null;
-			}
-
-			mockCanvas.getObjects().forEach((obj) => {
-				if (obj._originalSelectable !== undefined) {
-					obj.selectable = obj._originalSelectable;
-					delete obj._originalSelectable;
-				} else {
-					obj.selectable = true;
-				}
-				obj.evented = true;
-			});
-
-			mockCanvas.selection = true;
-		};
-
-		cleanup();
+		sharedCleanup(eventHandlers, mockEraserIndicator, mockCanvas);
 
 		expect(eventHandlers.removeListeners).toHaveBeenCalled();
 		expect(mockCanvas.off).toHaveBeenCalledWith("mouse:down");
@@ -132,7 +107,6 @@ const testCleanup = () => {
 		expect(mockCanvas.getObjects()[0].selectable).toBe(true);
 		expect(mockCanvas.getObjects()[0].evented).toBe(true);
 		expect(mockCanvas.selection).toBe(true);
-
 		expect(mockEraserIndicator.current).toBeNull();
 	});
 };
