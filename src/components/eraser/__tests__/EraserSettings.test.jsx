@@ -4,60 +4,94 @@ import "@testing-library/jest-dom";
 import EraserSettings from "../EraserSettings";
 
 jest.mock("@mui/material", () => {
+	const PropTypes = require("prop-types");
+	const Slider = function Slider(props) {
+		return (
+			<input
+				type="range"
+				min={props.min}
+				max={props.max}
+				value={props.value}
+				onChange={(e) => props.onChange(e, parseInt(e.target.value))}
+				data-testid="slider"
+			/>
+		);
+	};
+	Slider.propTypes = {
+		min: PropTypes.number,
+		max: PropTypes.number,
+		value: PropTypes.number,
+		onChange: PropTypes.func,
+	};
+
+	const Typography = function Typography(props) {
+		return <div {...props}>{props.children}</div>;
+	};
+	Typography.propTypes = { children: PropTypes.node };
+
+	const FormControl = function FormControl(props) {
+		return <div data-testid="form-control">{props.children}</div>;
+	};
+	FormControl.propTypes = { children: PropTypes.node };
+
+	const FormControlLabel = function FormControlLabel(props) {
+		return (
+			<label data-testid={`radio-label-${props.value}`}>
+				{props.control}
+				<span>{props.label}</span>
+			</label>
+		);
+	};
+	FormControlLabel.propTypes = {
+		control: PropTypes.node,
+		label: PropTypes.string,
+		value: PropTypes.string,
+	};
+
+	const RadioGroup = function RadioGroup(props) {
+		return (
+			<div
+				data-testid="radio-group"
+				onChange={(e) => props.onChange(e)}
+				onClick={(e) => {
+					if (props.onChange) {
+						props.onChange({ target: { value: "path" } });
+					}
+				}}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						props.onChange?.({ target: { value: "path" } });
+					}
+				}}
+				value={props.value}
+				role="radiogroup"
+				aria-label="eraser type options"
+				tabIndex="0"
+			>
+				{props.children}
+			</div>
+		);
+	};
+	RadioGroup.propTypes = {
+		children: PropTypes.node,
+		value: PropTypes.string,
+		onChange: PropTypes.func,
+	};
+
+	const Radio = function Radio(props) {
+		return <input type="radio" value={props.value} data-testid={`radio-input-${props.value}`} />;
+	};
+	Radio.propTypes = {
+		value: PropTypes.string,
+	};
+
 	return {
-		Slider: function Slider(props) {
-			return (
-				<input
-					type="range"
-					min={props.min}
-					max={props.max}
-					value={props.value}
-					onChange={(e) => props.onChange(e, parseInt(e.target.value))}
-					data-testid="slider"
-				/>
-			);
-		},
-		Typography: function Typography(props) {
-			return <div {...props}>{props.children}</div>;
-		},
-		FormControl: function FormControl(props) {
-			return <div data-testid="form-control">{props.children}</div>;
-		},
-		FormControlLabel: function FormControlLabel(props) {
-			return (
-				<label data-testid={`radio-label-${props.value}`}>
-					{props.control}
-					<span>{props.label}</span>
-				</label>
-			);
-		},
-		RadioGroup: function RadioGroup(props) {
-			return (
-				<div
-					data-testid="radio-group"
-					onChange={(e) => props.onChange(e)}
-					onClick={(e) => {
-						if (props.onChange) {
-							props.onChange({ target: { value: "path" } });
-						}
-					}}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") {
-							props.onChange?.({ target: { value: "path" } });
-						}
-					}}
-					value={props.value}
-					role="radiogroup"
-					aria-label="eraser type options"
-					tabIndex="0"
-				>
-					{props.children}
-				</div>
-			);
-		},
-		Radio: function Radio(props) {
-			return <input type="radio" value={props.value} data-testid={`radio-input-${props.value}`} />;
-		},
+		Slider,
+		Typography,
+		FormControl,
+		FormControlLabel,
+		RadioGroup,
+		Radio,
 	};
 });
 

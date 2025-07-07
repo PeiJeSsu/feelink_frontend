@@ -1,6 +1,4 @@
 import LongfurBrush from "../LongfurBrush";
-import * as fabric from "fabric";
-import { colorValues, convertToImg } from "../../../../utils/BrushUtils";
 
 jest.mock("../../../../utils/BrushUtils", () => {
 	const original = jest.requireActual("../../../../utils/BrushUtils");

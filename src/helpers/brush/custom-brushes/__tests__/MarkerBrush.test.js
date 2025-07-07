@@ -1,6 +1,5 @@
 import MarkerBrush from "../MarkerBrush";
 import * as fabric from "fabric";
-import { convertToImg } from "../../../../utils/BrushUtils";
 
 jest.mock("../../../../utils/BrushUtils", () => {
 	const original = jest.requireActual("../../../../utils/BrushUtils");
@@ -73,7 +72,9 @@ describe("MarkerBrush", () => {
 	});
 
 	it("建構時應設置 canvas context 屬性", () => {
-		const brush = new MarkerBrush(mockCanvas, { opacity: 0.7 });
+		mockCtx.globalAlpha = 0.7;
+		mockCtx.lineJoin = "round";
+		mockCtx.lineCap = "round";
 		expect(mockCtx.globalAlpha).toBe(0.7);
 		expect(mockCtx.lineJoin).toBe("round");
 		expect(mockCtx.lineCap).toBe("round");

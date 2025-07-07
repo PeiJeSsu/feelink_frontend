@@ -4,12 +4,17 @@ import CanvasControls from "../CanvasControls";
 
 // 模擬子組件
 jest.mock("../ZoomControls", () => {
+	const PropTypes = require("prop-types");
 	const MockZoomControls = (props) => (
 		<div data-testid="zoom-controls" data-chat-width={props.chatWidth} data-is-chat-open={props.isChatOpen}>
 			縮放控制項
 		</div>
 	);
 	MockZoomControls.displayName = "ZoomControls";
+	MockZoomControls.propTypes = {
+		chatWidth: PropTypes.number,
+		isChatOpen: PropTypes.bool,
+	};
 	return MockZoomControls;
 });
 
