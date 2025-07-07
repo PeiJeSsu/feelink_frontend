@@ -4,10 +4,13 @@ jest.mock("fabric", () => ({
 }));
 
 describe("BrushUtils", () => {
+	let origCreateElement;
 	beforeEach(() => {
+		origCreateElement = global.document.createElement;
 		jest.spyOn(BrushUtils, "trimCanvas").mockImplementation(() => ({ x: 0, y: 0 }));
 	});
 	afterEach(() => {
+		global.document.createElement = origCreateElement;
 		if (BrushUtils.trimCanvas.mockRestore) {
 			BrushUtils.trimCanvas.mockRestore();
 		}
