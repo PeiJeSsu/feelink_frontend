@@ -79,7 +79,6 @@
 	}
 }
 
-/* 新增拖動把手的樣式 */
 .react-resizable-handle {
 	position: absolute;
 	left: 0;
