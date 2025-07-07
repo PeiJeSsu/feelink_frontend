@@ -1,5 +1,18 @@
 import * as fabric from "fabric";
 
+function handleObjectAddedFactory(canvas) {
+	return function handleObjectAdded(e) {
+		const obj = e.target;
+		if (obj && obj.type === "textbox") {
+			obj.on("changed", function () {
+				const originalText = obj.text;
+				obj.set({ text: originalText });
+				canvas.requestRenderAll();
+			});
+		}
+	};
+}
+
 export const setupTextTool = (canvas, settings) => {
 	if (!canvas) return;
 
@@ -7,7 +20,6 @@ export const setupTextTool = (canvas, settings) => {
 	canvas.selection = true;
 	canvas.defaultCursor = "text";
 
-	// 移除現有的事件監聽器
 	canvas.off("mouse:down");
 
 	canvas.on("mouse:down", function (opt) {
@@ -57,17 +69,12 @@ export const setupTextTool = (canvas, settings) => {
 		}
 	});
 
-	// 新增：監聽所有 textbox 的 text:changed 事件
-	canvas.on("object:added", function (e) {
-		const obj = e.target;
-		if (obj && obj.type === "textbox") {
-			obj.on("changed", function () {
-				const originalText = obj.text;
-				obj.set({ text: originalText });
-				canvas.requestRenderAll();
-			});
-		}
-	});
+	// 避免重複註冊 object:added 事件
+	if (!canvas._textToolsObjectAddedHandler) {
+		canvas._textToolsObjectAddedHandler = handleObjectAddedFactory(canvas);
+	}
+	canvas.off("object:added", canvas._textToolsObjectAddedHandler);
+	canvas.on("object:added", canvas._textToolsObjectAddedHandler);
 };
 
 export const updateActiveTextbox = (canvas, settings) => {
@@ -85,14 +92,10 @@ export const updateActiveTextbox = (canvas, settings) => {
 		fill: settings.fill,
 		cursorColor: settings.fill,
 		fontWeight: settings.fontWeight || "normal",
+		text: activeObject.text,
 	});
 
-	const originalText = activeObject.text;
 	if (wasEditing) activeObject.enterEditing();
-	canvas.requestRenderAll();
 
-	requestAnimationFrame(() => {
-		activeObject.set({ text: originalText });
-		canvas.requestRenderAll();
-	});
+	canvas.requestRenderAll();
 };

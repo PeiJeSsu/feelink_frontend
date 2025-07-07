@@ -132,11 +132,10 @@ describe("TextTools", () => {
 				fill: settings.fill,
 				cursorColor: settings.fill,
 				fontWeight: "normal",
+				text: "abc",
 			});
 			expect(textbox.enterEditing).toHaveBeenCalled();
 			expect(canvas.requestRenderAll).toHaveBeenCalled();
-			// 應再次 set 文字內容
-			expect(textbox.set).toHaveBeenCalledWith({ text: "abc" });
 		});
 		it("應正確更新 textbox 屬性並維持編輯狀態 (有指定 fontWeight)", () => {
 			const textbox = {
@@ -157,9 +156,8 @@ describe("TextTools", () => {
 				fill: settings.fill,
 				cursorColor: settings.fill,
 				fontWeight: "700",
+				text: "abc",
 			});
-			// 應再次 set 文字內容
-			expect(textbox.set).toHaveBeenCalledWith({ text: "abc" });
 		});
 		it("未處於編輯狀態時不呼叫 exit/enterEditing", () => {
 			const textbox = {

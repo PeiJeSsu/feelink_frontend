@@ -35,7 +35,6 @@ const TextSettings = ({ textSettings, onTextSettingsChange, canvas }) => {
 	// 當使用者切換字型時，先預載所有 textbox 內的字，避免 webfont 懶加載導致部分字型沒換
 	const handleFontFamilyChange = async (event) => {
 		const newFontFamily = event.target.value;
-		// 預設值，確保至少有一個字被載入
 		let allText = "佔位";
 		if (canvas && typeof canvas.getObjects === "function") {
 			const allTextboxes = canvas.getObjects().filter((obj) => obj.type === "textbox");
@@ -47,10 +46,16 @@ const TextSettings = ({ textSettings, onTextSettingsChange, canvas }) => {
 		} catch (e) {
 			console.error("字型載入失敗或瀏覽器不支援 document.fonts：", e);
 		}
+		const availableWeights = fontWeightOptions[newFontFamily] || [];
+		let newFontWeight = textSettings.fontWeight;
+		if (!availableWeights.some((opt) => String(opt.value) === String(newFontWeight))) {
+			const defaultWeight = availableWeights.find((opt) => String(opt.value) === "400") || availableWeights[0];
+			newFontWeight = defaultWeight ? defaultWeight.value : "400";
+		}
 		onTextSettingsChange({
 			...textSettings,
 			fontFamily: newFontFamily,
-			fontWeight: textSettings.fontWeight || "400",
+			fontWeight: newFontWeight,
 		});
 	};
 

@@ -45,6 +45,7 @@ const Layout = () => {
 		fontFamily: '"Noto Sans TC", sans-serif',
 		fontSize: 24,
 		fill: "#000000",
+		fontWeight: "400",
 	});
 
 	const [clearTrigger, setClearTrigger] = useState(0);
