@@ -1,21 +1,56 @@
-import React from "react";
+import React, { useMemo } from "react";
 import PropTypes from "prop-types";
 import { FormControl, InputLabel, Select, MenuItem, Typography, Slider } from "@mui/material";
 import ColorPicker from "../color/ColorPicker";
 
-const TextSettings = ({ textSettings, onTextSettingsChange }) => {
+const chineseFontWeights = [
+	{ value: "100", label: "Thin (100)" },
+	{ value: "200", label: "ExtraLight (200)" },
+	{ value: "300", label: "Light (300)" },
+	{ value: "400", label: "Regular (400)" },
+	{ value: "500", label: "Medium (500)" },
+	{ value: "600", label: "SemiBold (600)" },
+	{ value: "700", label: "Bold (700)" },
+	{ value: "800", label: "ExtraBold (800)" },
+	{ value: "900", label: "Black (900)" },
+];
+
+const englishFontWeights = [
+	{ value: "200", label: "ExtraLight (200)" },
+	{ value: "300", label: "Light (300)" },
+	{ value: "400", label: "Regular (400)" },
+	{ value: "500", label: "Medium (500)" },
+	{ value: "600", label: "SemiBold (600)" },
+	{ value: "800", label: "ExtraBold (800)" },
+];
+
+const fontWeightOptions = {
+	'"Noto Sans TC", sans-serif': chineseFontWeights,
+	'"Noto Serif TC", serif': chineseFontWeights,
+	"Arial, sans-serif": englishFontWeights,
+	'"Times New Roman", serif': englishFontWeights,
+};
+
+const TextSettings = ({ textSettings, onTextSettingsChange, canvas }) => {
+	// 當使用者切換字型時，先預載所有 textbox 內的字，避免 webfont 懶加載導致部分字型沒換
 	const handleFontFamilyChange = async (event) => {
 		const newFontFamily = event.target.value;
-		// 先等待字型載入完成
+		// 預設值，確保至少有一個字被載入
+		let allText = "佔位";
+		if (canvas && typeof canvas.getObjects === "function") {
+			const allTextboxes = canvas.getObjects().filter((obj) => obj.type === "textbox");
+			allText = allTextboxes.map((obj) => obj.text).join("") || "佔位";
+		}
 		try {
 			const fontName = newFontFamily.split(",")[0].replace(/['"]/g, "").trim();
-			await document.fonts.load(`24px ${fontName}`);
+			await document.fonts.load(`24px ${fontName}`, allText);
 		} catch (e) {
 			console.error("字型載入失敗或瀏覽器不支援 document.fonts：", e);
 		}
 		onTextSettingsChange({
 			...textSettings,
 			fontFamily: newFontFamily,
+			fontWeight: textSettings.fontWeight || "400",
 		});
 	};
 
@@ -33,9 +68,25 @@ const TextSettings = ({ textSettings, onTextSettingsChange }) => {
 		});
 	};
 
+	const availableWeights = useMemo(() => {
+		return fontWeightOptions[textSettings.fontFamily] || [];
+	}, [textSettings.fontFamily]);
+
+	const fontWeightIndex = useMemo(() => {
+		if (textSettings.fontWeight) {
+			const idx = availableWeights.findIndex((opt) => String(opt.value) === String(textSettings.fontWeight));
+			if (idx !== -1) return idx;
+		}
+		// 沒有指定 fontWeight 時，預設找 400（Regular），找不到再找 normal，再找不到就 0
+		let idx = availableWeights.findIndex((opt) => String(opt.value) === "400");
+		if (idx === -1) idx = availableWeights.findIndex((opt) => String(opt.value).toLowerCase() === "normal");
+		if (idx === -1) idx = 0;
+		return idx;
+	}, [availableWeights, textSettings.fontWeight]);
+	const sliderValue = fontWeightIndex;
+
 	return (
 		<>
-			<FontPreload />
 			<FormControl fullWidth margin="normal">
 				<InputLabel id="font-family-label">字型</InputLabel>
 				<Select
@@ -54,6 +105,30 @@ const TextSettings = ({ textSettings, onTextSettingsChange }) => {
 				</Select>
 			</FormControl>
 
+			{/* 字型粗細滑桿 */}
+			{availableWeights.length > 0 && (
+				<>
+					<Typography gutterBottom sx={{ mt: 2 }}>
+						字型粗細：{availableWeights[sliderValue].label}
+					</Typography>
+					<Slider
+						min={0}
+						max={availableWeights.length - 1}
+						step={1}
+						value={sliderValue}
+						onChange={(_, idx) => {
+							onTextSettingsChange({
+								...textSettings,
+								fontWeight: availableWeights[idx].value,
+							});
+						}}
+						valueLabelDisplay="off"
+						valueLabelFormat={(idx) => `${availableWeights[idx].label}`}
+						marks={availableWeights.map((opt, idx) => ({ value: idx, label: opt.value }))}
+					/>
+				</>
+			)}
+
 			<Typography gutterBottom sx={{ mt: 2 }}>
 				字型大小
 			</Typography>
@@ -71,32 +146,15 @@ const TextSettings = ({ textSettings, onTextSettingsChange }) => {
 	);
 };
 
-function FontPreload() {
-	return (
-		<div
-			style={{
-				position: "absolute",
-				width: 0,
-				height: 0,
-				overflow: "hidden",
-				opacity: 0,
-				pointerEvents: "none",
-				zIndex: -9999,
-			}}
-		>
-			<span style={{ fontFamily: '"Noto Sans TC", sans-serif' }}>預載字體，請輸入文字</span>
-			<span style={{ fontFamily: '"Noto Serif TC", serif' }}>預載字體，請輸入文字</span>
-		</div>
-	);
-}
-
 TextSettings.propTypes = {
 	textSettings: PropTypes.shape({
 		fontFamily: PropTypes.string.isRequired,
 		fontSize: PropTypes.number.isRequired,
 		fill: PropTypes.string.isRequired,
+		fontWeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 	}).isRequired,
 	onTextSettingsChange: PropTypes.func.isRequired,
+	canvas: PropTypes.object,
 };
 
 export default TextSettings;

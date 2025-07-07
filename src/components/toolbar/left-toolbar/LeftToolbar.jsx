@@ -23,7 +23,8 @@ const LeftToolbar = ({
 	paintBucketSettings,
 	setTextSettings,
 	textSettings,
-	onClearCanvas
+	onClearCanvas,
+	canvas,
 }) => {
 	const [anchorEl, setAnchorEl] = useState(null);
 	const [popoverVisible, setPopoverVisible] = useState(false);
@@ -143,9 +144,9 @@ const LeftToolbar = ({
 				onClose={handlePaintBucketClose}
 				title="填充工具設置"
 			>
-				<PaintBucketSettings 
-					paintBucketSettings={paintBucketSettings} 
-					onPaintBucketSettingsChange={setPaintBucketSettings} 
+				<PaintBucketSettings
+					paintBucketSettings={paintBucketSettings}
+					onPaintBucketSettingsChange={setPaintBucketSettings}
 				/>
 			</SettingsPopover>
 
@@ -155,7 +156,7 @@ const LeftToolbar = ({
 				onClose={handleTextClose}
 				title="文字設置"
 			>
-				<TextSettings textSettings={textSettings} onTextSettingsChange={setTextSettings} />
+				<TextSettings textSettings={textSettings} onTextSettingsChange={setTextSettings} canvas={canvas} />
 			</SettingsPopover>
 		</Paper>
 	);
@@ -175,6 +176,7 @@ LeftToolbar.propTypes = {
 	setTextSettings: PropTypes.func.isRequired,
 	textSettings: PropTypes.object.isRequired,
 	onClearCanvas: PropTypes.func.isRequired,
+	canvas: PropTypes.object.isRequired,
 };
 
 export default LeftToolbar;

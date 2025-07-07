@@ -32,6 +32,7 @@ export const setupTextTool = (canvas, settings) => {
 			fontFamily: settings.fontFamily,
 			fontSize: settings.fontSize,
 			fill: settings.fill,
+			fontWeight: settings.fontWeight || "400",
 			width: 200,
 			editable: true,
 			cursorWidth: 1,
@@ -55,6 +56,18 @@ export const setupTextTool = (canvas, settings) => {
 			}, 0);
 		}
 	});
+
+	// 新增：監聽所有 textbox 的 text:changed 事件
+	canvas.on("object:added", function (e) {
+		const obj = e.target;
+		if (obj && obj.type === "textbox") {
+			obj.on("changed", function () {
+				const originalText = obj.text;
+				obj.set({ text: originalText });
+				canvas.requestRenderAll();
+			});
+		}
+	});
 };
 
 export const updateActiveTextbox = (canvas, settings) => {
@@ -71,17 +84,15 @@ export const updateActiveTextbox = (canvas, settings) => {
 		fontSize: settings.fontSize,
 		fill: settings.fill,
 		cursorColor: settings.fill,
+		fontWeight: settings.fontWeight || "normal",
 	});
 
-	// 強制重設文字內容以解決 webfont glyph 首次載入不顯示的問題
 	const originalText = activeObject.text;
-	activeObject.set({ text: "" });
-	canvas.requestRenderAll();
-	setTimeout(() => {
-		activeObject.set({ text: originalText });
-		canvas.requestRenderAll();
-	}, 0);
-
 	if (wasEditing) activeObject.enterEditing();
 	canvas.requestRenderAll();
+
+	requestAnimationFrame(() => {
+		activeObject.set({ text: originalText });
+		canvas.requestRenderAll();
+	});
 };
