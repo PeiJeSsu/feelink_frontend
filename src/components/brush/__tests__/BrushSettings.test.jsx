@@ -5,13 +5,18 @@ import BrushSettings from "../BrushSettings";
 
 // 模擬 ColorPicker 組件
 jest.mock("../../color/ColorPicker", () => {
+	const PropTypes = require("prop-types");
 	const MockColorPicker = ({ label, value, onChange }) => (
 		<div data-testid="color-picker">
 			<label>{label}</label>
 			<input type="color" data-testid={`color-input-${label}`} value={value} onChange={onChange} />
 		</div>
 	);
-
+	MockColorPicker.propTypes = {
+		label: PropTypes.string,
+		value: PropTypes.string,
+		onChange: PropTypes.func,
+	};
 	return MockColorPicker;
 });
 

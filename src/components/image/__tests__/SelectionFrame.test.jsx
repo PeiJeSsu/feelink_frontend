@@ -16,6 +16,36 @@ jest.mock("@mui/material", () => {
 			// 判斷是否為調整大小手柄
 			const isResizeHandle = dataTestId === "resize-handle";
 
+			if (isResizeHandle) {
+				return (
+					<button
+						ref={props.ref}
+						data-testid={dataTestId}
+						style={{
+							position: props.sx?.position,
+							left: props.sx?.left,
+							top: props.sx?.top,
+							width: props.sx?.width,
+							height: props.sx?.height,
+							border: props.sx?.border,
+							cursor: props.sx?.cursor,
+							right: props.sx?.right,
+							bottom: props.sx?.bottom,
+							backgroundColor: props.sx?.backgroundColor,
+						}}
+						onMouseDown={props.onMouseDown}
+						tabIndex={0}
+						aria-label={"調整選擇框大小"}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								props.onMouseDown && props.onMouseDown(e);
+							}
+						}}
+					>
+						{props.children}
+					</button>
+				);
+			}
 			return (
 				<div
 					ref={props.ref}
@@ -32,20 +62,8 @@ jest.mock("@mui/material", () => {
 						bottom: props.sx?.bottom,
 						backgroundColor: props.sx?.backgroundColor,
 					}}
+					role={"application"}
 					onMouseDown={props.onMouseDown}
-					// 添加無障礙性支援
-					role={isResizeHandle ? "button" : "application"}
-					tabIndex={isResizeHandle ? 0 : undefined}
-					onKeyDown={
-						isResizeHandle
-							? (e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										props.onMouseDown && props.onMouseDown(e);
-									}
-								}
-							: undefined
-					}
-					aria-label={isResizeHandle ? "調整選擇框大小" : undefined}
 				>
 					{props.children}
 				</div>
@@ -53,6 +71,26 @@ jest.mock("@mui/material", () => {
 		},
 	};
 });
+
+// 為 mock Box 補上 propTypes
+require("@mui/material").Box.propTypes = {
+	sx: require("prop-types").shape({
+		position: require("prop-types").string,
+		right: require("prop-types").oneOfType([require("prop-types").number, require("prop-types").string]),
+		bottom: require("prop-types").oneOfType([require("prop-types").number, require("prop-types").string]),
+		left: require("prop-types").oneOfType([require("prop-types").number, require("prop-types").string]),
+		top: require("prop-types").oneOfType([require("prop-types").number, require("prop-types").string]),
+		width: require("prop-types").oneOfType([require("prop-types").number, require("prop-types").string]),
+		height: require("prop-types").oneOfType([require("prop-types").number, require("prop-types").string]),
+		border: require("prop-types").string,
+		cursor: require("prop-types").string,
+		backgroundColor: require("prop-types").string,
+	}),
+	ref: require("prop-types").any,
+	children: require("prop-types").node,
+	"data-testid": require("prop-types").string,
+	onMouseDown: require("prop-types").func,
+};
 
 describe("SelectionFrame 組件測試", () => {
 	// 測試所需的常用變數

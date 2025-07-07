@@ -4,6 +4,18 @@ jest.mock("fabric", () => ({
 }));
 
 describe("BrushUtils", () => {
+	let origCreateElement;
+	beforeEach(() => {
+		origCreateElement = global.document.createElement;
+		jest.spyOn(BrushUtils, "trimCanvas").mockImplementation(() => ({ x: 0, y: 0 }));
+	});
+	afterEach(() => {
+		global.document.createElement = origCreateElement;
+		if (BrushUtils.trimCanvas.mockRestore) {
+			BrushUtils.trimCanvas.mockRestore();
+		}
+	});
+
 	describe("colorValues", () => {
 		it("應正確處理透明", () => {
 			expect(BrushUtils.colorValues("transparent")).toEqual([0, 0, 0, 0]);
@@ -177,29 +189,28 @@ describe("BrushUtils", () => {
 		});
 	});
 
-	describe("convertToImg", () => {
-		it("應正確轉換 canvas 為 fabric image 並設置屬性", async () => {
-			const mockImg = { set: jest.fn() };
-			const mockFromURL = jest.fn(() => Promise.resolve(mockImg));
-			require("fabric").FabricImage.fromURL = mockFromURL;
-			const canvas = {
-				getRetinaScaling: () => 2,
-				upperCanvasEl: { width: 100, height: 100 },
-			};
-			global.document.createElement = jest.fn(() => ({
-				getContext: () => ({
-					drawImage: jest.fn(),
-					getImageData: jest.fn(() => ({ data: [255, 255, 255, 255] })),
-					putImageData: jest.fn(),
-				}),
-				toDataURL: jest.fn(() => "data:image/png;base64,xxx"),
-			}));
-			const origTrimCanvas = BrushUtils.trimCanvas;
-			BrushUtils.trimCanvas = jest.fn(() => ({ x: 0, y: 0 }));
-			const result = await BrushUtils.convertToImg(canvas);
-			expect(mockFromURL).toHaveBeenCalled();
-			expect(mockImg.set).toHaveBeenCalledWith({ left: 0, top: 0, scaleX: 0.5, scaleY: 0.5 });
-			BrushUtils.trimCanvas = origTrimCanvas;
-		});
+	function mockCanvasElement() {
+		return {
+			getContext: () => ({
+				drawImage: jest.fn(),
+				getImageData: jest.fn(() => ({ data: [255, 255, 255, 255] })),
+				putImageData: jest.fn(),
+			}),
+			toDataURL: jest.fn(() => "data:image/png;base64,xxx"),
+		};
+	}
+
+	it("應正確轉換 canvas 為 fabric image 並設置屬性", async () => {
+		const mockImg = { set: jest.fn() };
+		const mockFromURL = jest.fn(() => Promise.resolve(mockImg));
+		require("fabric").FabricImage.fromURL = mockFromURL;
+		const canvas = {
+			getRetinaScaling: () => 2,
+			upperCanvasEl: { width: 100, height: 100 },
+		};
+		global.document.createElement = jest.fn(mockCanvasElement);
+		await BrushUtils.convertToImg(canvas);
+		expect(mockFromURL).toHaveBeenCalled();
+		expect(mockImg.set).toHaveBeenCalledWith({ left: 0, top: 0, scaleX: 0.5, scaleY: 0.5 });
 	});
 });
