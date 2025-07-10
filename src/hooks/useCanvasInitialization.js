@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 import { initializeCanvas, resizeCanvas, clearCanvas } from "../helpers/canvas/CanvasOperations";
+import { setupPinchZoom } from "../helpers/canvas/ZoomHelper";
 import createHistoryManager from "../helpers/history/HistoryManager";
 
 /**
@@ -10,8 +11,8 @@ import createHistoryManager from "../helpers/history/HistoryManager";
 export const useCanvasInitialization = ({ onCanvasInit, clearTrigger }) => {
 	const canvasRef = useRef(null);
 	const fabricCanvasRef = useRef(null);
-	// 使用 useRef 來保存歷史管理器實例，但不在外部暴露
 	const historyManagerRef = useRef(null);
+	const pinchZoomCleanupRef = useRef(null);
 
 	// 處理視窗大小變化
 	const handleResize = useCallback(() => {
@@ -36,10 +37,8 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger }) => {
 			const containerWidth = container ? container.clientWidth : window.innerWidth - 60;
 			const containerHeight = container ? container.clientHeight : window.innerHeight;
 
-			// 初始化 Fabric.js 畫布
 			fabricCanvasRef.current = initializeCanvas(canvasRef.current, containerWidth, containerHeight);
 
-			// 初始化歷史管理器
 			historyManagerRef.current = createHistoryManager(fabricCanvasRef.current);
 			fabricCanvasRef.current.historyManager = historyManagerRef.current;
 
@@ -52,8 +51,10 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger }) => {
 				onCanvasInit(fabricCanvasRef.current);
 			}
 
-			// 立即渲染畫布
 			fabricCanvasRef.current.renderAll();
+
+			// 設置兩指縮放功能 (移動設備)
+			pinchZoomCleanupRef.current = setupPinchZoom(fabricCanvasRef.current);
 
 			// 添加視窗大小變化監聽器
 			window.addEventListener("resize", handleResize);
@@ -71,6 +72,11 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger }) => {
 			window.removeEventListener("resize", handleResize);
 
 			try {
+				if (pinchZoomCleanupRef.current) {
+					pinchZoomCleanupRef.current();
+					pinchZoomCleanupRef.current = null;
+				}
+
 				if (fabricCanvasRef.current) {
 					fabricCanvasRef.current.dispose();
 				}
