@@ -31,7 +31,7 @@ export const callAIDrawingAPI = (messageText, canvasData) => {
 	})
 	.then(response => {
 		if (!response.data.success) {
-			throw new Error(response.data.error || 'AI 繪圖失敗');
+			throw new Error(response.data.error || 'AI 畫圖失敗');
 		}
 		return response.data.content;
 	});
