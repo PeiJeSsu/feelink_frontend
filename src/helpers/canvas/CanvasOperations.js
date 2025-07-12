@@ -59,7 +59,7 @@ export const setDrawingMode = (canvas, isDrawingMode) => {
 
 export const addImageToCanvas = (canvas, imageData) => {
 	if (!canvas || !imageData) return;
-
+	
 	const imgObj = new Image();
 	imgObj.src = imageData;
 	imgObj.onload = () => {

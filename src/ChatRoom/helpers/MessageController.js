@@ -1,6 +1,6 @@
 import {addMessages, appendMessage, getNewId} from "./usage/MessageFactory";
 import {sendAIDrawingToBackend, sendCanvasAnalysisToBackend, sendImageToBackend, sendTextToBackend} from './MessageService';
-import {convertBlobToBase64, getFullMessage} from './usage/MessageHelpers'
+import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
 
 export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, defaultQuestion = "", conversationCount = 1) => {
@@ -12,7 +12,11 @@ export const handleSendTextMessage = async (messageText, messages, setMessages, 
         messages,
         setMessages,
         setLoading,
-        generatePayload: () => Promise.resolve(getFullMessage(messageText, conversationCount, defaultQuestion)),
+        generatePayload: () => Promise.resolve({
+            text: messageText,
+            conversationCount: conversationCount,
+            hasDefaultQuestion: !!defaultQuestion
+        }),
         sendFunction: (payload) => sendTextToBackend(payload),
         onSuccess: (res, finalId) => appendMessage(finalId, res.content, setMessages),
         onErrorMessage: '發送訊息失敗',
@@ -53,7 +57,7 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
 
 export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas) => {
     if (!canvasImage) return;
-
+    
     const canvasData = await convertBlobToBase64(canvasImage);
 
     await runMessageTask({
@@ -64,8 +68,9 @@ export const handleSendAIDrawing = async (canvasImage, messageText, messages, se
         setLoading,
         generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
         sendFunction: ({ text, imageData }) => sendAIDrawingToBackend(text, imageData),
-        onSuccess: (res, finalId) =>
-            processDrawingResult(res, finalId, messages, setMessages, canvas),
+        onSuccess: (result, finalId) => {
+            return processDrawingResult(result, finalId, messages, setMessages, canvas);
+        },
         onErrorMessage: 'AI 畫圖失敗',
     });
 };
@@ -88,7 +93,6 @@ const runMessageTask = async ({messageText, image = null, messages, setMessages,
 const prepareMessageAndPayload = async (messageText, image, messages, setMessages, generatePayloadFn) => {
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
-
     const payload = await generatePayloadFn();
     return { finalId, payload };
 };
@@ -103,19 +107,33 @@ const handleResult = (result, onSuccess) => {
 
 const processDrawingResult = (result, currentId, messages, setMessages, canvas) => {
     const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+    const { createNewMessage } = require("./usage/MessageFactory");
+    let actualResult = result;
+    if (result.success && result.content) {
+        actualResult = result.content;
+        console.log('Found nested content:', actualResult); 
+    }
 
-    // 如果有文字回應，顯示出來
-    if (result.message) {
-        const { createNewMessage } = require("./usage/MessageFactory");
-        const textResponseMessage = createNewMessage(currentId, result.message, false, false);
+    if (actualResult.message) {
+        const textResponseMessage = createNewMessage(currentId, actualResult.message, false, false);
         setMessages(prevMessages => [...prevMessages, textResponseMessage]);
         currentId++;
     }
 
-    // 處理生成的圖片
-    if (result.imageData && canvas) {
-        clearCanvas(canvas);
-        addImageToCanvas(canvas, `data:image/png;base64,${result.imageData}`);
+    if (actualResult.imageData && canvas) {
+        try {
+            clearCanvas(canvas);
+            const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
+            addImageToCanvas(canvas, imageDataUrl);
+        } catch (error) {
+            console.error('Error adding image to canvas:', error); 
+        }
+    } else {
+        console.log('Missing data:', { 
+            hasImageData: !!actualResult.imageData, 
+            hasCanvas: !!canvas,
+            actualResult: actualResult
+        });
     }
 
     return currentId;
