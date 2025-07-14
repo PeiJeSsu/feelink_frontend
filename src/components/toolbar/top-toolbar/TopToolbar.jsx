@@ -7,6 +7,8 @@ import { handleSaveFile, handleLoadFile, handleFileInputChange } from "../../../
 import { importImage } from "../../../helpers/image/ImageImport";
 import ImageExportDialog from "../../image/ImageExportDialog";
 import { cut, copy, paste, hasClipboardContent } from "../../../helpers/clipboard/ClipboardOperations";
+import * as fabric from "fabric";
+import { groupSelectedObjects, ungroupSelectedGroup } from "../../../helpers/group/GroupUtils";
 
 const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 	const fileInputRef = useRef(null);
@@ -16,6 +18,8 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 	const [hasSelectedObject, setHasSelectedObject] = useState(false);
 	const [canPaste, setCanPaste] = useState(false);
 	const [availableWidth, setAvailableWidth] = useState(0);
+	const [canGroup, setCanGroup] = useState(false);
+	const [canUngroup, setCanUngroup] = useState(false);
 	const RESERVED_LAST_BUTTON_WIDTH = 72; // 與 TopToolbarButtons 保持一致
 
 	// 監聽工具欄容器寬度變化
@@ -47,7 +51,16 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 
 		// 監聽選取狀態變化
 		const handleSelection = () => {
-			setHasSelectedObject(!!canvas?.getActiveObject());
+			const activeObject = canvas?.getActiveObject();
+			setHasSelectedObject(!!activeObject);
+			setCanGroup(
+				activeObject &&
+					(activeObject instanceof fabric.ActiveSelection ||
+						(activeObject.forEachObject && typeof activeObject.forEachObject === "function")) &&
+					activeObject.size &&
+					activeObject.size() > 1
+			);
+			setCanUngroup(activeObject && activeObject.type === "group");
 		};
 
 		if (canvas) {
@@ -119,6 +132,13 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 	const handleImportClick = () => {
 		imageInputRef.current?.click();
 	};
+
+	const handleGroup = () => {
+		groupSelectedObjects(canvas);
+	};
+	const handleUngroup = () => {
+		ungroupSelectedGroup(canvas);
+	};
 	return (
 		<Box
 			ref={containerRef}
@@ -152,11 +172,15 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 					onRedoClick={handleRedo}
 					onExportClick={handleExportClick}
 					onImportClick={handleImportClick}
+					onGroupClick={handleGroup}
+					onUngroupClick={handleUngroup}
 					canvas={canvas}
 					hasSelectedObject={hasSelectedObject}
 					canPaste={canPaste}
 					chatWidth={chatWidth}
 					availableWidth={availableWidth}
+					canGroup={canGroup}
+					canUngroup={canUngroup}
 				/>
 			</Paper>
 

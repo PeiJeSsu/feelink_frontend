@@ -11,7 +11,7 @@ import "./Layout.css";
 const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(false);
-	const [chatWidth, setChatWidth] = useState(300);
+	const [chatWidth, setChatWidth] = useState(400);
 	const [isResizing, setIsResizing] = useState(false);
 	const resizeTimeoutRef = useRef(null);
 	const [brushSettings, setBrushSettings] = useState({
@@ -112,7 +112,6 @@ const Layout = () => {
 			clearTimeout(resizeTimeoutRef.current);
 		}
 
-		// 使用 requestAnimationFrame 來平滑更新視覺效果
 		requestAnimationFrame(() => {
 			const chatContainer = document.querySelector(".chat-container");
 			if (chatContainer) {

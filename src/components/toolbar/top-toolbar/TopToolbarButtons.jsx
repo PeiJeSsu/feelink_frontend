@@ -8,11 +8,13 @@ import {
 	ContentCut,
 	ContentCopy,
 	ContentPaste,
-	Image,
-	FileUpload,
+	Download,
+	AddPhotoAlternate,
+	GroupAdd,
+	GroupRemove,
+	Undo,
+	Redo,
 } from "@mui/icons-material";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
 import ToolbarButtonGroup from "./ToolbarButtonGroup";
 
 const TopToolbarButtons = ({
@@ -29,51 +31,43 @@ const TopToolbarButtons = ({
 	canvas,
 	hasSelectedObject,
 	canPaste,
-	chatWidth = 0,
 	availableWidth = Infinity,
+	onGroupClick,
+	onUngroupClick,
+	canGroup,
+	canUngroup,
 }) => {
-	// 移除本地 availableWidth 狀態與 useEffect
-
 	return (
-		<Box 
+		<Box
 			className="top-toolbar-tools"
 			sx={{
-				display: 'flex',
+				display: "flex",
 				gap: 1,
-				alignItems: 'center',
-				position: 'relative',
-				'&::-webkit-scrollbar': { display: 'none' },
-				msOverflowStyle: 'none',
-				scrollbarWidth: 'none',
-				width: '100%',
+				alignItems: "center",
+				position: "relative",
+				"&::-webkit-scrollbar": { display: "none" },
+				msOverflowStyle: "none",
+				scrollbarWidth: "none",
+				width: "100%",
 				height: 48,
-				justifyContent: 'flex-start',
+				justifyContent: "flex-start",
 			}}
-		><ToolbarButtonGroup 
-				label="編輯操作" 
-				index={0} 
-				totalGroups={5} 
-				availableWidth={availableWidth}
-			>
+		>
+			<ToolbarButtonGroup label="復原與重做" index={0} totalGroups={6} availableWidth={availableWidth}>
 				<Tooltip title="復原" placement="bottom">
 					<IconButton onClick={onUndoClick}>
-						<UndoIcon />
+						<Undo />
 					</IconButton>
 				</Tooltip>
 
 				<Tooltip title="重做" placement="bottom">
 					<IconButton onClick={onRedoClick}>
-						<RedoIcon />
+						<Redo />
 					</IconButton>
 				</Tooltip>
 			</ToolbarButtonGroup>
-
-			<Divider orientation="vertical" flexItem />			<ToolbarButtonGroup 
-				label="剪貼功能" 
-				index={1} 
-				totalGroups={5} 
-				availableWidth={availableWidth}
-			>
+			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
+			<ToolbarButtonGroup label="剪貼簿" index={1} totalGroups={6} availableWidth={availableWidth}>
 				<Tooltip title="剪下" placement="bottom">
 					<IconButton onClick={onCutClick} disabled={!hasSelectedObject}>
 						<ContentCut />
@@ -92,61 +86,53 @@ const TopToolbarButtons = ({
 					</IconButton>
 				</Tooltip>
 			</ToolbarButtonGroup>
-
-			<Divider orientation="vertical" flexItem />			<ToolbarButtonGroup 
-				label="檔案操作"
-				index={2}
-				totalGroups={5}
-				availableWidth={availableWidth}
-			>
-				<Tooltip title="保存" placement="bottom">
+			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
+			<ToolbarButtonGroup label="群組功能" index={2} totalGroups={6} availableWidth={availableWidth}>
+				<Tooltip title="成為群組" placement="bottom">
+					<IconButton onClick={onGroupClick} disabled={!canGroup}>
+						<GroupAdd />
+					</IconButton>
+				</Tooltip>
+				<Tooltip title="解散群組" placement="bottom">
+					<IconButton onClick={onUngroupClick} disabled={!canUngroup}>
+						<GroupRemove />
+					</IconButton>
+				</Tooltip>
+			</ToolbarButtonGroup>
+			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
+			<ToolbarButtonGroup label="檔案操作" index={3} totalGroups={6} availableWidth={availableWidth}>
+				<Tooltip title="保存檔案" placement="bottom">
 					<IconButton onClick={onSaveClick}>
 						<Save />
 					</IconButton>
 				</Tooltip>
 
-				<Tooltip title="開啟" placement="bottom">
+				<Tooltip title="開啟檔案" placement="bottom">
 					<IconButton onClick={onLoadClick}>
 						<FileOpen />
 					</IconButton>
 				</Tooltip>
 			</ToolbarButtonGroup>
-
-			<Divider orientation="vertical" flexItem />
-
-			<ToolbarButtonGroup 
-				label="圖片操作"
-				index={3}
-				totalGroups={5}
-				availableWidth={availableWidth}
-			>
+			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
+			<ToolbarButtonGroup label="圖片操作" index={4} totalGroups={6} availableWidth={availableWidth}>
 				<Tooltip title="匯入圖片" placement="bottom">
 					<IconButton onClick={onImportClick}>
-						<FileUpload />
+						<AddPhotoAlternate />
 					</IconButton>
 				</Tooltip>
 
 				<Tooltip title="匯出圖片" placement="bottom">
 					<IconButton onClick={onExportClick}>
-						<Image />
+						<Download />
 					</IconButton>
 				</Tooltip>
 			</ToolbarButtonGroup>
-
-			<Divider orientation="vertical" flexItem />
-
-			<ToolbarButtonGroup 
-				label="其他功能"
-				index={4}
-				totalGroups={5}
-				availableWidth={availableWidth}
-			>
-				<Tooltip title="清除畫布" placement="bottom">
-					<IconButton onClick={onClearClick}>
-						<Delete />
-					</IconButton>
-				</Tooltip>
-			</ToolbarButtonGroup>
+			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
+			<Tooltip title="清除畫布" placement="bottom">
+				<IconButton onClick={onClearClick}>
+					<Delete />
+				</IconButton>
+			</Tooltip>
 		</Box>
 	);
 };
@@ -167,6 +153,10 @@ TopToolbarButtons.propTypes = {
 	canPaste: PropTypes.bool,
 	chatWidth: PropTypes.number,
 	availableWidth: PropTypes.number,
+	onGroupClick: PropTypes.func.isRequired,
+	onUngroupClick: PropTypes.func.isRequired,
+	canGroup: PropTypes.bool,
+	canUngroup: PropTypes.bool,
 };
 
 export default TopToolbarButtons;
