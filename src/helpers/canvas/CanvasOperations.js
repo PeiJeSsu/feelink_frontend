@@ -31,7 +31,7 @@ export const clearCanvas = (canvas) => {
 	canvas.isClearingAll = true;
 
 	canvas.clear();
-	canvas.backgroundColor = "#ffffff"; 
+	canvas.backgroundColor = "#ffffff";
 	canvas.isClearingAll = false;
 
 	canvas.renderAll();
@@ -59,7 +59,7 @@ export const setDrawingMode = (canvas, isDrawingMode) => {
 
 export const addImageToCanvas = (canvas, imageData) => {
 	if (!canvas || !imageData) return;
-	
+
 	const imgObj = new Image();
 	imgObj.src = imageData;
 	imgObj.onload = () => {
@@ -70,10 +70,7 @@ export const addImageToCanvas = (canvas, imageData) => {
 		const windowHeight = window.innerHeight;
 
 		// 計算縮放比例，讓圖片填滿視窗
-		const scale = Math.max(
-			windowWidth / fabricImage.width,
-			windowHeight / fabricImage.height
-		);
+		const scale = Math.max(windowWidth / fabricImage.width, windowHeight / fabricImage.height);
 
 		// 設定圖片屬性
 		fabricImage.set({
