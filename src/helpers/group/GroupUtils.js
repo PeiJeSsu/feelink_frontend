@@ -24,7 +24,7 @@ export function groupSelectedObjects(canvas) {
  */
 export function ungroupSelectedGroup(canvas) {
 	const group = canvas.getActiveObject();
-	if (!group || group.type !== "group") {
+	if (!group || !(group instanceof fabric.Group)) {
 		return;
 	}
 	canvas.remove(group);
