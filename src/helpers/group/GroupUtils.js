@@ -9,7 +9,7 @@ export function groupSelectedObjects(canvas) {
 		return;
 	}
 
-	if (canvas.getActiveObject().type !== "activeSelection" && canvas.getActiveObject().type !== "activeselection") {
+	if (!(canvas.getActiveObject() instanceof fabric.ActiveSelection)) {
 		return;
 	}
 	const group = new fabric.Group(canvas.getActiveObject().removeAll());
