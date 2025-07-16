@@ -4,12 +4,13 @@ import {
     sendCanvasAnalysisToBackend, 
     sendAIDrawingToBackend 
 } from '../helpers/MessageService.js';
-import { sendMessage, callAIDrawingAPI } from '../helpers/MessageAPI.js';
+import { sendMessage, callAIDrawingAPI, analysisImage } from '../helpers/MessageAPI.js';
 
 // Mock MessageAPI 模組
 jest.mock('../helpers/MessageAPI.js', () => ({
     sendMessage: jest.fn(),
-    callAIDrawingAPI: jest.fn()
+    callAIDrawingAPI: jest.fn(),
+    analysisImage: jest.fn()
 }));
 
 describe('MessageService', () => {
@@ -36,7 +37,6 @@ describe('MessageService', () => {
             // Assert
             expect(sendMessage).toHaveBeenCalledWith(
                 '測試訊息',
-                null,
                 1,
                 false
             );
@@ -85,7 +85,6 @@ describe('MessageService', () => {
             expect(sendMessage).toHaveBeenCalledWith(
                 '',
                 null,
-                null,
                 true
             );
             expect(result.success).toBe(true);
@@ -96,7 +95,7 @@ describe('MessageService', () => {
         it('應該成功發送圖片訊息', async () => {
             // Arrange
             const mockResponse = { content: '圖片分析結果' };
-            sendMessage.mockResolvedValue(mockResponse);
+            analysisImage.mockResolvedValue(mockResponse);
             
             const messageText = '請分析這張圖片';
             const messageImage = 'base64ImageData';
@@ -105,11 +104,9 @@ describe('MessageService', () => {
             const result = await sendImageToBackend(messageText, messageImage);
 
             // Assert
-            expect(sendMessage).toHaveBeenCalledWith(
+            expect(analysisImage).toHaveBeenCalledWith(
                 messageText,
-                messageImage,
-                null,
-                false
+                messageImage
             );
             expect(result).toEqual({
                 success: true,
@@ -120,7 +117,7 @@ describe('MessageService', () => {
         it('應該處理發送圖片訊息時的錯誤', async () => {
             // Arrange
             const errorMessage = '圖片上傳失敗';
-            sendMessage.mockRejectedValue(new Error(errorMessage));
+            analysisImage.mockRejectedValue(new Error(errorMessage));
             
             const messageText = '分析圖片';
             const messageImage = 'invalidImageData';
@@ -138,17 +135,15 @@ describe('MessageService', () => {
         it('應該處理空的圖片資料', async () => {
             // Arrange
             const mockResponse = { content: '處理完成' };
-            sendMessage.mockResolvedValue(mockResponse);
+            analysisImage.mockResolvedValue(mockResponse);
 
             // Act
             const result = await sendImageToBackend('測試文字', null);
 
             // Assert
-            expect(sendMessage).toHaveBeenCalledWith(
+            expect(analysisImage).toHaveBeenCalledWith(
                 '測試文字',
-                null,
-                null,
-                false
+                null
             );
             expect(result.success).toBe(true);
         });
@@ -158,7 +153,7 @@ describe('MessageService', () => {
         it('應該成功發送畫布分析請求', async () => {
             // Arrange
             const mockResponse = { content: '畫布分析結果' };
-            sendMessage.mockResolvedValue(mockResponse);
+            analysisImage.mockResolvedValue(mockResponse);
             
             const messageText = '分析這個畫布';
             const canvasImage = 'canvasImageData';
@@ -167,11 +162,9 @@ describe('MessageService', () => {
             const result = await sendCanvasAnalysisToBackend(messageText, canvasImage);
 
             // Assert
-            expect(sendMessage).toHaveBeenCalledWith(
+            expect(analysisImage).toHaveBeenCalledWith(
                 messageText,
-                canvasImage,
-                null,
-                false
+                canvasImage
             );
             expect(result).toEqual({
                 success: true,
@@ -182,7 +175,7 @@ describe('MessageService', () => {
         it('應該在沒有提供訊息文字時使用預設訊息', async () => {
             // Arrange
             const mockResponse = { content: '分析完成' };
-            sendMessage.mockResolvedValue(mockResponse);
+            analysisImage.mockResolvedValue(mockResponse);
             
             const canvasImage = 'canvasImageData';
 
@@ -190,11 +183,9 @@ describe('MessageService', () => {
             const result = await sendCanvasAnalysisToBackend(null, canvasImage);
 
             // Assert
-            expect(sendMessage).toHaveBeenCalledWith(
+            expect(analysisImage).toHaveBeenCalledWith(
                 '請分析這張圖片',
-                canvasImage,
-                null,
-                false
+                canvasImage
             );
             expect(result.success).toBe(true);
         });
@@ -202,7 +193,7 @@ describe('MessageService', () => {
         it('應該在提供空字串時使用預設訊息', async () => {
             // Arrange
             const mockResponse = { content: '分析完成' };
-            sendMessage.mockResolvedValue(mockResponse);
+            analysisImage.mockResolvedValue(mockResponse);
             
             const canvasImage = 'canvasImageData';
 
@@ -210,11 +201,9 @@ describe('MessageService', () => {
             const result = await sendCanvasAnalysisToBackend('', canvasImage);
 
             // Assert
-            expect(sendMessage).toHaveBeenCalledWith(
+            expect(analysisImage).toHaveBeenCalledWith(
                 '請分析這張圖片',
-                canvasImage,
-                null,
-                false
+                canvasImage
             );
             expect(result.success).toBe(true);
         });
@@ -222,7 +211,7 @@ describe('MessageService', () => {
         it('應該處理畫布分析時的錯誤', async () => {
             // Arrange
             const errorMessage = '畫布分析失敗';
-            sendMessage.mockRejectedValue(new Error(errorMessage));
+            analysisImage.mockRejectedValue(new Error(errorMessage));
 
             // Act
             const result = await sendCanvasAnalysisToBackend('分析畫布', 'canvasData');
@@ -401,6 +390,21 @@ describe('MessageService', () => {
             });
         });
 
+        it('應該處理 analysisImage 回傳物件但沒有 content 的情況', async () => {
+            // Arrange
+            const mockResponse = { status: 'success', data: '分析資料' };
+            analysisImage.mockResolvedValue(mockResponse);
+
+            // Act
+            const result = await sendImageToBackend('分析圖片', 'imageData');
+
+            // Assert
+            expect(result).toEqual({
+                success: true,
+                content: mockResponse
+            });
+        });
+
         it('應該處理網路超時錯誤', async () => {
             // Arrange
             const timeoutError = new Error('Request timeout');
@@ -420,6 +424,21 @@ describe('MessageService', () => {
             expect(result).toEqual({
                 success: false,
                 error: 'Request timeout'
+            });
+        });
+
+        it('應該處理 analysisImage 的網路錯誤', async () => {
+            // Arrange
+            const networkError = new Error('Network error');
+            analysisImage.mockRejectedValue(networkError);
+
+            // Act
+            const result = await sendImageToBackend('分析圖片', 'imageData');
+
+            // Assert
+            expect(result).toEqual({
+                success: false,
+                error: 'Network error'
             });
         });
     });

@@ -1,21 +1,21 @@
-import { sendMessage , callAIDrawingAPI } from "./MessageAPI";
+import { sendMessage , callAIDrawingAPI,analysisImage } from "./MessageAPI";
 
 
 
 // 發送文字訊息到後端
 export const sendTextToBackend = async (payload) => {
-    return sendToBackend(payload.text, null, payload.conversationCount, payload.hasDefaultQuestion);
+    return handleServiceCall(() => sendMessage(payload.text, payload.conversationCount, payload.hasDefaultQuestion));
 };
 
 // 發送圖片訊息到後端
 export const sendImageToBackend = async (messageText, messageImage) => {
-    return sendToBackend(messageText, messageImage);
+    return handleServiceCall(() => analysisImage(messageText, messageImage));
 };
 
 // 發送畫布分析到後端
 export const sendCanvasAnalysisToBackend = async (messageText, canvasImage) => {
     const defaultMessage = "請分析這張圖片";
-    return sendToBackend(messageText || defaultMessage, canvasImage);
+    return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage));
 };
 
 // 發送 AI 繪圖請求到後端
@@ -24,11 +24,6 @@ export const sendAIDrawingToBackend = async (messageText, canvasData) => {
     return handleServiceCall(() => 
         callAIDrawingAPI(messageText || defaultMessage, canvasData)
     );
-};
-
-// 通用的後端訊息發送函數
-const sendToBackend = async (messageText, messageImage = null, conversationCount = null, hasDefaultQuestion = false) => {
-    return handleServiceCall(() => sendMessage(messageText, messageImage, conversationCount, hasDefaultQuestion));
 };
 
 // 通用的錯誤處理和回應格式化函數

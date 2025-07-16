@@ -32,28 +32,25 @@ describe('API Functions', () => {
       apiConfig.post.mockResolvedValue(mockResponse);
     });
 
-    it('should send message with text and image', async () => {
+    it('should send message with text only', async () => {
       const text = 'Hello world';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
-      const result = await sendMessage(text, image);
+      const result = await sendMessage(text);
       
       expect(apiConfig.post).toHaveBeenCalledWith('/chat', expect.any(FormData));
       expect(result).toEqual({ content: 'Test response content' });
       
       const formData = apiConfig.post.mock.calls[0][1];
       expect(formData.get('userMessage')).toBe(text);
-      expect(formData.get('file')).toBe(image);
       expect(formData.get('sessionId')).toBe('test-uuid-123');
     });
 
     it('should send message with conversation count and default question flag', async () => {
       const text = 'Hello world';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       const conversationCount = 5;
       const hasDefaultQuestion = true;
       
-      await sendMessage(text, image, conversationCount, hasDefaultQuestion);
+      await sendMessage(text, conversationCount, hasDefaultQuestion);
       
       const formData = apiConfig.post.mock.calls[0][1];
       expect(formData.get('conversationCount')).toBe('5');
@@ -62,10 +59,11 @@ describe('API Functions', () => {
 
     it('should use provided sessionId instead of generating new one', async () => {
       const text = 'Hello world';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+      const conversationCount = null;
+      const hasDefaultQuestion = false;
       const customSessionId = 'custom-session-123';
       
-      await sendMessage(text, image, null, false, customSessionId);
+      await sendMessage(text, conversationCount, hasDefaultQuestion, customSessionId);
       
       const formData = apiConfig.post.mock.calls[0][1];
       expect(formData.get('sessionId')).toBe(customSessionId);
@@ -73,9 +71,8 @@ describe('API Functions', () => {
 
     it('should not append conversationCount when it is null', async () => {
       const text = 'Hello world';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
-      await sendMessage(text, image, null);
+      await sendMessage(text, null);
       
       const formData = apiConfig.post.mock.calls[0][1];
       expect(formData.get('conversationCount')).toBeNull();
@@ -87,9 +84,8 @@ describe('API Functions', () => {
       apiConfig.post.mockRejectedValue(error);
       
       const text = 'Hello world';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
-      await expect(sendMessage(text, image)).rejects.toThrow('API Error');
+      await expect(sendMessage(text)).rejects.toThrow('API Error');
     });
 
     it('should generate unique session ID for each call', async () => {
@@ -98,10 +94,9 @@ describe('API Functions', () => {
         .mockReturnValueOnce('uuid-2');
       
       const text = 'Hello world';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
-      await sendMessage(text, image);
-      await sendMessage(text, image);
+      await sendMessage(text);
+      await sendMessage(text);
       
       const firstCall = apiConfig.post.mock.calls[0][1];
       const secondCall = apiConfig.post.mock.calls[1][1];
@@ -224,11 +219,10 @@ describe('API Functions', () => {
         .mockResolvedValueOnce({ data: { success: true, content: 'Drawing response' } });
       
       const text = 'Hello';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       const canvasData = 'canvas-data';
       
       const [chatResult, drawingResult] = await Promise.all([
-        sendMessage(text, image),
+        sendMessage(text),
         callAIDrawingAPI('Draw something', canvasData)
       ]);
       
@@ -247,12 +241,11 @@ describe('Utility Functions', () => {
         .mockReturnValueOnce('id-2');
       
       const text = 'test';
-      const image = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       
       apiConfig.post.mockResolvedValue({ data: { content: 'response' } });
       
-      sendMessage(text, image);
-      sendMessage(text, image);
+      sendMessage(text);
+      sendMessage(text);
       
       expect(global.crypto.randomUUID).toHaveBeenCalledTimes(2);
     });
