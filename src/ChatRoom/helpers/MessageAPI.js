@@ -53,6 +53,6 @@ export const analysisImage =(text, file ,sessionId = generateSessionId()) =>{
 		return response.data.content;
 	})
 	.catch(error => {
-		throw new Error(error.response?.data?.message || '圖片分析失敗');
+		throw new Error(error.response?.data?.message || error.message || '圖片分析失敗');
 	});
 }
