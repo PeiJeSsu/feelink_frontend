@@ -1,7 +1,101 @@
 import {addMessages, appendMessage, getNewId} from "./usage/MessageFactory";
-import {sendAIDrawingToBackend, sendCanvasAnalysisToBackend, sendImageToBackend, sendTextToBackend} from './MessageService';
+import {sendAIDrawingToBackend, sendCanvasAnalysisToBackend, sendCanvasAnalysisToBackendStreamService, sendImageToBackend, sendImageToBackendStreamService, sendTextToBackend, sendTextToBackendStream} from './MessageService';
 import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
+
+const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, streamFunction, errorMessage) => {
+    if (!messageText && !image) return;
+
+    const currentId = getNewId(messages);
+    const finalId = addMessages(messageText, image, currentId, messages, setMessages);
+
+    setLoading(true);
+
+    const responseMessage = {
+        id: finalId,
+        message: "",
+        isUser: false,
+        isImage: false
+    };
+
+    setMessages(prevMessages => [...prevMessages, responseMessage]);
+
+    let accumulatedContent = "";
+
+    const onToken = (token) => {
+        accumulatedContent += token;
+        setMessages(prevMessages => {
+            return prevMessages.map(msg => {
+                if (msg.id === finalId) {
+                    return {...msg, message: accumulatedContent};
+                }
+                return msg;
+            });
+        });
+    };
+
+    const onComplete = () => {
+        setLoading(false);
+    };
+
+    const onError = (error) => {
+        setLoading(false);
+        handleError(error, errorMessage, messages, setMessages);
+    };
+
+    try {
+        await streamFunction(messageText, image, onToken, onComplete, onError);
+    } catch (error) {
+        onError(error);
+    }
+};
+
+export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading) => {
+    return handleStreamMessage(
+        messageText,
+        null,
+        messages,
+        setMessages,
+        setLoading,
+        (text, image, onToken, onComplete, onError) => {
+            sendTextToBackendStream(
+                { text: text },
+                onToken,
+                onComplete,
+                onError
+            );
+        },
+        '發送訊息失敗'
+    );
+};
+export const handleSendImageMessageStream = async (messageText, messageImage, messages, setMessages, setLoading) => {
+    return handleStreamMessage(
+        messageText,
+        messageImage,
+        messages,
+        setMessages,
+        setLoading,
+        (text, image, onToken, onComplete, onError) => {
+            sendImageToBackendStreamService(text, image, onToken, onComplete, onError);
+        },
+        '發送圖片失敗'
+    );
+};
+
+// 畫布分析流式處理
+export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, messages, setMessages, setLoading) => {
+    return handleStreamMessage(
+        messageText,
+        canvasImage,
+        messages,
+        setMessages,
+        setLoading,
+        (text, image, onToken, onComplete, onError) => {
+            sendCanvasAnalysisToBackendStreamService(text, image, onToken, onComplete, onError);
+        },
+        '分析畫布失敗'
+    );
+};
 
 export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, defaultQuestion = "", conversationCount = 1) => {
     if (!messageText) return;

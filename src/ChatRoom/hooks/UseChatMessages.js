@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing } from "../helpers/MessageController";
+import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing, handleSendTextMessageStream, handleSendImageMessageStream, handleSendCanvasAnalysisStream} from "../helpers/MessageController";
 
 const predefinedQuestions = [
     "最近過得如何，有沒有發生甚麼有趣或難過的事？",
@@ -13,7 +13,24 @@ export default function useChatMessages(canvas) {
     const [currentQuestion, setCurrentQuestion] = useState("");
     const [conversationCount, setConversationCount] = useState(0);
     const questionAdded = useRef(false);
- 
+
+    const sendTextMessageStream = useCallback((messageText, defaultQuestion = "", conversationCount = 1) => {
+        return handleSendTextMessageStream(messageText, messages, setMessages, setLoading, defaultQuestion, conversationCount);
+    }, [messages, setMessages, setLoading]);
+
+    const sendImageMessageStream = useCallback((messageText, messageImage) => {
+        return handleSendImageMessageStream(messageText, messageImage, messages, setMessages, setLoading);
+    }, [messages, setMessages, setLoading]);
+
+    const sendCanvasAnalysisStream = useCallback(async (messageText) => {
+        try {
+            const blob = await convertCanvasToBlob();
+            await handleSendCanvasAnalysisStream(blob, messageText, messages, setMessages, setLoading);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }, [messages, setMessages, setLoading, canvas]);
+
     const sendTextMessage = (messageText) => {
         const nextCount = conversationCount + 1; 
         setConversationCount(nextCount); 
@@ -75,5 +92,8 @@ export default function useChatMessages(canvas) {
         sendCanvasAnalysis, 
         sendAIDrawing, 
         addSystemMessage,
+        sendTextMessageStream,
+        sendImageMessageStream,
+        sendCanvasAnalysisStream
     };
 }
