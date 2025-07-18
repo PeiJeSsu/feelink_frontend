@@ -1,5 +1,5 @@
-import axios from 'axios';
+import axios from "axios";
 
 export const apiConfig = axios.create({
-	baseURL: `https://feelink-backend.onrender.com`
+	baseURL: process.env.REACT_APP_API_BASE_URL,
 });
