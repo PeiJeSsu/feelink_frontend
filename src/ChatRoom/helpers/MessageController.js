@@ -8,47 +8,93 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
 
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
-
     setLoading(true);
-
     const responseMessage = {
         id: finalId,
         message: "",
         isUser: false,
         isImage: false
     };
-
     setMessages(prevMessages => [...prevMessages, responseMessage]);
+    let displayedContent = "";
+    let pendingQueue = [];
+    let typewriterTimer = null;
+    let isTypewriting = false;
+    let streamCompleted = false;
 
-    let accumulatedContent = "";
+    const typewriterEffect = () => {
+        if (pendingQueue.length > 0) {
+            isTypewriting = true;
+            displayedContent += pendingQueue.shift();
+
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === finalId) {
+                        return {...msg, message: displayedContent};
+                    }
+                    return msg;
+                });
+            });
+            typewriterTimer = setTimeout(typewriterEffect, 30);
+        } else {
+            isTypewriting = false;
+            typewriterTimer = null;
+            if (streamCompleted) {
+                setLoading(false);
+            }
+        }
+    };
+
+    const startTypewriter = () => {
+        if (!isTypewriting && pendingQueue.length > 0) {
+            typewriterEffect();
+        }
+    };
 
     const onToken = (token) => {
-        accumulatedContent += token;
-        setMessages(prevMessages => {
-            return prevMessages.map(msg => {
-                if (msg.id === finalId) {
-                    return {...msg, message: accumulatedContent};
-                }
-                return msg;
-            });
-        });
+        console.log('Token received:', token);
+        for (let i = 0; i < token.length; i++) {
+            pendingQueue.push(token[i]);
+        }
+        startTypewriter();
     };
 
     const onComplete = () => {
-        setLoading(false);
+        console.log('Stream completed');
+        streamCompleted = true;
+        if (!isTypewriting && pendingQueue.length === 0) {
+            setLoading(false);
+        }
     };
 
     const onError = (error) => {
+        if (typewriterTimer) {
+            clearTimeout(typewriterTimer);
+            typewriterTimer = null;
+        }
+        isTypewriting = false;
+        streamCompleted = true;
+        if (pendingQueue.length > 0) {
+            displayedContent += pendingQueue.join('');
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === finalId) {
+                        return {...msg, message: displayedContent};
+                    }
+                    return msg;
+                });
+            });
+        }
         setLoading(false);
         handleError(error, errorMessage, messages, setMessages);
     };
-
     try {
         await streamFunction(messageText, image, onToken, onComplete, onError);
     } catch (error) {
         onError(error);
     }
 };
+
 
 export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading) => {
     return handleStreamMessage(
