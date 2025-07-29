@@ -1,6 +1,6 @@
 import { sendMessage , callAIDrawingAPI, analysisImage } from "./MessageAPI";
 
-// 檢查用戶角色的函數
+// 檢查使用者角色的函數
 const getUserRole = () => {
     return localStorage.getItem('role') || sessionStorage.getItem('role') || null;
 };
