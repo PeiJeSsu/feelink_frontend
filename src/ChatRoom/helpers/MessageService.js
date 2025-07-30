@@ -19,8 +19,8 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage) => {
 
 // 修改後的 AI 繪圖函數，增加去背邏輯
 export const sendAIDrawingToBackend = async (messageText, canvasData) => {
-const defaultMessage = "請根據這張圖片生成新的內容";
-return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
+    const defaultMessage = "請根據這張圖片生成新的內容";
+    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
 };
 
 
