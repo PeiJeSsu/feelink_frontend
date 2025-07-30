@@ -1,8 +1,9 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Box, Paper } from "@mui/material";
 import "./TopToolbar.css";
 import TopToolbarButtons from "./TopToolbarButtons";
+import UserProfileMenu from "../../auth/UserProfileMenu";
 import { handleSaveFile, handleLoadFile, handleFileInputChange } from "../../../helpers/file/FileOperationHandlers";
 import { importImage } from "../../../helpers/image/ImageImport";
 import ImageExportDialog from "../../image/ImageExportDialog";
@@ -159,6 +160,8 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 					margin: "0 auto",
 					transition: "all 0.3s ease",
 					overflow: "hidden",
+					display: "flex",
+					alignItems: "center",
 				}}
 			>
 				<TopToolbarButtons
@@ -182,6 +185,7 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 					canGroup={canGroup}
 					canUngroup={canUngroup}
 				/>
+				<UserProfileMenu />
 			</Paper>
 
 			<input

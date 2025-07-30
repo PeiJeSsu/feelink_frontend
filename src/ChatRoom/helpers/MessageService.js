@@ -1,4 +1,4 @@
-import { sendMessage , callAIDrawingAPI, analysisImage } from "./MessageAPI";
+import { sendMessage , callAIDrawingAPI,analysisImage } from "./MessageAPI";
 
 
 // 發送文字訊息到後端
@@ -17,10 +17,10 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage) => {
     return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage));
 };
 
-// 修改後的 AI 繪圖函數，增加去背邏輯
+// 發送 AI 繪圖請求到後端
 export const sendAIDrawingToBackend = async (messageText, canvasData) => {
-const defaultMessage = "請根據這張圖片生成新的內容";
-return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
+    const defaultMessage = "請根據這張圖片生成新的內容";
+    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
 };
 
 // 通用的錯誤處理和回應格式化函數

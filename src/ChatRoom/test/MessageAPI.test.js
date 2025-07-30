@@ -128,8 +128,7 @@ describe('API Functions', () => {
         '/generate',
         {
           text: messageText,
-          imageData: canvasData,
-          removeBackground: true
+          imageData: canvasData
         },
         {
           headers: {

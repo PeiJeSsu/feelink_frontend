@@ -17,11 +17,10 @@ export const sendMessage = (text, conversationCount , hasDefaultQuestion , sessi
 		content: response.data.content
 	}));
 };
-export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true) => {
+export const callAIDrawingAPI = (messageText, canvasData) => {
 	const requestData = {
 		text: messageText,
-		imageData: canvasData,
-		removeBackground: removeBackground
+		imageData: canvasData
 	};
 
 	return apiConfig.post(`/generate`, requestData, {
