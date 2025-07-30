@@ -23,6 +23,7 @@ const defaultMessage = "請根據這張圖片生成新的內容";
 return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
 };
 
+
 // 通用的錯誤處理和回應格式化函數
 const handleServiceCall = async (serviceCall) => {
     try {
