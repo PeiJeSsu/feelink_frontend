@@ -79,10 +79,11 @@ export const sendCanvasAnalysisToBackendStream = async (messageText, canvasImage
 	createSSEStream(`${apiConfig.defaults.baseURL}/analysis`, formData, onToken, onComplete, onError);
 };
 
-export const sendMessage = (text, image, conversationCount = null, hasDefaultQuestion = false, sessionId = generateSessionId()) => {
+
+export const sendMessage = (text, conversationCount , hasDefaultQuestion , sessionId = generateSessionId()) => {
+
 	const formData = new FormData();
 	formData.append('userMessage', text);
-	formData.append('file', image);
 	formData.append('sessionId', sessionId);
 	
 	if (conversationCount !== null) {
@@ -113,3 +114,24 @@ export const callAIDrawingAPI = (messageText, canvasData) => {
 		return response.data.content;
 	});
 };
+export const analysisImage =(text, file ,sessionId = generateSessionId()) =>{
+	const formData = new FormData();
+	formData.append('userMessage', text);
+	formData.append('sessionId', sessionId);
+	
+	if (file) {
+		formData.append('file', file);
+	}
+
+	return apiConfig.post(`/analysis`, formData, {
+		headers: {
+			'Content-Type': 'multipart/form-data',
+		}
+	})
+	.then(response => {
+		return response.data.content;
+	})
+	.catch(error => {
+		throw new Error(error.response?.data?.message || error.message || '圖片分析失敗');
+	});
+}
