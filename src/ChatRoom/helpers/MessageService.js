@@ -1,4 +1,4 @@
-import {sendMessage, callAIDrawingAPI, sendMessageStream} from "./MessageAPI";
+import {sendMessage, callAIDrawingAPI, sendMessageStream,analysisImage} from "./MessageAPI";
 import {sendImageToBackendStream,sendCanvasAnalysisToBackendStream} from "./MessageAPI";
 
 // 發送文字訊息到後端
