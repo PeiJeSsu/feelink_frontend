@@ -1,13 +1,14 @@
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Box, Paper, Typography } from "@mui/material";
+import { Paper } from "@mui/material";
+import "./LeftToolbar.css";
 import LeftToolbarButtons from "./LeftToolbarButtons";
+import SettingsPopover from "./SettingsPopover";
 import BrushSettings from "../../brush/BrushSettings";
 import ShapeSettings from "../../shape/ShapeSettings";
 import EraserSettings from "../../eraser/EraserSettings";
 import PaintBucketSettings from "../../paint-bucket/PaintBucketSettings";
 import TextSettings from "../../text/TextSettings";
-import SelectSettings from "../../select/SelectSettings";
-import PanSettings from "../../pan/PanSettings";
 
 const LeftToolbar = ({
 	setActiveTool,
@@ -25,154 +26,139 @@ const LeftToolbar = ({
 	onClearCanvas,
 	canvas,
 }) => {
+	const [anchorEl, setAnchorEl] = useState(null);
+	const [popoverVisible, setPopoverVisible] = useState(false);
+	const [shapeAnchorEl, setShapeAnchorEl] = useState(null);
+	const [shapePopoverVisible, setShapePopoverVisible] = useState(false);
+	const [eraserAnchorEl, setEraserAnchorEl] = useState(null);
+	const [eraserPopoverVisible, setEraserPopoverVisible] = useState(false);
+	const [paintBucketAnchorEl, setPaintBucketAnchorEl] = useState(null);
+	const [paintBucketPopoverVisible, setPaintBucketPopoverVisible] = useState(false);
+	const [textAnchorEl, setTextAnchorEl] = useState(null);
+	const [textPopoverVisible, setTextPopoverVisible] = useState(false);
+
+	useEffect(() => {
+		if (activeTool === "pencil") {
+			const brushButton = document.getElementById("brush-button");
+			setAnchorEl(brushButton);
+			setPopoverVisible(true);
+		} else if (activeTool === "shape") {
+			const shapeButton = document.getElementById("shape-button");
+			setShapeAnchorEl(shapeButton);
+			setShapePopoverVisible(true);
+		} else if (activeTool === "eraser") {
+			const eraserButton = document.getElementById("eraser-button");
+			setEraserAnchorEl(eraserButton);
+			setEraserPopoverVisible(true);
+		} else if (activeTool === "paintBucket") {
+			const paintBucketButton = document.getElementById("paint-bucket-button");
+			setPaintBucketAnchorEl(paintBucketButton);
+			setPaintBucketPopoverVisible(true);
+		} else if (activeTool === "text") {
+			const textButton = document.getElementById("text-button");
+			setTextAnchorEl(textButton);
+			setTextPopoverVisible(true);
+		}
+	}, [activeTool]);
+
 	const handleToolClick = (tool) => {
 		setActiveTool(tool);
+
+		if (tool === "pencil") {
+			const brushButton = document.getElementById("brush-button");
+			setAnchorEl(brushButton);
+			setPopoverVisible(true);
+		} else if (tool === "shape") {
+			const shapeButton = document.getElementById("shape-button");
+			setShapeAnchorEl(shapeButton);
+			setShapePopoverVisible(true);
+		} else if (tool === "eraser") {
+			const eraserButton = document.getElementById("eraser-button");
+			setEraserAnchorEl(eraserButton);
+			setEraserPopoverVisible(true);
+		} else if (tool === "paintBucket") {
+			const paintBucketButton = document.getElementById("paint-bucket-button");
+			setPaintBucketAnchorEl(paintBucketButton);
+			setPaintBucketPopoverVisible(true);
+		} else if (tool === "text") {
+			const textButton = document.getElementById("text-button");
+			setTextAnchorEl(textButton);
+			setTextPopoverVisible(true);
+		}
 	};
 
-	const renderSettingsPanel = () => {
-		const settingsMap = {
-			select: { title: "選擇工具設置", component: <SelectSettings canvas={canvas} /> },
-			pencil: { title: "畫筆設置", component: <BrushSettings brushSettings={brushSettings} onBrushSettingsChange={setBrushSettings} /> },
-			shape: { title: "圖形設置", component: <ShapeSettings shapeSettings={shapeSettings} onShapeSettingsChange={setShapeSettings} /> },
-			eraser: { title: "橡皮擦設置", component: <EraserSettings eraserSettings={eraserSettings} onEraserSettingsChange={setEraserSettings} /> },
-			paintBucket: { title: "填充工具設置", component: <PaintBucketSettings paintBucketSettings={paintBucketSettings} onPaintBucketSettingsChange={setPaintBucketSettings} /> },
-			text: { title: "文字設置", component: <TextSettings textSettings={textSettings} onTextSettingsChange={setTextSettings} canvas={canvas} /> },
-			pan: { title: "移動畫布設置", component: <PanSettings canvas={canvas} /> },
-		};
+	const handleClose = () => {
+		setPopoverVisible(false);
+	};
 
-		const settings = settingsMap[activeTool];
-		if (!settings) return null;
+	const handleShapeClose = () => {
+		setShapePopoverVisible(false);
+	};
 
-		return (
-			<Box
-				sx={{
-					width: "280px",
-					height: "100%",
-					backgroundColor: "#ffffff",
-					borderRight: "1px solid #e2e8f0",
-					padding: "20px",
-					overflow: "auto",
-					display: "flex",
-					flexDirection: "column",
-				}}
-			>
-				<Typography
-					variant="h6"
-					sx={{
-						fontSize: "16px",
-						fontWeight: 600,
-						color: "#1e293b",
-						marginBottom: "20px",
-						borderBottom: "1px solid #e2e8f0",
-						paddingBottom: "12px",
-					}}
-				>
-					{settings.title}
-				</Typography>
-				<Box 
-					sx={{
-						"& .MuiFormControl-root": {
-							marginBottom: "16px",
-							"& .MuiInputLabel-root": {
-								color: "#64748b",
-								fontSize: "14px",
-								fontWeight: 500,
-							},
-							"& .MuiOutlinedInput-root": {
-								borderRadius: "12px",
-								backgroundColor: "#f8fafc",
-								"& fieldset": {
-									borderColor: "#e2e8f0",
-								},
-								"&:hover fieldset": {
-									borderColor: "#cbd5e1",
-								},
-								"&.Mui-focused fieldset": {
-									borderColor: "#2563eb",
-									borderWidth: "2px",
-								},
-							},
-							"& .MuiSelect-select": {
-								padding: "12px 14px",
-							},
-						},
-						"& .MuiSlider-root": {
-							color: "#2563eb",
-							height: 6,
-							"& .MuiSlider-track": {
-								border: "none",
-								borderRadius: "3px",
-							},
-							"& .MuiSlider-rail": {
-								backgroundColor: "#e2e8f0",
-								borderRadius: "3px",
-							},
-							"& .MuiSlider-thumb": {
-								height: 20,
-								width: 20,
-								backgroundColor: "#ffffff",
-								border: "2px solid #2563eb",
-								boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-								"&:hover": {
-									boxShadow: "0 4px 8px rgba(37, 99, 235, 0.3)",
-								},
-							},
-							"& .MuiSlider-valueLabel": {
-								backgroundColor: "#2563eb",
-								borderRadius: "8px",
-								padding: "4px 8px",
-								fontSize: "12px",
-								fontWeight: 500,
-							},
-						},
-						"& .MuiTypography-root": {
-							color: "#374151",
-							fontSize: "14px",
-							fontWeight: 500,
-							marginBottom: "8px",
-						},
-						"& .MuiSwitch-root": {
-							"& .MuiSwitch-switchBase": {
-								"&.Mui-checked": {
-									color: "#2563eb",
-									"& + .MuiSwitch-track": {
-										backgroundColor: "#2563eb",
-									},
-								},
-							},
-							"& .MuiSwitch-track": {
-								backgroundColor: "#e2e8f0",
-							},
-						},
-					}}
-				>
-					{settings.component}
-				</Box>
-			</Box>
-		);
+	const handleEraserClose = () => {
+		setEraserPopoverVisible(false);
+	};
+
+	const handlePaintBucketClose = () => {
+		setPaintBucketPopoverVisible(false);
+	};
+
+	const handleTextClose = () => {
+		setTextPopoverVisible(false);
 	};
 
 	return (
-		<Box sx={{ display: "flex", height: "100%" }}>
-			<Paper
-				sx={{
-					width: 72,
-					backgroundColor: "#ffffff",
-					borderRight: "1px solid #d1d5db",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					paddingY: 3,
-					gap: 1.5,
-					boxShadow: "none",
-				}}
+		<Paper className="left-toolbar-container" elevation={8}>
+			<LeftToolbarButtons activeTool={activeTool} onToolClick={handleToolClick} />
+
+			<SettingsPopover
+				open={popoverVisible && activeTool === "pencil"}
+				anchorEl={anchorEl}
+				onClose={handleClose}
+				title="畫筆設置"
 			>
-				<LeftToolbarButtons activeTool={activeTool} onToolClick={handleToolClick} />
-			</Paper>
-			
-			{/* 設定面板 */}
-			{renderSettingsPanel()}
-		</Box>
+				<BrushSettings brushSettings={brushSettings} onBrushSettingsChange={setBrushSettings} />
+			</SettingsPopover>
+
+			<SettingsPopover
+				open={shapePopoverVisible && activeTool === "shape"}
+				anchorEl={shapeAnchorEl}
+				onClose={handleShapeClose}
+				title="圖形設置"
+			>
+				<ShapeSettings shapeSettings={shapeSettings} onShapeSettingsChange={setShapeSettings} />
+			</SettingsPopover>
+
+			<SettingsPopover
+				open={eraserPopoverVisible && activeTool === "eraser"}
+				anchorEl={eraserAnchorEl}
+				onClose={handleEraserClose}
+				title="橡皮擦設置"
+			>
+				<EraserSettings eraserSettings={eraserSettings} onEraserSettingsChange={setEraserSettings} />
+			</SettingsPopover>
+
+			<SettingsPopover
+				open={paintBucketPopoverVisible && activeTool === "paintBucket"}
+				anchorEl={paintBucketAnchorEl}
+				onClose={handlePaintBucketClose}
+				title="填充工具設置"
+			>
+				<PaintBucketSettings
+					paintBucketSettings={paintBucketSettings}
+					onPaintBucketSettingsChange={setPaintBucketSettings}
+				/>
+			</SettingsPopover>
+
+			<SettingsPopover
+				open={textPopoverVisible && activeTool === "text"}
+				anchorEl={textAnchorEl}
+				onClose={handleTextClose}
+				title="文字設置"
+			>
+				<TextSettings textSettings={textSettings} onTextSettingsChange={setTextSettings} canvas={canvas} />
+			</SettingsPopover>
+		</Paper>
 	);
 };
 

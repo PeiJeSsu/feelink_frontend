@@ -9,11 +9,7 @@ export const createNewMessage = (id, message, isUser, isImage) => {
         id,
         message,
         isUser,
-        isImage,
-        timestamp: new Date().toLocaleTimeString("zh-TW", {
-            hour: "2-digit",
-            minute: "2-digit",
-        })
+        isImage
     };
 };
 

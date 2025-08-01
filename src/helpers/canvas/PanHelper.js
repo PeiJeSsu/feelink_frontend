@@ -50,7 +50,7 @@ export const handleMiddleButtonPan = (canvas, e, dragStart) => {
  * @returns {Function} 清理函數
  */
 export const setupMiddleButtonPan = (canvas, setIsDragging, setDragStart, handleMouseMove, handleMouseUp) => {
-	if (!canvas?.upperCanvasEl) return () => {};
+	if (!canvas) return () => {};
 
 	const handleMouseDown = (e) => {
 		if (e.button === 1) {
@@ -66,11 +66,6 @@ export const setupMiddleButtonPan = (canvas, setIsDragging, setDragStart, handle
 
 	// 只添加滑鼠事件監聽器 (不添加觸控事件，避免影響其他功能)
 	const canvasElement = canvas.upperCanvasEl;
-	if (!canvasElement) {
-		console.warn("Canvas element not ready for pan controls");
-		return () => {};
-	}
-	
 	canvasElement.addEventListener("mousedown", handleMouseDown);
 	window.addEventListener("mousemove", handleMouseMove);
 	window.addEventListener("mouseup", handleMouseUp);

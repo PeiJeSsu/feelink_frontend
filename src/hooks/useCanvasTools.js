@@ -91,12 +91,6 @@ export const useCanvasTools = (
 
 			// 根據當前工具設置相應的模式
 			switch (activeTool) {
-				case "select":
-					// 選擇工具不需要特別設置，保持預設的選擇模式
-					canvas.isDrawingMode = false;
-					canvas.selection = true;
-					canvas.defaultCursor = "default";
-					break;
 				case "pencil":
 					setupBrushTool();
 					break;

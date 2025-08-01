@@ -1,162 +1,119 @@
-/* 聊天室容器樣式 */
-.chat-container {
-	position: relative;
-	background-color: #ffffff;
-	border-left: 1px solid #e5e7eb;
-	transition: all 0.05s ease-in-out;
+.layout-container {
+	display: flex;
+	height: 100vh;
+	width: 100vw;
 	overflow: hidden;
+	background-color: #fffff3;
 }
 
-/* 調整中狀態 */
-.chat-container.resizing,
-.chat-container.resizing * {
-	user-select: none;
-	pointer-events: none;
+.left-toolbar {
+	background-color: #5c5c5c;
+	color: #ebebeb;
+	box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	padding: 12px 8px;
+	border-right: 1px solid rgba(235, 235, 235, 0.1);
 }
 
-/* 拖動手柄樣式 */
+.left-toolbar .MuiIconButton-root {
+	color: #ffffff;
+	transition: all 0.2s ease;
+	margin: 4px 0;
+	padding: 12px;
+	border-radius: 12px;
+	position: relative;
+}
+
+.left-toolbar .MuiIconButton-root:hover {
+	background-color: rgba(247, 202, 201, 0.2);
+	color: #ffffff;
+}
+
+.left-toolbar .MuiIconButton-root.Mui-selected {
+	background-color: #f7cac9;
+	color: #333333;
+}
+
+.left-toolbar .MuiIconButton-root.Mui-selected::before {
+	content: "";
+	position: absolute;
+	left: -8px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 3px;
+	height: 20px;
+	background-color: #f7cac9;
+	border-radius: 0 3px 3px 0;
+}
+
+.left-toolbar .MuiIconButton-root:not(.Mui-selected):hover {
+	background-color: rgba(247, 202, 201, 0.2);
+	color: #f7cac9;
+}
+
+.chat-container {
+	position: fixed;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	padding: 16px;
+	box-sizing: border-box;
+	border-left: 1px solid rgba(92, 92, 92, 0.15);
+	transform: translateX(100%);
+	will-change: transform, width;
+	backface-visibility: hidden;
+	transition: transform 0.3s ease;
+	background-color: #f5f5e9;
+}
+
+.chat-container.open {
+	transform: translateX(0);
+}
+
+.chat-container.resizing {
+	transition: none;
+	* {
+		pointer-events: none;
+	}
+}
+
 .react-resizable-handle {
 	position: absolute;
-	z-index: 1001;
-}
-
-/* 左側拖動手柄 (w = west) */
-.react-resizable-handle-w {
-	left: -5px;
+	left: 0;
 	top: 0;
 	bottom: 0;
 	width: 10px;
+	background-color: rgba(92, 92, 92, 0.1);
 	cursor: col-resize;
-	background: transparent;
-	transition: all 0.2s ease;
+	transition: background-color 0.2s ease;
+	will-change: background-color;
+	touch-action: none;
 }
 
-/* 拖動手柄 hover 效果 */
-.react-resizable-handle-w:hover {
-	background: linear-gradient(to right, 
-		transparent 0%, 
-		rgba(37, 99, 235, 0.2) 30%, 
-		rgba(37, 99, 235, 0.4) 50%, 
-		rgba(37, 99, 235, 0.2) 70%, 
-		transparent 100%
-	);
-	border-left: 2px solid #2563eb;
+.react-resizable-handle:hover,
+.resizing .react-resizable-handle {
+	background-color: rgba(23, 20, 20, 0.5);
 }
 
-/* 拖動時的視覺回饋 */
-.react-resizable-handle-w:active {
-	background: linear-gradient(to right, 
-		transparent 0%, 
-		rgba(37, 99, 235, 0.3) 30%, 
-		rgba(37, 99, 235, 0.6) 50%, 
-		rgba(37, 99, 235, 0.3) 70%, 
-		transparent 100%
-	);
-	border-left: 2px solid #1d4ed8;
+.chat-toggle-button {
+	box-shadow: -2px 0 15px rgba(0, 0, 0, 0.08) !important;
+	border-radius: 20px 0 0 20px !important;
+	background-color: #f5f5e9 !important;
+	color: #f7cac9 !important;
+	padding: 12px 8px !important;
+	transition: all 0.2s ease !important;
 }
 
-/* 拖動手柄中央指示器 */
-.react-resizable-handle-w::before {
-	content: '';
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	transform: translate(-50%, -50%);
-	width: 3px;
-	height: 30px;
-	background: linear-gradient(to bottom, 
-		transparent 0%,
-		#cbd5e0 20%,
-		#94a3b8 50%,
-		#cbd5e0 80%,
-		transparent 100%
-	);
-	border-radius: 2px;
-	opacity: 0;
-	transition: opacity 0.2s ease;
+.chat-toggle-button:hover {
+	background-color: #fffff3 !important;
+	color: #5c5c5c !important;
 }
 
-.react-resizable-handle-w:hover::before {
-	opacity: 1;
-	background: linear-gradient(to bottom, 
-		transparent 0%,
-		#2563eb 20%,
-		#1d4ed8 50%,
-		#2563eb 80%,
-		transparent 100%
-	);
-}
-
-/* 拖動時的全域游標 */
-body.react-resizable-cursor-ew {
-	cursor: col-resize !important;
-}
-
-/* 防止在拖動時選取文字 */
-.react-resizable-handle-w::selection,
-.react-resizable-handle-w::-moz-selection {
-	background: transparent;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-	.react-resizable-handle-w {
-		width: 12px;
-		left: -6px;
-	}
-	
-	.react-resizable-handle-w::before {
-		width: 4px;
-		height: 25px;
-	}
-}
-
-/* 高對比度模式支援 */
-@media (prefers-contrast: high) {
-	.react-resizable-handle-w:hover {
-		background: rgba(0, 0, 0, 0.3);
-		border-left: 2px solid #000;
-	}
-	
-	.react-resizable-handle-w:hover::before {
-		background: #000;
-	}
-}
-
-/* 深色模式支援 */
-@media (prefers-color-scheme: dark) {
-	.chat-container {
-		border-left: 1px solid #374151;
-	}
-	
-	.react-resizable-handle-w:hover {
-		background: linear-gradient(to right, 
-			transparent 0%, 
-			rgba(59, 130, 246, 0.2) 30%, 
-			rgba(59, 130, 246, 0.4) 50%, 
-			rgba(59, 130, 246, 0.2) 70%, 
-			transparent 100%
-		);
-		border-left: 2px solid #3b82f6;
-	}
-	
-	.react-resizable-handle-w::before {
-		background: linear-gradient(to bottom, 
-			transparent 0%,
-			#6b7280 20%,
-			#9ca3af 50%,
-			#6b7280 80%,
-			transparent 100%
-		);
-	}
-	
-	.react-resizable-handle-w:hover::before {
-		background: linear-gradient(to bottom, 
-			transparent 0%,
-			#3b82f6 20%,
-			#2563eb 50%,
-			#3b82f6 80%,
-			transparent 100%
-		);
-	}
+.canvas-container {
+	background-color: #fffff3;
+	flex: 1;
+	position: relative;
+	overflow: hidden;
 }
