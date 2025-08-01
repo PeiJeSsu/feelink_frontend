@@ -1,5 +1,4 @@
-import {sendMessage, callAIDrawingAPI, sendMessageStream,analysisImage} from "./MessageAPI";
-import {sendImageToBackendStream,sendCanvasAnalysisToBackendStream} from "./MessageAPI";
+import {sendMessage, callAIDrawingAPI, sendMessageStream, analysisImage, sendImageToBackendStream, sendCanvasAnalysisToBackendStream} from "./MessageAPI";
 
 // 發送文字訊息到後端
 export const sendTextToBackend = async (payload) => {
@@ -17,14 +16,11 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage) => {
     return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage));
 };
 
-// 發送 AI 繪圖請求到後端
+// 修改後的 AI 繪圖函數，增加去背邏輯
 export const sendAIDrawingToBackend = async (messageText, canvasData) => {
     const defaultMessage = "請根據這張圖片生成新的內容";
-    return handleServiceCall(() => 
-        callAIDrawingAPI(messageText || defaultMessage, canvasData)
-    );
+    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
 };
-
 
 // 通用的後端訊息發送函數
 const sendToBackend = async (messageText, messageImage = null, conversationCount = null, hasDefaultQuestion = false) => {
