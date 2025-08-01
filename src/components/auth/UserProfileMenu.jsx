@@ -41,9 +41,9 @@ const UserProfileMenu = () => {
                 size="small"
                 sx={{
                     ml: 2,
-                    color: "#5c5c5c",
+                    color: "#64748b",
                     "&:hover": {
-                        backgroundColor: "rgba(247, 202, 201, 0.1)",
+                        backgroundColor: "#f1f5f9",
                     },
                 }}
             >
@@ -64,19 +64,20 @@ const UserProfileMenu = () => {
                 PaperProps={{
                     elevation: 3,
                     sx: {
-                        backgroundColor: "#fffff3",
-                        border: "1px solid rgba(92, 92, 92, 0.15)",
-                        borderRadius: "8px",
+                        backgroundColor: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
                         mt: 1.5,
                         minWidth: 200,
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                     },
                 }}
             >
-                <Box sx={{ px: 2, py: 1 }}>
+                <Box sx={{ px: 2, py: 1.5 }}>
                     <Typography
                         variant="subtitle2"
                         sx={{
-                            color: "#5c5c5c",
+                            color: "#1e293b",
                             fontWeight: 600,
                             fontFamily: '"Noto Sans TC", sans-serif',
                         }}
@@ -86,7 +87,7 @@ const UserProfileMenu = () => {
                     <Typography
                         variant="body2"
                         sx={{
-                            color: "#888",
+                            color: "#64748b",
                             fontFamily: '"Noto Sans TC", sans-serif',
                         }}
                     >
@@ -94,20 +95,21 @@ const UserProfileMenu = () => {
                     </Typography>
                 </Box>
 
-                <Divider sx={{ borderColor: "rgba(92, 92, 92, 0.15)" }} />
+                <Divider sx={{ borderColor: "#e2e8f0" }} />
 
                 <MenuItem
                     onClick={handleClose}
                     sx={{
-                        color: "#5c5c5c",
+                        color: "#1e293b",
                         fontFamily: '"Noto Sans TC", sans-serif',
+                        py: 1.5,
                         "&:hover": {
-                            backgroundColor: "rgba(247, 202, 201, 0.1)",
+                            backgroundColor: "#f1f5f9",
                         },
                     }}
                 >
                     <ListItemIcon>
-                        <Person sx={{ color: "#f7cac9" }} />
+                        <Person sx={{ color: "#3b82f6", fontSize: 20 }} />
                     </ListItemIcon>
                     個人資料
                 </MenuItem>
@@ -115,15 +117,16 @@ const UserProfileMenu = () => {
                 <MenuItem
                     onClick={handleLogout}
                     sx={{
-                        color: "#5c5c5c",
+                        color: "#1e293b",
                         fontFamily: '"Noto Sans TC", sans-serif',
+                        py: 1.5,
                         "&:hover": {
-                            backgroundColor: "rgba(247, 202, 201, 0.1)",
+                            backgroundColor: "#f1f5f9",
                         },
                     }}
                 >
                     <ListItemIcon>
-                        <Logout sx={{ color: "#f7cac9" }} />
+                        <Logout sx={{ color: "#3b82f6", fontSize: 20 }} />
                     </ListItemIcon>
                     登出
                 </MenuItem>

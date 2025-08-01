@@ -1,136 +1,103 @@
-import React from "react";
 import PropTypes from "prop-types";
 import { Box, IconButton, Tooltip, Divider } from "@mui/material";
 import {
 	Delete,
 	Save,
 	FileOpen,
-	ContentCut,
-	ContentCopy,
-	ContentPaste,
 	Download,
 	AddPhotoAlternate,
-	GroupAdd,
-	GroupRemove,
 	Undo,
 	Redo,
 } from "@mui/icons-material";
-import ToolbarButtonGroup from "./ToolbarButtonGroup";
 
 const TopToolbarButtons = ({
 	onClearClick,
 	onSaveClick,
 	onLoadClick,
-	onCutClick,
-	onCopyClick,
-	onPasteClick,
 	onUndoClick,
 	onRedoClick,
 	onExportClick,
 	onImportClick,
 	canvas,
-	hasSelectedObject,
-	canPaste,
-	availableWidth = Infinity,
-	onGroupClick,
-	onUngroupClick,
-	canGroup,
-	canUngroup,
 }) => {
+	const buttonStyle = {
+		width: 40,
+		height: 40,
+		borderRadius: "8px",
+		color: "#64748b",
+		transition: "all 0.2s ease-in-out",
+		"&:hover": {
+			backgroundColor: "#f1f5f9",
+			color: "#2563eb",
+			transform: "translateY(-1px)",
+			boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+		},
+		"&:disabled": {
+			color: "#cbd5e1",
+			backgroundColor: "transparent",
+		},
+	};
+
 	return (
 		<Box
-			className="top-toolbar-tools"
 			sx={{
 				display: "flex",
-				gap: 1,
 				alignItems: "center",
-				position: "relative",
-				"&::-webkit-scrollbar": { display: "none" },
-				msOverflowStyle: "none",
-				scrollbarWidth: "none",
-				width: "100%",
-				height: 48,
-				justifyContent: "flex-start",
+				gap: "4px",
 			}}
 		>
-			<ToolbarButtonGroup label="復原與重做" index={0} totalGroups={6} availableWidth={availableWidth}>
-				<Tooltip title="復原" placement="bottom">
-					<IconButton onClick={onUndoClick}>
-						<Undo />
-					</IconButton>
-				</Tooltip>
+			{/* 復原與重做 */}
+			<Tooltip title="復原" placement="bottom">
+				<IconButton onClick={onUndoClick} sx={buttonStyle}>
+					<Undo sx={{ fontSize: 18 }} />
+				</IconButton>
+			</Tooltip>
 
-				<Tooltip title="重做" placement="bottom">
-					<IconButton onClick={onRedoClick}>
-						<Redo />
-					</IconButton>
-				</Tooltip>
-			</ToolbarButtonGroup>
-			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
-			<ToolbarButtonGroup label="剪貼簿" index={1} totalGroups={6} availableWidth={availableWidth}>
-				<Tooltip title="剪下" placement="bottom">
-					<IconButton onClick={onCutClick} disabled={!hasSelectedObject}>
-						<ContentCut />
-					</IconButton>
-				</Tooltip>
+			<Tooltip title="重做" placement="bottom">
+				<IconButton onClick={onRedoClick} sx={buttonStyle}>
+					<Redo sx={{ fontSize: 18 }} />
+				</IconButton>
+			</Tooltip>
 
-				<Tooltip title="複製" placement="bottom">
-					<IconButton onClick={onCopyClick} disabled={!hasSelectedObject}>
-						<ContentCopy />
-					</IconButton>
-				</Tooltip>
+			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#e2e8f0" }} />
 
-				<Tooltip title="貼上" placement="bottom">
-					<IconButton onClick={onPasteClick} disabled={!canvas || !canPaste}>
-						<ContentPaste />
-					</IconButton>
-				</Tooltip>
-			</ToolbarButtonGroup>
-			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
-			<ToolbarButtonGroup label="群組功能" index={2} totalGroups={6} availableWidth={availableWidth}>
-				<Tooltip title="成為群組" placement="bottom">
-					<IconButton onClick={onGroupClick} disabled={!canGroup}>
-						<GroupAdd />
-					</IconButton>
-				</Tooltip>
-				<Tooltip title="解散群組" placement="bottom">
-					<IconButton onClick={onUngroupClick} disabled={!canUngroup}>
-						<GroupRemove />
-					</IconButton>
-				</Tooltip>
-			</ToolbarButtonGroup>
-			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
-			<ToolbarButtonGroup label="檔案操作" index={3} totalGroups={6} availableWidth={availableWidth}>
-				<Tooltip title="保存檔案" placement="bottom">
-					<IconButton onClick={onSaveClick}>
-						<Save />
-					</IconButton>
-				</Tooltip>
+			{/* 檔案操作 */}
+			<Tooltip title="保存檔案" placement="bottom">
+				<IconButton onClick={onSaveClick} sx={buttonStyle}>
+					<Save sx={{ fontSize: 18 }} />
+				</IconButton>
+			</Tooltip>
 
-				<Tooltip title="開啟檔案" placement="bottom">
-					<IconButton onClick={onLoadClick}>
-						<FileOpen />
-					</IconButton>
-				</Tooltip>
-			</ToolbarButtonGroup>
-			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
-			<ToolbarButtonGroup label="圖片操作" index={4} totalGroups={6} availableWidth={availableWidth}>
-				<Tooltip title="匯入圖片" placement="bottom">
-					<IconButton onClick={onImportClick}>
-						<AddPhotoAlternate />
-					</IconButton>
-				</Tooltip>
+			<Tooltip title="開啟檔案" placement="bottom">
+				<IconButton onClick={onLoadClick} sx={buttonStyle}>
+					<FileOpen sx={{ fontSize: 18 }} />
+				</IconButton>
+			</Tooltip>
 
-				<Tooltip title="匯出圖片" placement="bottom">
-					<IconButton onClick={onExportClick}>
-						<Download />
-					</IconButton>
-				</Tooltip>
-			</ToolbarButtonGroup>
-			<Divider orientation="vertical" sx={{ height: "auto", minHeight: 30 }} />
+			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#e2e8f0" }} />
+
+			{/* 圖片操作 */}
+			<Tooltip title="匯入圖片" placement="bottom">
+				<IconButton onClick={onImportClick} sx={buttonStyle}>
+					<AddPhotoAlternate sx={{ fontSize: 18 }} />
+				</IconButton>
+			</Tooltip>
+
+			<Tooltip title="匯出圖片" placement="bottom">
+				<IconButton onClick={onExportClick} sx={buttonStyle}>
+					<Download sx={{ fontSize: 18 }} />
+				</IconButton>
+			</Tooltip>
+
+			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#e2e8f0" }} />
+
+			{/* 清除畫布 */}
 			<Tooltip title="清除畫布" placement="bottom">
-				<IconButton onClick={onClearClick}>
-					<Delete />
+				<IconButton 
+					onClick={onClearClick} 
+					sx={buttonStyle}
+				>
+					<Delete sx={{ fontSize: 18 }} />
 				</IconButton>
 			</Tooltip>
 		</Box>
@@ -141,22 +108,11 @@ TopToolbarButtons.propTypes = {
 	onClearClick: PropTypes.func.isRequired,
 	onSaveClick: PropTypes.func.isRequired,
 	onLoadClick: PropTypes.func.isRequired,
-	onCutClick: PropTypes.func.isRequired,
-	onCopyClick: PropTypes.func.isRequired,
-	onPasteClick: PropTypes.func.isRequired,
 	onUndoClick: PropTypes.func,
 	onRedoClick: PropTypes.func,
 	onExportClick: PropTypes.func.isRequired,
 	onImportClick: PropTypes.func.isRequired,
 	canvas: PropTypes.object,
-	hasSelectedObject: PropTypes.bool,
-	canPaste: PropTypes.bool,
-	chatWidth: PropTypes.number,
-	availableWidth: PropTypes.number,
-	onGroupClick: PropTypes.func.isRequired,
-	onUngroupClick: PropTypes.func.isRequired,
-	canGroup: PropTypes.bool,
-	canUngroup: PropTypes.bool,
 };
 
 export default TopToolbarButtons;
