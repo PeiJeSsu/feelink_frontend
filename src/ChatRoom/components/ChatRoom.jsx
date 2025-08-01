@@ -13,9 +13,11 @@ export default function ChatRoom({ canvas })  {
         sendTextMessage, 
         sendImageMessage, 
         sendCanvasAnalysis, 
-        sendAIDrawing, 
+        sendAIDrawing,
+        sendTextMessageStream,
+        sendImageMessageStream,
+        sendCanvasAnalysisStream
     } = useChatMessages(canvas);
-
     return (
         <Box sx={chatRoomStyles.container}>
             {/* 聊天標題 */}
