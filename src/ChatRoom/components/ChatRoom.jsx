@@ -7,16 +7,18 @@ import ChatMessage from "./ChatMessage";
 import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 
-export default function ChatRoom({ canvas, onClose })  {
+export default function ChatRoom({ canvas, onClose})  {
     const { 
         messages, 
         loading, 
         sendTextMessage, 
         sendImageMessage, 
         sendCanvasAnalysis, 
-        sendAIDrawing, 
+        sendAIDrawing,
+        sendTextMessageStream,
+        sendImageMessageStream,
+        sendCanvasAnalysisStream
     } = useChatMessages(canvas);
-
     return (
         <Box sx={chatRoomStyles.container}>
             <Box sx={chatRoomStyles.header}>
@@ -71,9 +73,9 @@ export default function ChatRoom({ canvas, onClose })  {
             </Box>
 
             <TextInputArea
-                onSendMessage={sendTextMessage}
-                onSendImage={sendImageMessage}
-                onAnalyzeCanvas={sendCanvasAnalysis}
+                onSendMessage={sendTextMessageStream}
+                onSendImage={sendImageMessageStream}
+                onAnalyzeCanvas={sendCanvasAnalysisStream}
                 onAIDrawing={sendAIDrawing}
                 disabled={loading}
             />
