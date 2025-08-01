@@ -1,54 +1,72 @@
 export const containerStyle = {
-	position: "relative",
-	width: "100%",
-	border: "1px solid rgba(92, 92, 92, 0.15)",
-	borderRadius: "12px",
-	padding: "12px",
 	display: "flex",
-	flexDirection: "column-reverse",
+	flexDirection: "column",
 	gap: "12px",
-	backgroundColor: "#fffff3",
+	width: "100%",
+	minWidth: 0, // 確保可以縮小
 	boxSizing: "border-box",
-	minWidth: 0,
-	overflow: "hidden",
 };
 
-export const buttonContainerStyle = {
+export const inputContainer = {
 	display: "flex",
-	justifyContent: "space-between",
 	gap: "8px",
 	alignItems: "flex-end",
-	flexWrap: "wrap",
-	minWidth: 0,
+	minWidth: 0, // 確保可以縮小
 	width: "100%",
 };
 
 export const textFieldStyle = {
-	width: "100%",
-	"& .MuiInput-root": {
+	flex: 1,
+	"& .MuiOutlinedInput-root": {
+		borderRadius: "12px",
 		fontSize: "14px",
-		color: "#333333",
-		"&:before": {
-			borderBottom: "1px solid rgba(92, 92, 92, 0.2)",
+		backgroundColor: "#f8fafc",
+		"& fieldset": {
+			borderColor: "#e5e7eb",
 		},
-		"&:hover:not(.Mui-disabled):before": {
-			borderBottom: "1px solid rgba(247, 202, 201, 0.8)",
+		"&:hover fieldset": {
+			borderColor: "#2563eb",
 		},
-		"&.Mui-focused:after": {
-			borderBottom: "2px solid #f7cac9",
+		"&.Mui-focused fieldset": {
+			borderColor: "#2563eb",
 		},
 	},
-	"& .MuiInput-input::placeholder": {
-		color: "#5c5c5c",
+	"& .MuiOutlinedInput-input::placeholder": {
+		color: "#9ca3af",
 	},
 };
 
-// RWD for button group
-export const buttonGroupResponsive = {
-	"@media (max-width: 520px)": {
-		display: "flex",
-		flexDirection: "column",
-		alignItems: "stretch",
-		gap: "4px",
+export const sendButtonStyle = {
+	backgroundColor: "#2563eb",
+	color: "#ffffff",
+	width: 40,
+	height: 40,
+	minWidth: 40, // 防止按鈕被擠壓
+	borderRadius: "12px",
+	flexShrink: 0, // 防止縮小
+	"&:hover": {
+		backgroundColor: "#1d4ed8",
+	},
+	"&:disabled": {
+		backgroundColor: "#e5e7eb",
+		color: "#9ca3af",
+	},
+};
+
+export const quickActionButton = {
+	borderColor: "#e2e8f0",
+	color: "#64748b",
+	fontSize: "12px",
+	borderRadius: "20px",
+	textTransform: "none",
+	"&:hover": {
+		borderColor: "#2563eb",
+		backgroundColor: "#f1f5f9",
+		color: "#2563eb",
+	},
+	"&:disabled": {
+		borderColor: "#e5e7eb",
+		color: "#9ca3af",
+		backgroundColor: "transparent",
 	},
 };

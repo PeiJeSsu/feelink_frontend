@@ -1,4 +1,3 @@
-import * as React from "react";
 import Button from "@mui/material/Button";
 import { functionButtonStyles } from "../styles/FunctionButtonStyles";
 import PropTypes from "prop-types";

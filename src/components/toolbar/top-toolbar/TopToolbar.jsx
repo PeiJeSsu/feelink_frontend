@@ -1,26 +1,17 @@
 import { useRef, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { Box, Paper } from "@mui/material";
-import "./TopToolbar.css";
+import { Box } from "@mui/material";
 import TopToolbarButtons from "./TopToolbarButtons";
-import UserProfileMenu from "../../auth/UserProfileMenu";
 import { handleSaveFile, handleLoadFile, handleFileInputChange } from "../../../helpers/file/FileOperationHandlers";
 import { importImage } from "../../../helpers/image/ImageImport";
 import ImageExportDialog from "../../image/ImageExportDialog";
-import { cut, copy, paste, hasClipboardContent } from "../../../helpers/clipboard/ClipboardOperations";
-import * as fabric from "fabric";
-import { groupSelectedObjects, ungroupSelectedGroup } from "../../../helpers/group/GroupUtils";
 
 const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 	const fileInputRef = useRef(null);
 	const imageInputRef = useRef(null);
 	const historyManager = useRef(null);
 	const [exportDialogOpen, setExportDialogOpen] = useState(false);
-	const [hasSelectedObject, setHasSelectedObject] = useState(false);
-	const [canPaste, setCanPaste] = useState(false);
 	const [availableWidth, setAvailableWidth] = useState(0);
-	const [canGroup, setCanGroup] = useState(false);
-	const [canUngroup, setCanUngroup] = useState(false);
 	const RESERVED_LAST_BUTTON_WIDTH = 72; // 與 TopToolbarButtons 保持一致
 
 	// 監聽工具欄容器寬度變化
@@ -43,68 +34,13 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 		};
 	}, [chatWidth]);
 
-	// 設置歷史管理器引用和選取狀態監聽
+	// 設置歷史管理器引用
 	useEffect(() => {
 		if (canvas?.historyManager) {
 			historyManager.current = canvas.historyManager;
 			console.log("History manager reference updated:", historyManager.current);
 		}
-
-		// 監聽選取狀態變化
-		const handleSelection = () => {
-			const activeObject = canvas?.getActiveObject();
-			setHasSelectedObject(!!activeObject);
-			setCanGroup(
-				activeObject &&
-					(activeObject instanceof fabric.ActiveSelection ||
-						(activeObject.forEachObject && typeof activeObject.forEachObject === "function")) &&
-					activeObject.size &&
-					activeObject.size() > 1
-			);
-			setCanUngroup(activeObject && activeObject.type === "group");
-		};
-
-		if (canvas) {
-			canvas.on("selection:created", handleSelection);
-			canvas.on("selection:updated", handleSelection);
-			canvas.on("selection:cleared", handleSelection);
-		}
-
-		return () => {
-			if (canvas) {
-				canvas.off("selection:created", handleSelection);
-				canvas.off("selection:updated", handleSelection);
-				canvas.off("selection:cleared", handleSelection);
-			}
-		};
 	}, [canvas]);
-
-	// 監聽剪貼簿狀態
-	useEffect(() => {
-		const checkClipboard = () => {
-			setCanPaste(hasClipboardContent());
-		};
-
-		// 初始檢查
-		checkClipboard();
-
-		// 定期檢查剪貼簿狀態
-		const interval = setInterval(checkClipboard, 100);
-
-		return () => clearInterval(interval);
-	}, []);
-
-	const handleCut = () => {
-		cut(canvas);
-	};
-
-	const handleCopy = () => {
-		copy(canvas);
-	};
-
-	const handlePaste = () => {
-		paste(canvas);
-	};
 
 	const handleUndo = () => {
 		console.log("Undo button clicked");
@@ -133,60 +69,24 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 	const handleImportClick = () => {
 		imageInputRef.current?.click();
 	};
-
-	const handleGroup = () => {
-		groupSelectedObjects(canvas);
-	};
-	const handleUngroup = () => {
-		ungroupSelectedGroup(canvas);
-	};
 	return (
 		<Box
-			ref={containerRef}
-			className="top-toolbar-container"
 			sx={{
-				right: chatWidth ? `${chatWidth}px` : "0",
-				width: chatWidth ? `calc(100% - ${chatWidth + 64}px)` : "calc(100% - 64px)",
-				paddingRight: chatWidth ? "0" : "8px",
-				transition: "width 0.3s ease-in-out, right 0.3s ease-in-out",
+				display: "flex",
+				alignItems: "center",
+				gap: "8px",
 			}}
 		>
-			<Paper
-				className="top-toolbar"
-				elevation={3}
-				sx={{
-					width: "fit-content",
-					maxWidth: "100%",
-					margin: "0 auto",
-					transition: "all 0.3s ease",
-					overflow: "hidden",
-					display: "flex",
-					alignItems: "center",
-				}}
-			>
-				<TopToolbarButtons
-					onClearClick={onClearClick}
-					onSaveClick={() => handleSaveFile(canvas)}
-					onLoadClick={() => handleLoadFile(fileInputRef, canvasReady)}
-					onCutClick={handleCut}
-					onCopyClick={handleCopy}
-					onPasteClick={handlePaste}
-					onUndoClick={handleUndo}
-					onRedoClick={handleRedo}
-					onExportClick={handleExportClick}
-					onImportClick={handleImportClick}
-					onGroupClick={handleGroup}
-					onUngroupClick={handleUngroup}
-					canvas={canvas}
-					hasSelectedObject={hasSelectedObject}
-					canPaste={canPaste}
-					chatWidth={chatWidth}
-					availableWidth={availableWidth}
-					canGroup={canGroup}
-					canUngroup={canUngroup}
-				/>
-				<UserProfileMenu />
-			</Paper>
+			<TopToolbarButtons
+				onClearClick={onClearClick}
+				onSaveClick={() => handleSaveFile(canvas)}
+				onLoadClick={() => handleLoadFile(fileInputRef, canvasReady)}
+				onUndoClick={handleUndo}
+				onRedoClick={handleRedo}
+				onExportClick={handleExportClick}
+				onImportClick={handleImportClick}
+				canvas={canvas}
+			/>
 
 			<input
 				type="file"
