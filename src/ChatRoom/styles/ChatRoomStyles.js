@@ -3,92 +3,58 @@ export const chatRoomStyles = {
         position: "relative",
         width: "100%",
         height: "100%",
-        backgroundColor: "#ffffff",
+        maxHeight: "calc(100vh - 16px)",
         display: "flex",
         flexDirection: "column",
-        boxShadow: "none",
-        minWidth: 0, // 確保可以縮小
-        overflow: "hidden", // 防止內容溢出
+        gap: "8px",
     },
     header: {
-        padding: "16px 20px 12px 20px",
-        borderBottom: "1px solid #e5e7eb",
         display: "flex",
+        justifyContent: "flex-end",
         alignItems: "center",
-        justifyContent: "space-between",
-    },
-    headerTitle: {
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
+        padding: "0",
     },
     chatArea: {
-        flex: 1,
-        overflowY: "auto",
+        border: "1px solid rgba(92, 92, 92, 0.15)",
+        borderRadius: "12px",
         padding: "16px",
-        backgroundColor: "#ffffff",
+        position: "relative",
+        flex: 1,
+        backgroundColor: "#fffff3",
+        overflowY: "auto",
+        transition: "all 0.3s ease",
+        boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.05)",
         "&::-webkit-scrollbar": {
             width: "6px",
         },
         "&::-webkit-scrollbar-track": {
-            background: "#f8fafc",
+            background: "#f5f5e9",
             borderRadius: "3px",
         },
         "&::-webkit-scrollbar-thumb": {
-            background: "#d1d5db",
+            background: "#ccccc0",
             borderRadius: "3px",
             "&:hover": {
-                background: "#9ca3af",
+                background: "#5c5c5c",
             },
         },
     },
-    inputArea: {
-        padding: "16px",
-        borderTop: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        flexShrink: 0, // 確保輸入區域不被壓縮
-        minWidth: 0, // 確保可以縮小
+    messageContainer: {
+        backgroundColor: "#f5f5e9",
+        borderRadius: "10px",
+        padding: "12px",
+        marginBottom: "8px",
+        boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
     },
-    quickActions: {
-        display: "flex",
-        gap: "8px",
-        marginTop: "12px",
+    userMessage: {
+        backgroundColor: "#f7cac9",
+        borderColor: "#e5b8b7",
     },
-    messageLoading: {
+    messageLoading:{
         display: 'flex',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        padding: '16px',
-        gap: '12px',
-    },
-    loadingText: {
-        color: "#64748b",
-        fontSize: "14px",
-    },
-    closeButton: {
-        color: "#64748b",
-        width: 32,
-        height: 32,
-        "&:hover": {
-            backgroundColor: "#f1f5f9",
-            color: "#2563eb",
-        },
-    },
-    titleIcon: {
-        color: "#2563eb",
-        fontSize: 20,
-    },
-    titleText: {
-        color: "#1e293b",
-        fontWeight: 600,
-        fontSize: "16px",
-        fontFamily: '"Inter", "Noto Sans TC", sans-serif',
-    },
-    betaChip: {
-        backgroundColor: "#dbeafe",
-        color: "#1d4ed8",
-        fontSize: "11px",
-        fontWeight: 600,
+        padding: '10px'
     }
 };
 

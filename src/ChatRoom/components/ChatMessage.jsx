@@ -1,77 +1,56 @@
-import { Box, Paper, Typography, Avatar } from "@mui/material";
-import { chatMessageStyles } from "../styles/ChatMessageStyles";
+import * as React from 'react';
+import { Box, Paper, Typography } from '@mui/material';
+import { chatMessageStyles } from '../styles/ChatMessageStyles';
 import PropTypes from "prop-types";
-import MarkdownIt from "markdown-it";
+import MarkdownIt from 'markdown-it';
 
 const md = new MarkdownIt({
-    html: false,
-    breaks: true,
-    linkify: true,
+  html: false,       
+  breaks: true,      
+  linkify: true     
 });
 
-export default function ChatMessage({ message, isUser, isImage, timestamp }) {
-    const textMessage = message || "";
-    const isMarkdown = /[*_#\-`]/.test(textMessage);
+export default function ChatMessage({ message, isUser, isImage }) {
+  const textMessage = message || "";
+  const isMarkdown = /[*_#\-`]/.test(textMessage);
+  
+  const renderMessageContent = () => {
+      if (isImage) {
+        return <img src={textMessage} alt="上傳的圖片" style={chatMessageStyles.image} />;
+      }
+      
+      if (isMarkdown) {
+        return renderMarkdown();
+      }
+      
+      return (
+        <Typography variant='body2' sx={chatMessageStyles.text}>
+          {textMessage}
+        </Typography>
+      );
+  };
 
-    const renderMessageContent = () => {
-        if (isImage) {
-            return (
-                <img
-                    src={textMessage}
-                    alt="上傳的圖片"
-                    style={chatMessageStyles.image}
-                />
-            );
-        }
+  const renderMarkdown = () => {
+    if (!isMarkdown) return textMessage;
+    const html = md.render(textMessage);
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  };
 
-        if (isMarkdown) {
-            return renderMarkdown();
-        }
+  
 
-        return (
-            <Typography sx={chatMessageStyles.text}>{textMessage}</Typography>
-        );
-    };
-
-    const renderMarkdown = () => {
-        if (!isMarkdown) return textMessage;
-        const html = md.render(textMessage);
-        return (
-            <div
-                dangerouslySetInnerHTML={{ __html: html }}
-                style={chatMessageStyles.markdown}
-            />
-        );
-    };
-
-    // 取得頭像內容
-    const getAvatarContent = () => {
-        if (isUser) return null;
-        return "🤖";
-    };
-
-    return (
-        <Box sx={chatMessageStyles.container(isUser)}>
-            {!isUser && (
-                <Avatar sx={chatMessageStyles.avatar}>
-                    {getAvatarContent()}
-                </Avatar>
-            )}
-            <Box sx={chatMessageStyles.messageBox}>
-                <Paper sx={chatMessageStyles.paper(isUser)}>
-                    {renderMessageContent()}
-                </Paper>
-                <Typography sx={chatMessageStyles.timeStamp}>
-                    {timestamp}
-                </Typography>
-            </Box>
-        </Box>
-    );
+  return (
+    <Box sx={chatMessageStyles.container(isUser)}>
+      <Box sx={chatMessageStyles.messageBox}>
+        <Paper sx={chatMessageStyles.paper(isUser)}>
+          {renderMessageContent()}
+        </Paper>
+      </Box>
+    </Box>
+  );
 }
 
 ChatMessage.propTypes = {
-    message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
-    isUser: PropTypes.bool.isRequired,
-    isImage: PropTypes.bool.isRequired,
-    timestamp: PropTypes.string.isRequired,
+  message: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
+  isUser: PropTypes.bool.isRequired,
+  isImage: PropTypes.bool.isRequired,
 };

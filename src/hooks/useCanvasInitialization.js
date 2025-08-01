@@ -8,7 +8,7 @@ import createHistoryManager from "../helpers/history/HistoryManager";
  * @param {Object} options - 初始化選項
  * @returns {Object} 畫布相關的 refs
  */
-export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth = 0, isChatOpen = false }) => {
+export const useCanvasInitialization = ({ onCanvasInit, clearTrigger }) => {
 	const canvasRef = useRef(null);
 	const fabricCanvasRef = useRef(null);
 	const historyManagerRef = useRef(null);
@@ -20,10 +20,8 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth 
 
 		try {
 			const container = document.querySelector(".canvas-container");
-			if (!container) return;
-
-			const containerWidth = container.clientWidth;
-			const containerHeight = container.clientHeight;
+			const containerWidth = container ? container.clientWidth : window.innerWidth - 60;
+			const containerHeight = container ? container.clientHeight : window.innerHeight;
 
 			resizeCanvas(fabricCanvasRef.current, containerWidth, containerHeight);
 			fabricCanvasRef.current.renderAll();
@@ -36,13 +34,8 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth 
 	useEffect(() => {
 		try {
 			const container = document.querySelector(".canvas-container");
-			if (!container) {
-				console.error("找不到畫布容器");
-				return;
-			}
-
-			const containerWidth = container.clientWidth;
-			const containerHeight = container.clientHeight;
+			const containerWidth = container ? container.clientWidth : window.innerWidth - 60;
+			const containerHeight = container ? container.clientHeight : window.innerHeight;
 
 			fabricCanvasRef.current = initializeCanvas(canvasRef.current, containerWidth, containerHeight);
 
@@ -96,13 +89,6 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth 
 		};
 	}, [onCanvasInit, handleResize]);
 
-	// 監聽聊天室寬度變化並調整畫布尺寸
-	useEffect(() => {
-		if (fabricCanvasRef.current) {
-			handleResize();
-		}
-	}, [chatWidth, isChatOpen, handleResize]);
-
 	// 處理清除畫布
 	useEffect(() => {
 		if (clearTrigger > 0 && fabricCanvasRef.current) {
@@ -117,6 +103,7 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth 
 		}
 	}, [clearTrigger]);
 
+	// 只返回必要的 refs
 	return {
 		canvasRef,
 		fabricCanvasRef,

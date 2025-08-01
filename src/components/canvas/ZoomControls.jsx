@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { Box, IconButton, Slider, Typography, useTheme, useMediaQuery } from "@mui/material";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -18,15 +18,13 @@ const ZoomControls = ({ canvas, chatWidth = 0, isChatOpen = false }) => {
 
 	useEffect(() => {
 		const updateLayout = () => {
-			const canvasContainer = document.querySelector(".canvas-container");
-			if (canvasContainer) {
-				const containerWidth = canvasContainer.clientWidth;
-				const leftToolbarWidth = 64;
-				const availableSpace = containerWidth - leftToolbarWidth;
+			const windowWidth = window.innerWidth;
+			const leftToolbarWidth = 64;
+			const chatOffset = isChatOpen ? chatWidth : 0;
+			const availableSpace = windowWidth - leftToolbarWidth - chatOffset;
 
-				// 如果可用空間小於 350px 或在移動裝置上，則隱藏slider
-				setShowSlider(availableSpace > 350 && !isMobile);
-			}
+			// 如果可用空間小於 350px 或在移動裝置上，則隱藏slider
+			setShowSlider(availableSpace > 350 && !isMobile);
 		};
 
 		updateLayout();

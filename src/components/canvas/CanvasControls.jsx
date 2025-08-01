@@ -1,3 +1,4 @@
+import React from "react";
 import PropTypes from "prop-types";
 import { Box } from "@mui/material";
 import ZoomControls from "./ZoomControls";
@@ -13,7 +14,7 @@ const CanvasControls = ({ canvas, chatWidth = 0, isChatOpen = false }) => {
 		<Box
 			className="canvas-controls-container"
 			sx={{
-				width: "100%",
+				width: `calc(100% - ${chatWidth}px)`,
 				transition: "width 0.3s ease-in-out",
 			}}
 		>

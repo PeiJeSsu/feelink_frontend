@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { createNewMessage } from "../helpers/usage/MessageFactory";
 import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing, handleSendTextMessageStream, handleSendImageMessageStream, handleSendCanvasAnalysisStream} from "../helpers/MessageController";
 
 const predefinedQuestions = [
@@ -64,7 +63,7 @@ export default function useChatMessages(canvas) {
         setCurrentQuestion(text);
         setMessages((prevMessages) => [
             ...prevMessages,
-            createNewMessage(Date.now(), text, false, false)
+            { id: Date.now(), message: text, isUser: false, isImage: false }
         ]);
     }, []);
 
