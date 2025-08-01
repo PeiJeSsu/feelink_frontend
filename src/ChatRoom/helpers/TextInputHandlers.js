@@ -39,3 +39,11 @@ export function handleAIDrawing(message, setMessage, onAIDrawing) {
 		setMessage('');
 	}
 }
+
+export function handleKeyDown(event, message, setMessage, onSendMessage, disabled) {
+	// 檢查是否按下 Enter 鍵但沒有按住 Shift 鍵
+	if (event.key === 'Enter' && !event.shiftKey) {
+		event.preventDefault(); // 防止換行
+		handleSendText(message, setMessage, onSendMessage, disabled);
+	}
+}

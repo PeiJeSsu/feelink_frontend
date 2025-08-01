@@ -26,6 +26,7 @@ export default function TextInputArea({ onSendMessage, onSendImage, onAnalyzeCan
 		imageChange,
 		handleAnalyzeCanvas,
 		handleAIDrawing,
+		handleKeyDown,
 	} = useTextInput(onSendMessage, onSendImage, onAnalyzeCanvas, onAIDrawing, disabled);
 
 	return (
@@ -47,6 +48,7 @@ export default function TextInputArea({ onSendMessage, onSendImage, onAnalyzeCan
 					placeholder="與 AI 助手對話..."
 					value={message}
 					onChange={messageChange}
+					onKeyDown={handleKeyDown}
 					disabled={disabled}
 					sx={textFieldStyle}
 				/>
