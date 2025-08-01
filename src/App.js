@@ -11,7 +11,6 @@ import PublicRoute from "./components/routing/PublicRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CanvasPage from "./pages/CanvasPage";
-import ModernLayoutDemoImproved from "./components/demo/ModernLayoutDemoImproved";
 
 function App() {
     return (
@@ -43,10 +42,6 @@ function App() {
                                     <CanvasPage />
                                 </ProtectedRoute>
                             }
-                        />
-                        <Route
-                            path="/demo"
-                            element={<ModernLayoutDemoImproved />}
                         />
                         <Route
                             path="/"

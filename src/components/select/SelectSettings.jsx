@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Box, Button, Typography, Alert, Divider } from "@mui/material";
+import { Box, Button, Typography, Alert } from "@mui/material";
 import { 
 	ContentCut, 
 	ContentCopy, 

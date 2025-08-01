@@ -14,7 +14,6 @@ const Layout = () => {
 	const [isChatOpen, setIsChatOpen] = useState(true);
 	const [chatWidth, setChatWidth] = useState(350);
 	const [isResizing, setIsResizing] = useState(false);
-	const resizeTimeoutRef = useRef(null);
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
 		size: 5,
@@ -54,15 +53,6 @@ const Layout = () => {
 	const canvasRef = useRef(null);
 
 	const [canvasReady, setCanvasReady] = useState(false);
-
-	useEffect(() => {
-		const currentTimeout = resizeTimeoutRef.current;
-		return () => {
-			if (currentTimeout) {
-				clearTimeout(currentTimeout);
-			}
-		};
-	}, []);
 
 	useEffect(() => {
 		if (!canvasReady || !canvasRef.current) return;
