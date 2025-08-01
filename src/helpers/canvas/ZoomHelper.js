@@ -143,7 +143,7 @@ const getTouchCenter = (touch1, touch2, canvasRect) => {
  * @returns {Function} 清理函數
  */
 export const setupPinchZoom = (canvas) => {
-	if (!canvas) return () => {};
+	if (!canvas?.upperCanvasEl) return () => {};
 
 	let initialDistance = 0;
 	let initialZoom = 1;
@@ -176,13 +176,15 @@ export const setupPinchZoom = (canvas) => {
 			newZoom = Math.round(newZoom * 10) / 10;
 
 			// 計算縮放中心點
-			const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
-			const center = getTouchCenter(e.touches[0], e.touches[1], canvasRect);
+			if (canvas.upperCanvasEl) {
+				const canvasRect = canvas.upperCanvasEl.getBoundingClientRect();
+				const center = getTouchCenter(e.touches[0], e.touches[1], canvasRect);
 
-			// 應用縮放
-			canvas.zoomToPoint(center, newZoom);
-			canvas.zoomLevel = newZoom;
-			canvas.renderAll();
+				// 應用縮放
+				canvas.zoomToPoint(center, newZoom);
+				canvas.zoomLevel = newZoom;
+				canvas.renderAll();
+			}
 		}
 	};
 
@@ -195,14 +197,21 @@ export const setupPinchZoom = (canvas) => {
 
 	// 添加事件監聽器
 	const canvasElement = canvas.upperCanvasEl;
+	if (!canvasElement) {
+		console.warn("Canvas element not ready for pinch zoom");
+		return () => {};
+	}
+	
 	canvasElement.addEventListener('touchstart', handleTouchStart, { passive: false });
 	canvasElement.addEventListener('touchmove', handleTouchMove, { passive: false });
 	canvasElement.addEventListener('touchend', handleTouchEnd, { passive: false });
 
 	// 返回清理函數
 	return () => {
-		canvasElement.removeEventListener('touchstart', handleTouchStart);
-		canvasElement.removeEventListener('touchmove', handleTouchMove);
-		canvasElement.removeEventListener('touchend', handleTouchEnd);
+		if (canvasElement) {
+			canvasElement.removeEventListener('touchstart', handleTouchStart);
+			canvasElement.removeEventListener('touchmove', handleTouchMove);
+			canvasElement.removeEventListener('touchend', handleTouchEnd);
+		}
 	};
 };

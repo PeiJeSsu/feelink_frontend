@@ -24,6 +24,8 @@ const Canvas = ({
 	const { canvasRef, fabricCanvasRef } = useCanvasInitialization({
 		onCanvasInit,
 		clearTrigger,
+		chatWidth,
+		isChatOpen,
 	});
 
 	// 設置工具
