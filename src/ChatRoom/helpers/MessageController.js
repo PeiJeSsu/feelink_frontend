@@ -9,18 +9,13 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
     setLoading(true);
-    const responseMessage = {
-        id: finalId,
-        message: "",
-        isUser: false,
-        isImage: false
-    };
-    setMessages(prevMessages => [...prevMessages, responseMessage]);
+    
+    // 不立即加入 AI 回應訊息，等到第一個字符到達時再加入
+    let responseMessageAdded = false;
     let displayedContent = "";
     let pendingQueue = [];
     let typewriterTimer = null;
     let isTypewriting = false;
-    let streamCompleted = false;
 
     const typewriterEffect = () => {
         if (pendingQueue.length > 0) {
@@ -39,9 +34,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         } else {
             isTypewriting = false;
             typewriterTimer = null;
-            if (streamCompleted) {
-                setLoading(false);
-            }
         }
     };
 
@@ -53,18 +45,28 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
 
     const onToken = (token) => {
         console.log('Token received:', token);
-        for (let i = 0; i < token.length; i++) {
-            pendingQueue.push(token[i]);
+        
+        // 收到第一個字符時，加入 AI 回應訊息並關閉載入狀態
+        if (!responseMessageAdded) {
+            const responseMessage = {
+                id: finalId,
+                message: "",
+                isUser: false,
+                isImage: false
+            };
+            setMessages(prevMessages => [...prevMessages, responseMessage]);
+            setLoading(false); // 收到第一個字符時關閉載入狀態
+            responseMessageAdded = true;
+        }
+        
+        for (const char of token) {
+            pendingQueue.push(char);
         }
         startTypewriter();
     };
 
     const onComplete = () => {
         console.log('Stream completed');
-        streamCompleted = true;
-        if (!isTypewriting && pendingQueue.length === 0) {
-            setLoading(false);
-        }
     };
 
     const onError = (error) => {
@@ -73,7 +75,19 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             typewriterTimer = null;
         }
         isTypewriting = false;
-        streamCompleted = true;
+        
+        // 如果還沒有加入 AI 回應訊息，在錯誤時加入空訊息
+        if (!responseMessageAdded) {
+            const responseMessage = {
+                id: finalId,
+                message: "",
+                isUser: false,
+                isImage: false
+            };
+            setMessages(prevMessages => [...prevMessages, responseMessage]);
+            responseMessageAdded = true;
+        }
+        
         if (pendingQueue.length > 0) {
             displayedContent += pendingQueue.join('');
             setMessages(prevMessages => {

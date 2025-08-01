@@ -5,7 +5,8 @@ import {
 	handleMessageChange,
 	handleImageChange,
 	handleAnalyzeCanvas,
-	handleAIDrawing
+	handleAIDrawing,
+	handleKeyDown
 } from "../helpers/TextInputHandlers";
 
 export function useTextInput(onSendMessage, onUploadImage, onAnalyzeCanvas, onAIDrawing, disabled) {
@@ -37,6 +38,10 @@ export function useTextInput(onSendMessage, onUploadImage, onAnalyzeCanvas, onAI
 		handleAIDrawing(message, setMessage, onAIDrawing);
 	};
 
+	const keyDown = (e) => {
+		handleKeyDown(e, message, setMessage, onSendMessage, disabled);
+	};
+
 	return {
 		message,
 		textInputRef,
@@ -47,6 +52,7 @@ export function useTextInput(onSendMessage, onUploadImage, onAnalyzeCanvas, onAI
 		imageChange,
 		setMessage,
 		handleAnalyzeCanvas: analyzeCanvas,
-		handleAIDrawing: aiDrawing
+		handleAIDrawing: aiDrawing,
+		handleKeyDown: keyDown
 	};
 }
