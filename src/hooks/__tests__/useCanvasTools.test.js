@@ -30,7 +30,12 @@ jest.mock("../../helpers/text/TextTools", () => ({
 	updateActiveTextbox: jest.fn(),
 }));
 
-const getMockCanvas = () => ({ freeDrawingBrush: null });
+const getMockCanvas = () => ({ 
+	freeDrawingBrush: null,
+	isDrawingMode: false,
+	selection: true,
+	defaultCursor: "default",
+});
 
 function TestComponent({ canvas, options }) {
 	useCanvasTools(canvas, options);
@@ -60,6 +65,14 @@ describe("useCanvasTools", () => {
 		expect(() => {
 			render(<TestComponent canvas={null} options={baseOptions} />);
 		}).not.toThrow();
+	});
+
+	it("切換 select 工具應設置選擇模式", () => {
+		const canvas = getMockCanvas();
+		render(<TestComponent canvas={canvas} options={{ ...baseOptions, activeTool: "select" }} />);
+		expect(canvas.isDrawingMode).toBe(false);
+		expect(canvas.selection).toBe(true);
+		expect(canvas.defaultCursor).toBe("default");
 	});
 
 	it("切換 pencil 工具應呼叫 setDrawingMode, createBrush, setupBrushEventListeners", () => {

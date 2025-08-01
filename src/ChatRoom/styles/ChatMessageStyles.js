@@ -1,54 +1,77 @@
 export const chatMessageStyles = {
     container: (isUser) => ({
         display: 'flex',
-        justifyContent: isUser ? 'flex-end' : 'flex-start',
-        mb: 1,
-        width: '100%'
+        alignItems: 'flex-start',
+        gap: 1.5,
+        mb: 2,
+        width: '100%',
+        ...(isUser && { flexDirection: 'row-reverse' }),
     }),
     messageBox: {
-        maxWidth: '70%'
+        maxWidth: '75%',
+    },
+    avatar: {
+        width: 32,
+        height: 32,
+        backgroundColor: "#f1f5f9",
+        fontSize: "16px",
     },
     paper: (isUser) => ({
-        padding: '8px 12px',
-        bgcolor: isUser ? "#f7cac9" : "#f5f5e9",
-        borderRadius: '12px',
-        borderTopRightRadius: isUser ? 0 : '12px',
-        borderTopLeftRadius: isUser ? '12px' : 0,
-        overflow: 'hidden'
+        padding: '16px',
+        backgroundColor: isUser ? "#2563eb" : "#f8fafc",
+        color: isUser ? "#ffffff" : "#374151",
+        borderRadius: isUser ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+        border: isUser ? "none" : "1px solid #e5e7eb",
+        boxShadow: "none",
     }),
-    text:{
-        fontFamily: '"微軟正黑體", "Microsoft JhengHei", sans-serif',
-        fontSize: '0.875rem',
-        lineHeight: '1.5',
-        letterSpacing: '0.01em',
+    text: {
+        fontSize: '14px',
+        lineHeight: 1.5,
+        whiteSpace: 'pre-line',
+    },
+    timeStamp: {
+        color: "#9ca3af",
+        marginTop: 0.5,
+        display: "block",
+        fontSize: "11px",
     },
     image: {
         width: '100%',
-        borderRadius: '4px',
+        borderRadius: '8px',
         display: 'block'
     },
     markdown: {
         '& p': {
-          fontSize: '0.875rem', // 對應 Typography variant='body2' 的大小
+          fontSize: '14px',
           fontFamily: 'inherit',
-          margin: '0'
+          margin: '0',
+          lineHeight: 1.5
         },
         '& h1, & h2, & h3, & h4, & h5, & h6': {
-          fontSize: '0.975rem', // 稍微大一點的標題
+          fontSize: '16px',
           fontWeight: 'bold',
-          margin: '0.5em 0'
+          margin: '0.5em 0',
+          color: 'inherit'
         },
         '& ul, & ol': {
-          fontSize: '0.875rem',
+          fontSize: '14px',
           margin: '0.5em 0',
           paddingLeft: '1.5em'
         },
         '& code': {
-          fontSize: '0.8rem',
+          fontSize: '13px',
           fontFamily: 'monospace',
           backgroundColor: 'rgba(0, 0, 0, 0.05)',
           padding: '0.1em 0.3em',
           borderRadius: '3px'
+        },
+        '& pre': {
+          fontSize: '13px',
+          fontFamily: 'monospace',
+          backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          padding: '8px',
+          borderRadius: '6px',
+          overflowX: 'auto'
         }
-      }
+    }
 };

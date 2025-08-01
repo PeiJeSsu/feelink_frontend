@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing } from "../helpers/MessageController";
+import { createNewMessage } from "../helpers/usage/MessageFactory";
 
 const predefinedQuestions = [
     "最近過得如何，有沒有發生甚麼有趣或難過的事？",
@@ -46,7 +47,7 @@ export default function useChatMessages(canvas) {
         setCurrentQuestion(text);
         setMessages((prevMessages) => [
             ...prevMessages,
-            { id: Date.now(), message: text, isUser: false, isImage: false }
+            createNewMessage(Date.now(), text, false, false)
         ]);
     }, []);
 
