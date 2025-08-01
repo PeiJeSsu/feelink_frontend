@@ -88,9 +88,7 @@ describe("useCanvasInitialization", () => {
 				clearTrigger: 0,
 			});
 			// 在 hook 執行過程中立即設置 canvasRef
-			if (hookResult && hookResult.canvasRef) {
-				hookResult.canvasRef.current = mockCanvasElement;
-			}
+			hookResult?.canvasRef && (hookResult.canvasRef.current = mockCanvasElement);
 			return hookResult;
 		});
 

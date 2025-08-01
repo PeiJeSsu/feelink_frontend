@@ -71,12 +71,12 @@ export default function ChatRoom({ canvas })  {
                 )}
             </Box>
 
-            {/* 聊天輸入區域 */}
+           {/* 聊天輸入區域 */}
             <Box sx={chatRoomStyles.inputArea}>
                 <TextInputArea
-                    onSendMessage={sendTextMessage}
-                    onSendImage={sendImageMessage}
-                    onAnalyzeCanvas={sendCanvasAnalysis}
+                    onSendMessage={sendTextMessageStream}
+                    onSendImage={sendImageMessageStream}
+                    onAnalyzeCanvas={sendCanvasAnalysisStream}
                     onAIDrawing={sendAIDrawing}
                     disabled={loading}
                 />
