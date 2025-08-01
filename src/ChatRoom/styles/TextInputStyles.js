@@ -1,72 +1,54 @@
 export const containerStyle = {
-	display: "flex",
-	flexDirection: "column",
-	gap: "12px",
+	position: "relative",
 	width: "100%",
-	minWidth: 0, // 確保可以縮小
+	border: "1px solid rgba(92, 92, 92, 0.15)",
+	borderRadius: "12px",
+	padding: "12px",
+	display: "flex",
+	flexDirection: "column-reverse",
+	gap: "12px",
+	backgroundColor: "#fffff3",
 	boxSizing: "border-box",
+	minWidth: 0,
+	overflow: "hidden",
 };
 
-export const inputContainer = {
+export const buttonContainerStyle = {
 	display: "flex",
+	justifyContent: "space-between",
 	gap: "8px",
 	alignItems: "flex-end",
-	minWidth: 0, // 確保可以縮小
+	flexWrap: "wrap",
+	minWidth: 0,
 	width: "100%",
 };
 
 export const textFieldStyle = {
-	flex: 1,
-	"& .MuiOutlinedInput-root": {
-		borderRadius: "12px",
+	width: "100%",
+	"& .MuiInput-root": {
 		fontSize: "14px",
-		backgroundColor: "#f8fafc",
-		"& fieldset": {
-			borderColor: "#e5e7eb",
+		color: "#333333",
+		"&:before": {
+			borderBottom: "1px solid rgba(92, 92, 92, 0.2)",
 		},
-		"&:hover fieldset": {
-			borderColor: "#2563eb",
+		"&:hover:not(.Mui-disabled):before": {
+			borderBottom: "1px solid rgba(247, 202, 201, 0.8)",
 		},
-		"&.Mui-focused fieldset": {
-			borderColor: "#2563eb",
+		"&.Mui-focused:after": {
+			borderBottom: "2px solid #f7cac9",
 		},
 	},
-	"& .MuiOutlinedInput-input::placeholder": {
-		color: "#9ca3af",
+	"& .MuiInput-input::placeholder": {
+		color: "#5c5c5c",
 	},
 };
 
-export const sendButtonStyle = {
-	backgroundColor: "#2563eb",
-	color: "#ffffff",
-	width: 40,
-	height: 40,
-	minWidth: 40, // 防止按鈕被擠壓
-	borderRadius: "12px",
-	flexShrink: 0, // 防止縮小
-	"&:hover": {
-		backgroundColor: "#1d4ed8",
-	},
-	"&:disabled": {
-		backgroundColor: "#e5e7eb",
-		color: "#9ca3af",
-	},
-};
-
-export const quickActionButton = {
-	borderColor: "#e2e8f0",
-	color: "#64748b",
-	fontSize: "12px",
-	borderRadius: "20px",
-	textTransform: "none",
-	"&:hover": {
-		borderColor: "#2563eb",
-		backgroundColor: "#f1f5f9",
-		color: "#2563eb",
-	},
-	"&:disabled": {
-		borderColor: "#e5e7eb",
-		color: "#9ca3af",
-		backgroundColor: "transparent",
+// RWD for button group
+export const buttonGroupResponsive = {
+	"@media (max-width: 520px)": {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "stretch",
+		gap: "4px",
 	},
 };

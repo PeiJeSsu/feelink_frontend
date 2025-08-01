@@ -7,7 +7,7 @@ const PanControls = ({ canvas }) => {
 	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
 	useEffect(() => {
-		if (!canvas?.upperCanvasEl) return;
+		if (!canvas) return;
 
 		const handleMouseMove = (e) => {
 			if (!isDragging) return;
