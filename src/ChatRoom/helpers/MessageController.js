@@ -211,23 +211,104 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
 
 export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas) => {
     if (!canvasImage) return;
-    
     const canvasData = await convertBlobToBase64(canvasImage);
 
-    await runMessageTask({
-        messageText,
-        image: canvasImage,
-        messages,
-        setMessages,
-        setLoading,
-        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
-        sendFunction: ({ text, imageData }) => sendAIDrawingToBackend(text, imageData),
-        onSuccess: (result, finalId) => {
-            return processDrawingResult(result, finalId, messages, setMessages, canvas);
-        },
-        onErrorMessage: 'AI 畫圖失敗',
-    });
+    if (!messageText && !canvasImage) return;
+    const currentId = getNewId(messages);
+    const finalId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
+    setLoading(true);
+
+    let responseMessageAdded = false;
+    try {
+        const result = await sendAIDrawingToBackend(messageText || "請根據這張圖片生成新的內容", canvasData);
+
+        if (result.success) {
+            const content = result.content;
+
+            if (content.message) {
+                let displayedContent = "";
+                for (let i = 0; i < content.message.length; i++) {
+                    displayedContent += content.message[i];
+                    if (!responseMessageAdded) {
+                        const responseMessage = {
+                            id: finalId,
+                            message: "",
+                            isUser: false,
+                            isImage: false
+                        };
+                        setMessages(prevMessages => [...prevMessages, responseMessage]);
+                        setLoading(false);
+                        responseMessageAdded = true;
+                    }
+                    setMessages(prevMessages => {
+                        return prevMessages.map(msg => {
+                            if (msg.id === finalId) {
+                                return {...msg, message: displayedContent};
+                            }
+                            return msg;
+                        });
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 30));
+                }
+            }
+            if (content.imageData) {
+                if (!responseMessageAdded) {
+                    const responseMessage = {
+                        id: finalId,
+                        message: "",
+                        isUser: false,
+                        isImage: false
+                    };
+                    setMessages(prevMessages => [...prevMessages, responseMessage]);
+                    setLoading(false);
+                    responseMessageAdded = true;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                if (canvas) {
+                    const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+                    try {
+                        clearCanvas(canvas);
+                        const imageDataUrl = `data:image/png;base64,${content.imageData}`;
+                        addImageToCanvas(canvas, imageDataUrl);
+                    } catch (error) {
+                        console.error('Error adding image to canvas:', error);
+                    }
+                }
+                setMessages(prevMessages => {
+                    return prevMessages.map(msg => {
+                        if (msg.id === finalId) {
+                            return {
+                                ...msg,
+                                imageData: content.imageData,
+                                hasImage: true
+                            };
+                        }
+                        return msg;
+                    });
+                });
+            }
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        if (!responseMessageAdded) {
+            const responseMessage = {
+                id: finalId,
+                message: "",
+                isUser: false,
+                isImage: false
+            };
+            setMessages(prevMessages => [...prevMessages, responseMessage]);
+            responseMessageAdded = true;
+        }
+        setLoading(false);
+        handleError(error, 'AI 畫圖失敗', messages, setMessages);
+    }
+
 };
+
 
 const runMessageTask = async ({messageText, image = null, messages, setMessages, setLoading, generatePayload, sendFunction, onSuccess, onErrorMessage,}) => {
     try {
@@ -265,7 +346,7 @@ const processDrawingResult = (result, currentId, messages, setMessages, canvas) 
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
-        console.log('Found nested content:', actualResult); 
+        console.log('Found nested content:', actualResult);
     }
 
     if (actualResult.message) {
@@ -280,11 +361,11 @@ const processDrawingResult = (result, currentId, messages, setMessages, canvas) 
             const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
             addImageToCanvas(canvas, imageDataUrl);
         } catch (error) {
-            console.error('Error adding image to canvas:', error); 
+            console.error('Error adding image to canvas:', error);
         }
     } else {
-        console.log('Missing data:', { 
-            hasImageData: !!actualResult.imageData, 
+        console.log('Missing data:', {
+            hasImageData: !!actualResult.imageData,
             hasCanvas: !!canvas,
             actualResult: actualResult
         });
