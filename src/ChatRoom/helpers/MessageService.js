@@ -1,5 +1,14 @@
 import {sendMessage, callAIDrawingAPI, sendMessageStream, analysisImage, sendImageToBackendStream, sendCanvasAnalysisToBackendStream} from "./MessageAPI";
 
+const getSessionId = () => {
+    const sessionId = localStorage.getItem('currentSessionId');
+    if (!sessionId) {
+        console.error('SessionId 不存在，請先選擇 AI 個性');
+        return null;
+    }
+    return sessionId;
+};
+
 // 發送文字訊息到後端
 export const sendTextToBackend = async (payload) => {
     return handleServiceCall(() => sendMessage(payload.text, payload.conversationCount, payload.hasDefaultQuestion));
@@ -28,17 +37,17 @@ const sendToBackend = async (messageText, messageImage = null, conversationCount
 };
 
 export const sendTextToBackendStream = async (payload, onToken, onComplete, onError) => {
-    const sessionId = crypto.randomUUID();
+    const sessionId = getSessionId();
     return sendMessageStream(payload.text, sessionId, onToken, onComplete, onError);
 };
 export const sendImageToBackendStreamService = async (messageText, messageImage, onToken, onComplete, onError) => {
-    const sessionId = crypto.randomUUID();
+    const sessionId = getSessionId();
     return sendImageToBackendStream(messageText, messageImage, sessionId, onToken, onComplete, onError);
 };
 
 // 畫布分析流式服務
 export const sendCanvasAnalysisToBackendStreamService = async (messageText, canvasImage, onToken, onComplete, onError) => {
-    const sessionId = crypto.randomUUID();
+    const sessionId = getSessionId();
     return sendCanvasAnalysisToBackendStream(messageText, canvasImage, sessionId, onToken, onComplete, onError);
 };
 

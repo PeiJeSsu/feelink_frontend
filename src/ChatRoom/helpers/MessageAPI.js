@@ -2,6 +2,10 @@ import {apiConfig} from "../config/ApiConfig";
 import $ from 'jquery';
 const generateSessionId = () => crypto.randomUUID();
 
+const getSelectedPersonality = () => {
+	return localStorage.getItem('selectedPersonality') || 'default';
+};
+
 const createSSEStream = (url, formData, onToken, onComplete, onError) => {
 	let buffer = '';
 	let lastProcessedLength = 0;
@@ -57,7 +61,7 @@ export const sendMessageStream = (text, sessionId, onToken, onComplete, onError)
 	const formData = new FormData();
 	formData.append('userMessage', text);
 	formData.append('sessionId', sessionId);
-
+	formData.append('personality', getSelectedPersonality());
 	createSSEStream(`${apiConfig.defaults.baseURL}/chat`, formData, onToken, onComplete, onError);
 };
 
@@ -66,7 +70,7 @@ export const sendImageToBackendStream = async (messageText, messageImage, sessio
 	formData.append('userMessage', messageText);
 	formData.append('file', messageImage);
 	formData.append('sessionId', sessionId);
-
+	formData.append('personality', getSelectedPersonality());
 	createSSEStream(`${apiConfig.defaults.baseURL}/analysis`, formData, onToken, onComplete, onError);
 };
 
@@ -75,7 +79,7 @@ export const sendCanvasAnalysisToBackendStream = async (messageText, canvasImage
 	formData.append('userMessage', messageText || '請分析這張圖片');
 	formData.append('file', canvasImage);
 	formData.append('sessionId', sessionId);
-
+	formData.append('personality', getSelectedPersonality());
 	createSSEStream(`${apiConfig.defaults.baseURL}/analysis`, formData, onToken, onComplete, onError);
 };
 
