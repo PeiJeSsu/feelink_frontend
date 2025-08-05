@@ -1,21 +1,8 @@
-import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    Container,
-    Typography,
-    Grid,
-    Card,
-    CardContent,
-    Button,
-    Box,
-    Avatar
-} from '@mui/material';
-import {
-    Palette as CreativeIcon,
-    Search as CuriousIcon,
-    Favorite as WarmIcon
-} from '@mui/icons-material';
+import { Container, Typography, Grid2, Card, CardContent, Button, Box, Avatar } from '@mui/material';
+import { Palette as CreativeIcon, Search as CuriousIcon, Favorite as WarmIcon } from '@mui/icons-material';
+import { v4 as uuidv4 } from 'uuid';
 
 const PersonalitySelectPage = () => {
     const navigate = useNavigate();
@@ -38,7 +25,7 @@ const PersonalitySelectPage = () => {
         {
             id: 'curious',
             name: '好奇分析師',
-            description: '充滿好奇心的藝術分析師，深入探討創作背後的原理和心理',
+            description: '充滿好奇心的藝術分析師，深入探討創作背後的心理',
             icon: <CuriousIcon sx={{ fontSize: 40 }} />,
             color: '#4ECDC4',
             features: [
@@ -70,9 +57,8 @@ const PersonalitySelectPage = () => {
     const handleConfirm = () => {
         if (selectedPersonality) {
             localStorage.setItem('selectedPersonality', selectedPersonality);
-            const newSessionId = crypto.randomUUID();
+            const newSessionId = uuidv4();
             localStorage.setItem('currentSessionId', newSessionId);
-
             console.log(`已選擇個性: ${selectedPersonality}, SessionId: ${newSessionId}`);
 
             navigate('/canvas');
@@ -80,7 +66,7 @@ const PersonalitySelectPage = () => {
     };
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
             <Box textAlign="center" mb={4}>
                 <Typography variant="h3" component="h1" gutterBottom color="primary">
                     選擇你的 AI 夥伴
@@ -90,12 +76,23 @@ const PersonalitySelectPage = () => {
                 </Typography>
             </Box>
 
-            <Grid container spacing={4} justifyContent="center">
+            <Grid2 container spacing={3} justifyContent="center" sx={{ maxWidth: '1200px', mx: 'auto' }}>
                 {personalities.map((personality) => (
-                    <Grid item xs={12} md={4} key={personality.id}>
+                    <Grid2
+                        key={personality.id}
+                        xs={12}
+                        sm={6}
+                        lg={4}
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'center'
+                        }}
+                    >
                         <Card
                             sx={{
-                                height: '100%',
+                                width: '100%',
+                                maxWidth: '350px',
+                                minHeight: '400px',
                                 cursor: 'pointer',
                                 border: selectedPersonality === personality.id ? 3 : 1,
                                 borderColor: selectedPersonality === personality.id ? personality.color : 'divider',
@@ -107,47 +104,62 @@ const PersonalitySelectPage = () => {
                             }}
                             onClick={() => handleSelectPersonality(personality.id)}
                         >
-                            <CardContent sx={{ textAlign: 'center', pb: 1 }}>
-                                <Avatar
-                                    sx={{
-                                        bgcolor: personality.color,
-                                        width: 80,
-                                        height: 80,
-                                        mx: 'auto',
-                                        mb: 2
-                                    }}
-                                >
-                                    {personality.icon}
-                                </Avatar>
+                            <CardContent sx={{
+                                textAlign: 'center',
+                                p: 3,
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between'
+                            }}>
+                                <Box>
+                                    <Avatar
+                                        sx={{
+                                            bgcolor: personality.color,
+                                            width: 80,
+                                            height: 80,
+                                            mx: 'auto',
+                                            mb: 2
+                                        }}
+                                    >
+                                        {personality.icon}
+                                    </Avatar>
 
-                                <Typography variant="h5" component="h2" gutterBottom>
-                                    {personality.name}
-                                </Typography>
+                                    <Typography variant="h5" component="h2" gutterBottom>
+                                        {personality.name}
+                                    </Typography>
 
-                                <Typography variant="body2" color="text.secondary" >
-                                    {personality.description}
-                                </Typography>
+                                    <Typography variant="body2" color="text.secondary" paragraph>
+                                        {personality.description}
+                                    </Typography>
+                                </Box>
 
-                                <Box mt={2}>
-                                    <Typography variant="subtitle2" gutterBottom>
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
                                         特色功能：
                                     </Typography>
-                                    {personality.features.map((feature, index) => (
-                                        <Typography
-                                            key={index}
-                                            variant="caption"
-                                            display="block"
-                                            color="text.secondary"
-                                        >
-                                            • {feature}
-                                        </Typography>
-                                    ))}
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: 0.5
+                                    }}>
+                                        {personality.features.map((feature, index) => (
+                                            <Typography
+                                                key={index}
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                • {feature}
+                                            </Typography>
+                                        ))}
+                                    </Box>
                                 </Box>
                             </CardContent>
                         </Card>
-                    </Grid>
+                    </Grid2>
                 ))}
-            </Grid>
+            </Grid2>
 
             <Box textAlign="center" mt={4}>
                 <Button
