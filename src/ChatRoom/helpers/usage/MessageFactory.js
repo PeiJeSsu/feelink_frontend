@@ -1,6 +1,8 @@
 // 取得新訊息的 ID
 export const getNewId = (messages) => {
-    return messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 0;
+    if (messages.length === 0) return 1;
+    const maxId = Math.max(...messages.map(msg => msg.id || 0));
+    return maxId + 1;
 };
 
 // 創建新訊息物件

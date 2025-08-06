@@ -3,8 +3,14 @@ import {sendAIDrawingToBackend, sendCanvasAnalysisToBackend, sendCanvasAnalysisT
 import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
 
-const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, streamFunction, errorMessage) => {
+// 修改：添加 chatroomId 參數到流式處理函數
+const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, chatroomId, streamFunction, errorMessage) => {
+    console.log('handleStreamMessage called with chatroomId:', chatroomId);
     if (!messageText && !image) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for sending messages');
+        return;
+    }
 
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
@@ -102,24 +108,27 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         setLoading(false);
         handleError(error, errorMessage, messages, setMessages);
     };
+    
     try {
-        await streamFunction(messageText, image, onToken, onComplete, onError);
+        await streamFunction(messageText, image, chatroomId, onToken, onComplete, onError);
     } catch (error) {
         onError(error);
     }
 };
 
-
-export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading) => {
+// 修改：添加 chatroomId 參數
+export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
         null,
         messages,
         setMessages,
         setLoading,
-        (text, image, onToken, onComplete, onError) => {
+        chatroomId,
+        (text, image, chatroomId, onToken, onComplete, onError) => {
             sendTextToBackendStream(
                 { text: text },
+                chatroomId,
                 onToken,
                 onComplete,
                 onError
@@ -128,37 +137,46 @@ export const handleSendTextMessageStream = async (messageText, messages, setMess
         '發送訊息失敗'
     );
 };
-export const handleSendImageMessageStream = async (messageText, messageImage, messages, setMessages, setLoading) => {
+
+// 修改：添加 chatroomId 參數
+export const handleSendImageMessageStream = async (messageText, messageImage, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
         messageImage,
         messages,
         setMessages,
         setLoading,
-        (text, image, onToken, onComplete, onError) => {
-            sendImageToBackendStreamService(text, image, onToken, onComplete, onError);
+        chatroomId,
+        (text, image, chatroomId, onToken, onComplete, onError) => {
+            sendImageToBackendStreamService(text, image, chatroomId, onToken, onComplete, onError);
         },
         '發送圖片失敗'
     );
 };
 
-// 畫布分析流式處理
-export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, messages, setMessages, setLoading) => {
+// 修改：畫布分析流式處理，添加 chatroomId 參數
+export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
         canvasImage,
         messages,
         setMessages,
         setLoading,
-        (text, image, onToken, onComplete, onError) => {
-            sendCanvasAnalysisToBackendStreamService(text, image, onToken, onComplete, onError);
+        chatroomId,
+        (text, image, chatroomId, onToken, onComplete, onError) => {
+            sendCanvasAnalysisToBackendStreamService(text, image, chatroomId, onToken, onComplete, onError);
         },
         '分析畫布失敗'
     );
 };
 
-export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, defaultQuestion = "", conversationCount = 1) => {
+// 修改：添加 chatroomId 參數
+export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, chatroomId, defaultQuestion = "", conversationCount = 1) => {
     if (!messageText) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for sending messages');
+        return;
+    }
 
     await runMessageTask({
         messageText,
@@ -166,19 +184,25 @@ export const handleSendTextMessage = async (messageText, messages, setMessages, 
         messages,
         setMessages,
         setLoading,
+        chatroomId,
         generatePayload: () => Promise.resolve({
             text: messageText,
             conversationCount: conversationCount,
             hasDefaultQuestion: !!defaultQuestion
         }),
-        sendFunction: (payload) => sendTextToBackend(payload),
+        sendFunction: (payload, chatroomId) => sendTextToBackend(payload, chatroomId),
         onSuccess: (res, finalId) => appendMessage(finalId, res.content, setMessages),
         onErrorMessage: '發送訊息失敗',
     });
 };
 
-export const handleSendImageMessage = async (messageText, messageImage, messages, setMessages, setLoading) => {
+// 修改：添加 chatroomId 參數
+export const handleSendImageMessage = async (messageText, messageImage, messages, setMessages, setLoading, chatroomId) => {
     if (!messageText && !messageImage) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for sending messages');
+        return;
+    }
 
     await runMessageTask({
         messageText,
@@ -186,15 +210,21 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
         messages,
         setMessages,
         setLoading,
+        chatroomId,
         generatePayload: () => Promise.resolve({ text: messageText, image: messageImage }),
-        sendFunction: ({ text, image }) => sendImageToBackend(text, image),
+        sendFunction: (payload, chatroomId) => sendImageToBackend(payload.text, payload.image, chatroomId),
         onSuccess: (res, finalId) => appendMessage(finalId, res.content, setMessages),
         onErrorMessage: '發送圖片失敗',
     });
 };
 
-export const handleSendCanvasAnalysis = async (canvasImage, messageText, messages, setMessages, setLoading) => {
+// 修改：添加 chatroomId 參數
+export const handleSendCanvasAnalysis = async (canvasImage, messageText, messages, setMessages, setLoading, chatroomId) => {
     if (!canvasImage) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for sending messages');
+        return;
+    }
 
     await runMessageTask({
         messageText,
@@ -202,13 +232,15 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
         messages,
         setMessages,
         setLoading,
+        chatroomId,
         generatePayload: () => Promise.resolve({ text: messageText, image: canvasImage }),
-        sendFunction: ({ text, image }) => sendCanvasAnalysisToBackend(text, image),
+        sendFunction: (payload, chatroomId) => sendCanvasAnalysisToBackend(payload.text, payload.image, chatroomId),
         onSuccess: (res, finalId) => appendMessage(finalId, res.content, setMessages),
         onErrorMessage: '分析畫布失敗',
     });
 };
 
+// 修改：AI 繪圖功能保持不變，因為它可能是不同的服務
 export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas) => {
     if (!canvasImage) return;
     
@@ -229,13 +261,14 @@ export const handleSendAIDrawing = async (canvasImage, messageText, messages, se
     });
 };
 
-const runMessageTask = async ({messageText, image = null, messages, setMessages, setLoading, generatePayload, sendFunction, onSuccess, onErrorMessage,}) => {
+// 修改：更新 runMessageTask 函數來處理 chatroomId
+const runMessageTask = async ({messageText, image = null, messages, setMessages, setLoading, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
     try {
         setLoading(true);
 
         const { finalId, payload } = await prepareMessageAndPayload(messageText, image, messages, setMessages, generatePayload);
 
-        const result = await sendFunction(payload);
+        const result = await sendFunction(payload, chatroomId);
         handleResult(result, res => onSuccess(res, finalId));
     } catch (error) {
         handleError(error, onErrorMessage, messages, setMessages);
@@ -244,6 +277,7 @@ const runMessageTask = async ({messageText, image = null, messages, setMessages,
     }
 };
 
+// 保持不變的輔助函數
 const prepareMessageAndPayload = async (messageText, image, messages, setMessages, generatePayloadFn) => {
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
