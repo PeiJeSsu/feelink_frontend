@@ -212,8 +212,8 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
 
 export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas) => {
     if (!canvasImage) return;
-    
     const canvasData = await convertBlobToBase64(canvasImage);
+
 
     await runMessageTask({
         messageText,
@@ -280,37 +280,59 @@ const handleResult = (result, onSuccess) => {
     }
 };
 
-const processDrawingResult = (result, currentId, messages, setMessages, canvas) => {
+const processDrawingResult = async (result, currentId, messages, setMessages, canvas) => {
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
-        console.log('Found nested content:', actualResult); 
     }
-
     if (actualResult.message) {
-        const textResponseMessage = createNewMessage(currentId, actualResult.message, false, false);
+        const textResponseMessage = createNewMessage(currentId, "", false, false);
         setMessages(prevMessages => [...prevMessages, textResponseMessage]);
+        
+        let displayedContent = "";
+        for (let i = 0; i < actualResult.message.length; i++) {
+            displayedContent += actualResult.message[i];
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === currentId) {
+                        return {...msg, message: displayedContent};
+                    }
+                    return msg;
+                });
+            });
+            await new Promise(resolve => setTimeout(resolve, 30));
+        }
         currentId++;
     }
 
     if (actualResult.imageData && canvas) {
         try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             clearCanvas(canvas);
             const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
             addImageToCanvas(canvas, imageDataUrl, { mode: 'fillViewport' });
+
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === currentId - 1) {
+                        return {
+                            ...msg,
+                            imageData: actualResult.imageData,
+                            hasImage: true
+                        };
+                    }
+                    return msg;
+                });
+            });
         } catch (error) {
-            console.error('Error adding image to canvas:', error); 
+            console.error('Error adding image to canvas:', error);
         }
-    } else {
-        console.log('Missing data:', { 
-            hasImageData: !!actualResult.imageData, 
-            hasCanvas: !!canvas,
-            actualResult: actualResult
-        });
     }
 
     return currentId;
 };
+
 
 const processGenerateObjectResult = (result, currentId, messages, setMessages, canvas) => {
     let actualResult = result;

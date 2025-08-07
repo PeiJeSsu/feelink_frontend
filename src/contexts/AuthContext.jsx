@@ -20,6 +20,8 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
+            localStorage.removeItem('selectedPersonality');
+            localStorage.removeItem('currentSessionId');
             await signOut(auth);
         } catch (error) {
             console.error("登出錯誤:", error);
