@@ -25,10 +25,10 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage) => {
     return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage));
 };
 
-// 修改後的 AI 繪圖函數，增加去背邏輯
-export const sendAIDrawingToBackend = async (messageText, canvasData) => {
+// 修改後的 AI 繪圖函數，增加去背邏輯和模式參數
+export const sendAIDrawingToBackend = async (messageText, canvasData, mode = 'drawing') => {
     const defaultMessage = "請根據這張圖片生成新的內容";
-    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
+    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, mode));
 };
 
 // 通用的後端訊息發送函數
