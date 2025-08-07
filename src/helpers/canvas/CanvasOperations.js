@@ -64,7 +64,6 @@ export const addImageToCanvas = (canvas, imageData, options = {}) => {
 		mode = 'fillViewport', // 'fillViewport' 或 'originalSize' 或 'customSize'
 		targetPosition = null, // { x, y } 指定位置
 		maxSize = 200, // 當mode為'originalSize'時的最大尺寸
-		scale = null // 自定義縮放比例
 	} = options;
 
 	const imgObj = new Image();
@@ -101,16 +100,6 @@ export const addImageToCanvas = (canvas, imageData, options = {}) => {
 				finalTop = targetPosition.y - (fabricImage.height * finalScale) / 2;
 			} else {
 				// 如果沒有指定位置，放在畫布中央
-				finalLeft = (canvas.width - fabricImage.width * finalScale) / 2;
-				finalTop = (canvas.height - fabricImage.height * finalScale) / 2;
-			}
-		} else if (mode === 'customSize' && scale) {
-			// 自定義縮放模式
-			finalScale = scale;
-			if (targetPosition) {
-				finalLeft = targetPosition.x - (fabricImage.width * finalScale) / 2;
-				finalTop = targetPosition.y - (fabricImage.height * finalScale) / 2;
-			} else {
 				finalLeft = (canvas.width - fabricImage.width * finalScale) / 2;
 				finalTop = (canvas.height - fabricImage.height * finalScale) / 2;
 			}

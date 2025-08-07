@@ -2,7 +2,8 @@ import {addMessages, appendMessage, getNewId} from "./usage/MessageFactory";
 import {sendAIDrawingToBackend, sendCanvasAnalysisToBackend, sendCanvasAnalysisToBackendStreamService, sendImageToBackend, sendImageToBackendStreamService, sendTextToBackend, sendTextToBackendStream} from './MessageService';
 import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
-
+import {clearCanvas, addImageToCanvas} from "../../helpers/canvas/CanvasOperations";
+import { createNewMessage } from "./usage/MessageFactory";
 const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, streamFunction, errorMessage) => {
     if (!messageText && !image) return;
 
@@ -280,8 +281,6 @@ const handleResult = (result, onSuccess) => {
 };
 
 const processDrawingResult = (result, currentId, messages, setMessages, canvas) => {
-    const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
-    const { createNewMessage } = require("./usage/MessageFactory");
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
@@ -314,8 +313,6 @@ const processDrawingResult = (result, currentId, messages, setMessages, canvas) 
 };
 
 const processGenerateObjectResult = (result, currentId, messages, setMessages, canvas) => {
-    const { addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
-    const { createNewMessage } = require("./usage/MessageFactory");
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
