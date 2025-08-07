@@ -12,7 +12,7 @@ import "./Layout.css";
 const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(true);
-	const [chatWidth, setChatWidth] = useState(350);
+	const [chatWidth, setChatWidth] = useState(400);
 	const [isResizing, setIsResizing] = useState(false);
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
@@ -252,7 +252,7 @@ const Layout = () => {
 						className={`chat-container ${isResizing ? "resizing" : ""}`}
 						width={chatWidth}
 						height={Infinity}
-						minConstraints={[350, Infinity]}
+						minConstraints={[400, Infinity]}
 						maxConstraints={[550, Infinity]}
 						axis="x"
 						resizeHandles={["w"]}

@@ -220,12 +220,32 @@ export const handleSendAIDrawing = async (canvasImage, messageText, messages, se
         messages,
         setMessages,
         setLoading,
-        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
-        sendFunction: ({ text, imageData }) => sendAIDrawingToBackend(text, imageData),
+        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData, mode: 'drawing' }),
+        sendFunction: ({ text, imageData, mode }) => sendAIDrawingToBackend(text, imageData, mode),
         onSuccess: (result, finalId) => {
             return processDrawingResult(result, finalId, messages, setMessages, canvas);
         },
         onErrorMessage: 'AI 畫圖失敗',
+    });
+};
+
+export const handleSendGenerateObject = async (canvasImage, messageText, messages, setMessages, setLoading, canvas) => {
+    if (!canvasImage) return;
+    
+    const canvasData = await convertBlobToBase64(canvasImage);
+
+    await runMessageTask({
+        messageText,
+        image: canvasImage,
+        messages,
+        setMessages,
+        setLoading,
+        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData, mode: 'generateObject' }),
+        sendFunction: ({ text, imageData, mode }) => sendAIDrawingToBackend(text, imageData, mode),
+        onSuccess: (result, finalId) => {
+            return processGenerateObjectResult(result, finalId, messages, setMessages, canvas);
+        },
+        onErrorMessage: 'AI 生成物件失敗',
     });
 };
 
@@ -278,9 +298,57 @@ const processDrawingResult = (result, currentId, messages, setMessages, canvas) 
         try {
             clearCanvas(canvas);
             const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
-            addImageToCanvas(canvas, imageDataUrl);
+            addImageToCanvas(canvas, imageDataUrl, { mode: 'fillViewport' });
         } catch (error) {
             console.error('Error adding image to canvas:', error); 
+        }
+    } else {
+        console.log('Missing data:', { 
+            hasImageData: !!actualResult.imageData, 
+            hasCanvas: !!canvas,
+            actualResult: actualResult
+        });
+    }
+
+    return currentId;
+};
+
+const processGenerateObjectResult = (result, currentId, messages, setMessages, canvas) => {
+    const { addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+    const { createNewMessage } = require("./usage/MessageFactory");
+    let actualResult = result;
+    if (result.success && result.content) {
+        actualResult = result.content;
+        console.log('Found nested content:', actualResult); 
+    }
+
+    if (actualResult.message) {
+        const textResponseMessage = createNewMessage(currentId, actualResult.message, false, false);
+        setMessages(prevMessages => [...prevMessages, textResponseMessage]);
+        currentId++;
+    }
+
+    if (actualResult.imageData && canvas) {
+        try {
+            const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
+            // 取得儲存的點擊位置
+            const targetPosition = canvas._generateObjectPosition || null;
+            console.log('讀取到的點擊位置:', targetPosition);
+            addImageToCanvas(canvas, imageDataUrl, { 
+                mode: 'originalSize', 
+                targetPosition: targetPosition,
+                maxSize: 200 
+            });
+            // 清除儲存的位置
+            delete canvas._generateObjectPosition;
+            // 恢復畫布交互功能
+            canvas.selection = true;
+            canvas.getObjects().forEach(obj => {
+                obj.selectable = true;
+                obj.evented = true;
+            });
+        } catch (error) {
+            console.error('Error adding generated object to canvas:', error); 
         }
     } else {
         console.log('Missing data:', { 

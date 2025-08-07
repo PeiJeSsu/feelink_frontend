@@ -96,11 +96,12 @@ export const sendMessage = (text, conversationCount , hasDefaultQuestion , sessi
 		content: response.data.content
 	}));
 };
-export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true) => {
+export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true, mode = 'drawing') => {
 	const requestData = {
 		text: messageText,
 		imageData: canvasData,
-		removeBackground: removeBackground
+		removeBackground: removeBackground,
+		mode: mode
 	};
 
 	return apiConfig.post(`/generate`, requestData, {
