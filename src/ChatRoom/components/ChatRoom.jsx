@@ -10,6 +10,7 @@ export default function ChatRoom({ canvas }) {
     const {
         messages,
         loading,
+        disabled,
         sendTextMessage,
         sendImageMessage,
         sendCanvasAnalysis,
@@ -84,7 +85,7 @@ export default function ChatRoom({ canvas }) {
                     onAnalyzeCanvas={sendCanvasAnalysisStream}
                     onAIDrawing={sendAIDrawing}
                     onGenerateObject={sendGenerateObject}
-                    disabled={loading}
+                    disabled={disabled}
                 />
             </Box>
         </Box>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createNewMessage } from "../helpers/usage/MessageFactory";
-import { handleSendImageMessage, handleSendTextMessage, handleSendCanvasAnalysis, handleSendAIDrawing, handleSendGenerateObject, handleSendTextMessageStream, handleSendImageMessageStream, handleSendCanvasAnalysisStream} from "../helpers/MessageController";
+import { handleSendAIDrawing, handleSendGenerateObject, handleSendTextMessageStream, handleSendImageMessageStream, handleSendCanvasAnalysisStream} from "../helpers/MessageController";
 import { setDrawingMode } from "../../helpers/canvas/CanvasOperations";
 import { setPanningMode } from "../../helpers/canvas/PanHelper";
 import { disableShapeDrawing } from "../../helpers/shape/ShapeTools";
@@ -22,6 +22,7 @@ export default function useChatMessages(canvas) {
     const [conversationCount, setConversationCount] = useState(0);
     const questionAdded = useRef(false);
     const cleanupFunctionsRef = useRef([]);
+    const [disabled, setDisabled] = useState(false);
 
     // 添加清理函數到引用中
     const addCleanupFunction = useCallback((cleanupFn) => {
@@ -48,11 +49,11 @@ export default function useChatMessages(canvas) {
     }, [executeCleanup]);
 
     const sendTextMessageStream = useCallback((messageText, defaultQuestion = "", conversationCount = 1) => {
-        return handleSendTextMessageStream(messageText, messages, setMessages, setLoading, defaultQuestion, conversationCount);
+        return handleSendTextMessageStream(messageText, messages, setMessages, setLoading, setDisabled, defaultQuestion, conversationCount);
     }, [messages, setMessages, setLoading]);
 
     const sendImageMessageStream = useCallback((messageText, messageImage) => {
-        return handleSendImageMessageStream(messageText, messageImage, messages, setMessages, setLoading);
+        return handleSendImageMessageStream(messageText, messageImage, messages, setMessages ,setLoading, setDisabled);
     }, [messages, setMessages, setLoading]);
 
     const convertCanvasToBlob = useCallback(async () => {
@@ -66,35 +67,17 @@ export default function useChatMessages(canvas) {
     const sendCanvasAnalysisStream = useCallback(async (messageText) => {
         try {
             const blob = await convertCanvasToBlob();
-            await handleSendCanvasAnalysisStream(blob, messageText, messages, setMessages, setLoading);
+            await handleSendCanvasAnalysisStream(blob, messageText, messages, setMessages, setLoading, setDisabled);
         } catch (error) {
             console.error(error.message);
         }
     }, [messages, setMessages, setLoading, convertCanvasToBlob]);
 
-    const sendTextMessage = (messageText) => {
-        const nextCount = conversationCount + 1; 
-        setConversationCount(nextCount); 
-        handleSendTextMessage(messageText, messages, setMessages, setLoading, currentQuestion, nextCount);
-    };
-
-    const sendImageMessage = (messageText, messageImage) => {
-        handleSendImageMessage(messageText, messageImage, messages, setMessages, setLoading);
-    };
-
-    const sendCanvasAnalysis = async (messageText) => {
-        try {
-            const blob = await convertCanvasToBlob();
-            await handleSendCanvasAnalysis(blob, messageText, messages, setMessages, setLoading);
-        } catch (error) {
-            console.error(error.message);
-        }
-    };
 
     const sendAIDrawing = async (messageText) => {
         try {
             const blob = await convertCanvasToBlob();
-            await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas);
+            await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, setDisabled, canvas);
         } catch (error) {
             console.error(error.message);
         }
@@ -197,7 +180,7 @@ export default function useChatMessages(canvas) {
             
             try {
                 const blob = await convertCanvasToBlob();
-                await handleSendGenerateObject(blob, messageText, messages, setMessages, setLoading, canvas);
+                await handleSendGenerateObject(blob, messageText, messages, setMessages, setLoading, setDisabled, canvas);
             } catch (error) {
                 console.error(error.message);
                 // 如果出錯，手動清除位置
@@ -231,11 +214,9 @@ export default function useChatMessages(canvas) {
 
     return { 
         messages, 
-        loading, 
-        predefinedQuestions, 
-        sendTextMessage, 
-        sendImageMessage, 
-        sendCanvasAnalysis, 
+        loading,
+        disabled,
+        predefinedQuestions,
         sendAIDrawing, 
         sendGenerateObject,
         addSystemMessage,
