@@ -333,8 +333,7 @@ const processDrawingResult = async (result, currentId, messages, setMessages, ca
     return currentId;
 };
 
-
-const processGenerateObjectResult = (result, currentId, messages, setMessages, canvas) => {
+const processGenerateObjectResult = async (result, currentId, messages, setMessages, canvas) => {
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
@@ -342,8 +341,22 @@ const processGenerateObjectResult = (result, currentId, messages, setMessages, c
     }
 
     if (actualResult.message) {
-        const textResponseMessage = createNewMessage(currentId, actualResult.message, false, false);
+        const textResponseMessage = createNewMessage(currentId, "", false, false);
         setMessages(prevMessages => [...prevMessages, textResponseMessage]);
+
+        let displayedContent = "";
+        for (let i = 0; i < actualResult.message.length; i++) {
+            displayedContent += actualResult.message[i];
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === currentId) {
+                        return {...msg, message: displayedContent};
+                    }
+                    return msg;
+                });
+            });
+            await new Promise(resolve => setTimeout(resolve, 30));
+        }
         currentId++;
     }
 
