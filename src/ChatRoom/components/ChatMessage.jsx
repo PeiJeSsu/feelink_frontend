@@ -4,14 +4,17 @@ import PropTypes from "prop-types";
 import MarkdownIt from "markdown-it";
 
 const md = new MarkdownIt({
-    html: false,
+    html: true,
     breaks: true,
     linkify: true,
 });
 
 export default function ChatMessage({ message, isUser, isImage, timestamp }) {
     const textMessage = message || "";
-    const isMarkdown = /[*_#\-`]/.test(textMessage);
+    const isMarkdown = /[*_#\-`|]/.test(textMessage) ||
+        /https?:\/\/[^\s]+/.test(textMessage) ||
+        textMessage.includes('**') ||
+        textMessage.includes('\n');
 
     const renderMessageContent = () => {
         if (isImage) {
@@ -34,12 +37,20 @@ export default function ChatMessage({ message, isUser, isImage, timestamp }) {
     };
 
     const renderMarkdown = () => {
-        if (!isMarkdown) return textMessage;
-        const html = md.render(textMessage);
+        let html = md.render(textMessage);
+        html = html.replace(/<p>/g, '').replace(/<\/p>/g, '');
+        html = html.replace(/<p>/g, '').replace(/<\/p>/g, '');
+        html = html.replace(/\*\s/g, '');
         return (
             <div
                 dangerouslySetInnerHTML={{ __html: html }}
-                style={chatMessageStyles.markdown}
+                style={{
+                    ...chatMessageStyles.markdown,
+                    fontSize: '14px',
+                    lineHeight: 1.5,
+                    margin: 0,
+                    padding: 0
+                }}
             />
         );
     };
