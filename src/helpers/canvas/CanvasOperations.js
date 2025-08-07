@@ -61,7 +61,7 @@ export const addImageToCanvas = (canvas, imageData, options = {}) => {
 	if (!canvas || !imageData) return;
 
 	const {
-		mode = 'fillViewport', // 'fillViewport' 或 'originalSize' 或 'customSize'
+		mode = 'fillViewport', // 'fillViewport' 或 'originalSize'
 		targetPosition = null, // { x, y } 指定位置
 		maxSize = 200, // 當mode為'originalSize'時的最大尺寸
 	} = options;
