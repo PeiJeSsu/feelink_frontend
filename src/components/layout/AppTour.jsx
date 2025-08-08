@@ -103,13 +103,11 @@ const AppTour = ({ runTour, setRunTour }) => {
   }, [runTour, updateHighlight]);
 
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem('hasSeenTour');
-    if (!hasSeenTour) {
-      const timer = setTimeout(() => {
-        setRunTour(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
+    // 延遲 2 秒後自動開啟導覽
+    const timer = setTimeout(() => {
+      setRunTour(true);
+    }, 2000);
+    return () => clearTimeout(timer);
   }, [setRunTour]);
 
   const nextStep = () => {
