@@ -101,11 +101,7 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
     };
 
     return (
-        <Box sx={{ 
-            width: "100%", 
-            maxWidth: "100%",
-            overflow: "hidden"
-        }}>
+        <>
             <FormControl fullWidth margin="normal">
                 <InputLabel id="brush-type-label">畫筆類型</InputLabel>
                 <Select
@@ -294,7 +290,7 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
                     />
                 </Box>
             )}
-        </Box>
+        </>
     );
 };
 
