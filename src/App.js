@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CanvasPage from "./pages/CanvasPage";
 import PersonalitySelectPage from "./pages/PersonalitySelectPage";
+import './i18n'; 
 
 function App() {
     return (

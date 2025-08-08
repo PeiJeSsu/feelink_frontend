@@ -9,17 +9,34 @@ import { disablePathEraser } from "../../helpers/eraser/PathEraserTools";
 import { disablePaintBucket } from "../../helpers/paint-bucket/PaintBucketTools";
 import { showAlert } from "../../utils/AlertUtils";
 
-const predefinedQuestions = [
-    "最近過得如何，有沒有發生甚麼有趣或難過的事？",
-    "今天的心情如何呢",
-    "最近有沒有讓你開心或困擾的事呢？"
-];
+const predefinedQuestions = {
+    'zh-TW': [
+        "最近過得如何，有沒有發生什麼有趣或難過的事？",
+        "今天的心情如何呢？",
+        "最近有沒有讓你開心或困擾的事呢？"
+    ],
+    'en-US': [
+        "How have you been recently? Has anything interesting or sad happened?",
+        "How are you feeling today?",
+        "Is there anything that has made you happy or troubled recently?"
+    ]
+};
+
+const getGreetingWithNickname = (question) => {
+    const userNickname = localStorage.getItem('userNickname') || '朋友';
+    const aiPartnerName = localStorage.getItem('aiPartnerName') || 'AI夥伴';
+    const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
+    
+    if (currentLanguage === 'zh-TW') {
+        return `嗨，${userNickname}！我是你的好夥伴${aiPartnerName}。${question}`;
+    } else {
+        return `Hi, ${userNickname}! I'm your AI partner ${aiPartnerName}. ${question}`;
+    }
+};
 
 export default function useChatMessages(canvas) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [currentQuestion, setCurrentQuestion] = useState("");
-    const [conversationCount, setConversationCount] = useState(0);
     const questionAdded = useRef(false);
     const cleanupFunctionsRef = useRef([]);
     const [disabled, setDisabled] = useState(false);
@@ -197,7 +214,6 @@ export default function useChatMessages(canvas) {
     };
 
     const addSystemMessage = useCallback((text) => {
-        setCurrentQuestion(text);
         setMessages((prevMessages) => [
             ...prevMessages,
             createNewMessage(Date.now(), text, false, false)
@@ -206,8 +222,11 @@ export default function useChatMessages(canvas) {
 
     useEffect(() => {
         if (messages.length === 0 && !questionAdded.current) {
-            const randomQuestion = predefinedQuestions[Math.floor(Math.random() * predefinedQuestions.length)];
-            addSystemMessage(randomQuestion);
+            const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
+            const questions = predefinedQuestions[currentLanguage] || predefinedQuestions['zh-TW'];
+            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+            const greetingMessage = getGreetingWithNickname(randomQuestion);
+            addSystemMessage(greetingMessage);
             questionAdded.current = true;
         }
     }, [messages, addSystemMessage]);
