@@ -11,15 +11,24 @@ export default function ChatRoom({ canvas }) {
         messages,
         loading,
         disabled,
-        sendTextMessage,
-        sendImageMessage,
-        sendCanvasAnalysis,
         sendAIDrawing,
         sendGenerateObject,
         sendTextMessageStream,
         sendImageMessageStream,
         sendCanvasAnalysisStream,
     } = useChatMessages(canvas);
+
+    // 取得 AI 夥伴名稱的函數
+    const getAIPartnerName = () => {
+        const aiPartnerName = localStorage.getItem('aiPartnerName');
+        const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
+        
+        if (!aiPartnerName) {
+            return currentLanguage === 'zh-TW' ? 'AI 夥伴' : 'AI Partner';
+        }
+        
+        return currentLanguage === 'zh-TW' ? `AI 夥伴 — ${aiPartnerName}` : `AI Partner ${aiPartnerName}`;
+    };
     return (
         <Box sx={chatRoomStyles.container}>
             {/* 聊天標題 */}
@@ -28,7 +37,7 @@ export default function ChatRoom({ canvas }) {
                     <Box sx={chatRoomStyles.headerTitle}>
                         <AssistantIcon sx={chatRoomStyles.titleIcon} />
                         <Typography sx={chatRoomStyles.titleText}>
-                            AI 夥伴
+                            {getAIPartnerName()}
                         </Typography>
                     </Box>
                     <Chip
