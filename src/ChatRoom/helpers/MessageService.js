@@ -28,10 +28,12 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage, chat
     return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage, chatroomId));
 };
 
-// 修改後的 AI 繪圖函數，增加去背邏輯
-export const sendAIDrawingToBackend = async (messageText, canvasData) => {
+// 🎯 修改：AI 繪圖函數，增加 chatroomId 參數和去背邏輯
+export const sendAIDrawingToBackend = async (messageText, canvasData, chatroomId) => {
     const defaultMessage = "請根據這張圖片生成新的內容";
-    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true));
+    
+    // 🎯 添加 chatroomId 參數到 API 調用
+    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, chatroomId));
 };
 
 // 修改：更新流式發送函數，使用 chatroomId

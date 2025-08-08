@@ -240,9 +240,13 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
     });
 };
 
-// 修改：AI 繪圖功能保持不變，因為它可能是不同的服務
-export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas) => {
+// 🎯 修改：AI 繪圖功能，添加 chatroomId 參數
+export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
     if (!canvasImage) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for AI drawing');
+        return;
+    }
     
     const canvasData = await convertBlobToBase64(canvasImage);
 
@@ -252,8 +256,9 @@ export const handleSendAIDrawing = async (canvasImage, messageText, messages, se
         messages,
         setMessages,
         setLoading,
+        chatroomId,
         generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
-        sendFunction: ({ text, imageData }) => sendAIDrawingToBackend(text, imageData),
+        sendFunction: ({ text, imageData }, chatroomId) => sendAIDrawingToBackend(text, imageData, chatroomId),
         onSuccess: (result, finalId) => {
             return processDrawingResult(result, finalId, messages, setMessages, canvas);
         },

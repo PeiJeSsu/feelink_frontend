@@ -98,12 +98,13 @@ export const sendMessage = (text, conversationCount, hasDefaultQuestion, chatroo
     }));
 };
 
-// AI 繪圖 API（保持不變，因為這個可能是不同的服務）
-export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true) => {
+// 🎯 修改：AI 繪圖 API，添加 chatroomId 參數
+export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true, chatroomId) => {
     const requestData = {
         text: messageText,
         imageData: canvasData,
-        removeBackground: removeBackground
+        removeBackground: removeBackground,
+        chatroomId: chatroomId  // 🎯 新增 chatroomId
     };
 
     return apiConfig.post(`/generate`, requestData, {
@@ -142,7 +143,7 @@ export const analysisImage = (text, file, chatroomId) => {
     });
 };
 
-// 🎯 新增：載入聊天室的歷史訊息
+// 🎯 載入聊天室的歷史訊息
 export const loadChatroomMessages = async (chatroomId) => {
     try {
         console.log('正在載入聊天室訊息:', chatroomId);
@@ -154,7 +155,7 @@ export const loadChatroomMessages = async (chatroomId) => {
     }
 };
 
-// 🎯 新增：只載入文字訊息（非畫布資料）
+// 🎯 只載入文字訊息（非畫布資料）
 export const loadChatroomTextMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/text`);
@@ -165,7 +166,7 @@ export const loadChatroomTextMessages = async (chatroomId) => {
     }
 };
 
-// 🎯 新增：載入畫布資料
+// 🎯 載入畫布資料
 export const loadChatroomDrawingMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/drawing`);
@@ -176,7 +177,7 @@ export const loadChatroomDrawingMessages = async (chatroomId) => {
     }
 };
 
-// 🎯 新增：載入使用者訊息
+// 🎯 載入使用者訊息
 export const loadUserMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/user`);
@@ -187,7 +188,7 @@ export const loadUserMessages = async (chatroomId) => {
     }
 };
 
-// 🎯 新增：載入AI訊息
+// 🎯 載入AI訊息
 export const loadAIMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/ai`);

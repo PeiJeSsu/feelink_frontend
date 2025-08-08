@@ -249,13 +249,18 @@ export default function useChatMessages(canvas) {
     }, [messages, setMessages, setLoading, canvas, currentChatroomId]);
 
     const sendAIDrawing = useCallback(async (messageText) => {
-        try {
-            const blob = await convertCanvasToBlob();
-            await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas);
-        } catch (error) {
-            console.error(error.message);
-        }
-    }, [messages, setMessages, setLoading, canvas]);
+    if (!currentChatroomId) {
+        console.error('No current chatroom ID available');
+        return;
+    }
+    try {
+        const blob = await convertCanvasToBlob();
+        await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas, currentChatroomId);
+        //                                                                                             
+    } catch (error) {
+        console.error(error.message);
+    }
+}, [messages, setMessages, setLoading, canvas, currentChatroomId]);
 
     const addSystemMessage = useCallback((text) => {
         setCurrentQuestion(text);
