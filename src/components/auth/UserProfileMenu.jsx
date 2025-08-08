@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     IconButton,
@@ -15,7 +15,38 @@ import { useAuth } from "../../hooks/useAuth";
 const UserProfileMenu = () => {
     const { user, logout } = useAuth();
     const [anchorEl, setAnchorEl] = useState(null);
+    const [userNickname, setUserNickname] = useState("");
     const open = Boolean(anchorEl);
+
+    // 監聽 localStorage 的變化，取得使用者設定的暱稱
+    useEffect(() => {
+        const getNickname = () => {
+            const savedNickname = localStorage.getItem('userNickname');
+            setUserNickname(savedNickname || "");
+        };
+
+        // 初始載入
+        getNickname();
+
+        // 監聽 storage 事件，當其他分頁更改 localStorage 時更新
+        window.addEventListener('storage', getNickname);
+
+        // 自定義事件監聽，當同一分頁內更改 localStorage 時更新
+        const handleNicknameUpdate = () => getNickname();
+        window.addEventListener('nicknameUpdated', handleNicknameUpdate);
+
+        return () => {
+            window.removeEventListener('storage', getNickname);
+            window.removeEventListener('nicknameUpdated', handleNicknameUpdate);
+        };
+    }, []);
+
+    // 取得顯示的暱稱，優先級：localStorage 暱稱 > Firebase displayName > "使用者"
+    const getDisplayName = () => {
+        if (userNickname) return userNickname;
+        if (user?.displayName) return user.displayName;
+        return "使用者";
+    };
 
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -82,7 +113,7 @@ const UserProfileMenu = () => {
                             fontFamily: '"Noto Sans TC", sans-serif',
                         }}
                     >
-                        {user?.displayName || "使用者"}
+                        {getDisplayName()}
                     </Typography>
                     <Typography
                         variant="body2"
