@@ -61,7 +61,7 @@ export default function TextInputArea({
                     fullWidth
                     multiline
                     maxRows={3}
-                    placeholder="與 AI 助手對話..."
+                    placeholder="與 AI 夥伴對話..."
                     value={message}
                     onChange={messageChange}
                     onKeyDown={handleKeyDown}
