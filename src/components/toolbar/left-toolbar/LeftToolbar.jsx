@@ -1,5 +1,6 @@
 import PropTypes from "prop-types";
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Paper, Typography, IconButton } from "@mui/material";
+import { Close } from "@mui/icons-material";
 import LeftToolbarButtons from "./LeftToolbarButtons";
 import BrushSettings from "../../brush/BrushSettings";
 import ShapeSettings from "../../shape/ShapeSettings";
@@ -29,6 +30,10 @@ const LeftToolbar = ({
 		setActiveTool(tool);
 	};
 
+	const handleCloseSettings = () => {
+		setActiveTool(null);
+	};
+
 	const renderSettingsPanel = () => {
 		const settingsMap = {
 			select: { title: "選擇工具設置", component: <SelectSettings canvas={canvas} /> },
@@ -49,26 +54,49 @@ const LeftToolbar = ({
 					width: "280px",
 					height: "100%",
 					backgroundColor: "#ffffff",
-					borderRight: "1px solid #e2e8f0",
+					borderRight: "1px solid #aeb8d5f5",
 					padding: "20px",
 					overflow: "auto",
 					display: "flex",
 					flexDirection: "column",
 				}}
 			>
-				<Typography
-					variant="h6"
+				<Box
 					sx={{
-						fontSize: "16px",
-						fontWeight: 600,
-						color: "#1e293b",
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
 						marginBottom: "20px",
-						borderBottom: "1px solid #e2e8f0",
+						borderBottom: "1px solid #aeb8d5f5",
 						paddingBottom: "12px",
 					}}
 				>
-					{settings.title}
-				</Typography>
+					<Typography
+						variant="h6"
+						sx={{
+							fontSize: "16px",
+							fontWeight: 600,
+							color: "#1e293b",
+						}}
+					>
+						{settings.title}
+					</Typography>
+					<IconButton
+						onClick={handleCloseSettings}
+						size="small"
+						sx={{
+							width: 32,
+							height: 32,
+							color: "#64748b",
+							"&:hover": {
+								backgroundColor: "#f1f5f9",
+								color: "#2563eb",
+							},
+						}}
+					>
+						<Close sx={{ fontSize: 18 }} />
+					</IconButton>
+				</Box>
 				<Box 
 					sx={{
 						"& .MuiFormControl-root": {
@@ -82,7 +110,7 @@ const LeftToolbar = ({
 								borderRadius: "12px",
 								backgroundColor: "#f8fafc",
 								"& fieldset": {
-									borderColor: "#e2e8f0",
+									borderColor: "#aeb8d5f5",
 								},
 								"&:hover fieldset": {
 									borderColor: "#cbd5e1",
@@ -104,7 +132,7 @@ const LeftToolbar = ({
 								borderRadius: "3px",
 							},
 							"& .MuiSlider-rail": {
-								backgroundColor: "#e2e8f0",
+								backgroundColor: "#aeb8d5f5",
 								borderRadius: "3px",
 							},
 							"& .MuiSlider-thumb": {
@@ -136,12 +164,35 @@ const LeftToolbar = ({
 								"&.Mui-checked": {
 									color: "#2563eb",
 									"& + .MuiSwitch-track": {
-										backgroundColor: "#2563eb",
+										backgroundColor: "#2563eb !important",
+										border: "2px solid #ffffff",
+										opacity: 1,
 									},
+								},
+								"& + .MuiSwitch-track": {
+									border: "2px solid #cbd5e1",
 								},
 							},
 							"& .MuiSwitch-track": {
-								backgroundColor: "#e2e8f0",
+								backgroundColor: "#cbd5e1",
+								border: "2px solid #cbd5e1",
+								opacity: 1,
+							},
+							"& .MuiSwitch-thumb": {
+								backgroundColor: "#ffffff",
+								border: "2px solid #cbd5e1",
+								boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+								"&:hover": {
+									boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
+								},
+							},
+							"& .Mui-checked .MuiSwitch-thumb": {
+								backgroundColor: "#ffffff",
+								border: "2px solid #2563eb",
+								boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
+								"&:hover": {
+									boxShadow: "0 4px 12px rgba(37, 99, 235, 0.4)",
+								},
 							},
 						},
 					}}
@@ -158,7 +209,7 @@ const LeftToolbar = ({
 				sx={{
 					width: 72,
 					backgroundColor: "#ffffff",
-					borderRight: "1px solid #d1d5db",
+					borderRight: "1px solid #aeb8d5f5",
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",

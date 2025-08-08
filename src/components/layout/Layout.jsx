@@ -148,7 +148,7 @@ const Layout = () => {
 									border: "none",
 								},
 								"&:hover fieldset": {
-									border: "1px solid #e2e8f0",
+									border: "1px solid #cbd5e1",
 								},
 								"&.Mui-focused fieldset": {
 									border: "1px solid #2563eb",
@@ -217,9 +217,9 @@ const Layout = () => {
 					flex: 1, 
 					display: "flex", 
 					flexDirection: "column",
-					backgroundColor: "#f8fafc",
-					padding: "16px",
-					paddingBottom: "16px",
+					background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+					padding: "20px",
+					paddingBottom: "20px",
 					minWidth: 0, // 確保可以縮小
 					transition: "all 0.3s ease-in-out",
 				}}>
@@ -227,7 +227,7 @@ const Layout = () => {
 						flex: 1,
 						backgroundColor: "#ffffff",
 						borderRadius: "12px",
-						border: "1px solid #e5e7eb",
+						border: "1px solid #aeb8d5f5",
 						overflow: "hidden",
 						boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
 					}}>

@@ -28,7 +28,7 @@ const getGreetingWithNickname = (question) => {
     const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
     
     if (currentLanguage === 'zh-TW') {
-        return `嗨，${userNickname}！我是你的好夥伴${aiPartnerName}。${question}`;
+        return `嗨，${userNickname}！我是你的AI夥伴${aiPartnerName}。${question}`;
     } else {
         return `Hi, ${userNickname}! I'm your AI partner ${aiPartnerName}. ${question}`;
     }

@@ -101,7 +101,11 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
     };
 
     return (
-        <>
+        <Box sx={{ 
+            width: "100%", 
+            maxWidth: "100%",
+            overflow: "hidden"
+        }}>
             <FormControl fullWidth margin="normal">
                 <InputLabel id="brush-type-label">畫筆類型</InputLabel>
                 <Select
@@ -265,7 +269,7 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
                         sx={{ mb: 2, mt: 0 }}
                     />
 
-                    <Typography gutterBottom>水平陰影偏移</Typography>
+                    <Typography gutterBottom>水平偏移</Typography>
                     <Slider
                         value={brushSettings.shadow?.offsetX || 0}
                         onChange={(e, val) =>
@@ -277,7 +281,7 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
                     />
 
                     <Typography gutterBottom sx={{ mt: 2 }}>
-                        垂直陰影偏移
+                        垂直偏移
                     </Typography>
                     <Slider
                         value={brushSettings.shadow?.offsetY || 0}
@@ -290,7 +294,7 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
                     />
                 </Box>
             )}
-        </>
+        </Box>
     );
 };
 

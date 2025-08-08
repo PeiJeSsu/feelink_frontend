@@ -96,7 +96,7 @@ const UserProfileMenu = () => {
                     elevation: 3,
                     sx: {
                         backgroundColor: "#ffffff",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid #cbd5e1",
                         borderRadius: "12px",
                         mt: 1.5,
                         minWidth: 200,
@@ -126,7 +126,7 @@ const UserProfileMenu = () => {
                     </Typography>
                 </Box>
 
-                <Divider sx={{ borderColor: "#e2e8f0" }} />
+                <Divider sx={{ borderColor: "#cbd5e1" }} />
 
                 <MenuItem
                     onClick={handleClose}
@@ -142,7 +142,7 @@ const UserProfileMenu = () => {
                     <ListItemIcon>
                         <Person sx={{ color: "#3b82f6", fontSize: 20 }} />
                     </ListItemIcon>
-                    個人資料
+                    個人設定
                 </MenuItem>
 
                 <MenuItem

@@ -204,7 +204,7 @@ const PersonalitySelectPage = () => {
                     mb: 4, 
                     p: 4, 
                     borderRadius: '16px', 
-                    border: '1px solid #e5e7eb',
+                    border: '1px solid #cbd5e1',
                     backgroundColor: '#ffffff',
                     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
                 }}
@@ -238,7 +238,7 @@ const PersonalitySelectPage = () => {
                                     borderRadius: '12px',
                                     backgroundColor: '#f8fafc',
                                     '& fieldset': {
-                                        borderColor: '#e5e7eb',
+                                        borderColor: '#cbd5e1',
                                     },
                                     '&:hover fieldset': {
                                         borderColor: '#3b82f6',
@@ -274,7 +274,7 @@ const PersonalitySelectPage = () => {
                                     borderRadius: '12px',
                                     backgroundColor: '#f8fafc',
                                     '& .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: '#e5e7eb',
+                                        borderColor: '#cbd5e1',
                                     },
                                     '&:hover .MuiOutlinedInput-notchedOutline': {
                                         borderColor: '#3b82f6',
@@ -306,7 +306,7 @@ const PersonalitySelectPage = () => {
             </Paper>
 
             {/* 分隔線 */}
-            <Divider sx={{ mb: 4, backgroundColor: '#e5e7eb' }} />
+            <Divider sx={{ mb: 4, backgroundColor: '#cbd5e1' }} />
 
             {/* 下半部：AI 夥伴選擇區 */}
             <Paper 
@@ -314,7 +314,7 @@ const PersonalitySelectPage = () => {
                 sx={{ 
                     p: 4, 
                     borderRadius: '16px', 
-                    border: '1px solid #e5e7eb',
+                    border: '1px solid #cbd5e1',
                     backgroundColor: '#ffffff',
                     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
                 }}
@@ -360,7 +360,7 @@ const PersonalitySelectPage = () => {
                                     minHeight: '480px', 
                                     cursor: 'pointer',
                                     // 使用 outline 而不是 border，完全不影響佈局
-                                    border: '1px solid #e5e7eb',
+                                    border: '1px solid #cbd5e1',
                                     outline: selectedPersonality === personality.id ? `3px solid ${personality.color}` : 'none',
                                     outlineOffset: selectedPersonality === personality.id ? '-1px' : '0px',
                                     borderRadius: '16px',
@@ -525,7 +525,7 @@ const PersonalitySelectPage = () => {
                             boxShadow: '0 8px 25px rgba(59, 130, 246, 0.5)',
                         },
                         '&:disabled': {
-                            background: '#e5e7eb',
+                            background: '#cbd5e1',
                             color: '#9ca3af',
                             boxShadow: 'none',
                             transform: 'none'

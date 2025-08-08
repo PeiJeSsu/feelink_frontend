@@ -59,7 +59,7 @@ const TopToolbarButtons = ({
 				</IconButton>
 			</Tooltip>
 
-			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#e2e8f0" }} />
+			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#aeb8d5f5" }} />
 
 			{/* 檔案操作 */}
 			<Tooltip title="保存檔案" placement="bottom">
@@ -74,7 +74,7 @@ const TopToolbarButtons = ({
 				</IconButton>
 			</Tooltip>
 
-			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#e2e8f0" }} />
+			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#aeb8d5f5" }} />
 
 			{/* 圖片操作 */}
 			<Tooltip title="匯入圖片" placement="bottom">
@@ -89,7 +89,7 @@ const TopToolbarButtons = ({
 				</IconButton>
 			</Tooltip>
 
-			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#e2e8f0" }} />
+			<Divider orientation="vertical" sx={{ height: 32, mx: 1, borderColor: "#aeb8d5f5" }} />
 
 			{/* 清除畫布 */}
 			<Tooltip title="清除畫布" placement="bottom">
