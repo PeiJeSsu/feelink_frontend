@@ -11,7 +11,7 @@ export const layoutStyles = {
 	// 頂部工具欄容器
 	topToolbarContainer: {
 		backgroundColor: "#ffffff",
-		borderBottom: "1px solid #aeb8d5f5",
+		borderBottom: "1px solid #cbd5e1",
 		padding: "12px 16px",
 		display: "flex",
 		alignItems: "center",
