@@ -1,5 +1,6 @@
 import { Box, CircularProgress, Typography, Chip } from "@mui/material";
 import { Assistant as AssistantIcon } from "@mui/icons-material";
+import { useState } from "react";
 import { chatRoomStyles } from "../styles/ChatRoomStyles";
 import useChatMessages from "../hooks/UseChatMessages";
 import ChatMessage from "./ChatMessage";
@@ -7,6 +8,8 @@ import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 
 export default function ChatRoom({ canvas }) {
+    const [inputNotification, setInputNotification] = useState(null);
+    
     const {
         messages,
         loading,
@@ -16,7 +19,7 @@ export default function ChatRoom({ canvas }) {
         sendTextMessageStream,
         sendImageMessageStream,
         sendCanvasAnalysisStream,
-    } = useChatMessages(canvas);
+    } = useChatMessages(canvas, setInputNotification);
 
     // 取得 AI 夥伴名稱的函數
     const getAIPartnerName = () => {
@@ -95,6 +98,8 @@ export default function ChatRoom({ canvas }) {
                     onAIDrawing={sendAIDrawing}
                     onGenerateObject={sendGenerateObject}
                     disabled={disabled}
+                    inputNotification={inputNotification}
+                    onClearNotification={() => setInputNotification(null)}
                 />
             </Box>
         </Box>

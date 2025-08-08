@@ -34,7 +34,7 @@ const getGreetingWithNickname = (question) => {
     }
 };
 
-export default function useChatMessages(canvas) {
+export default function useChatMessages(canvas, setInputNotification) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const questionAdded = useRef(false);
@@ -102,8 +102,11 @@ export default function useChatMessages(canvas) {
 
     const sendGenerateObject = async (messageText) => {
         try {
-            // 使用 snackbar 顯示提示訊息
-            showAlert('點擊畫布上要生成物件的位置，或按 ESC 鍵取消', 'info', 5000);
+            // 使用輸入框通知而不是全局 snackbar
+            setInputNotification({
+                message: '點擊畫布上要生成物件的位置，或按 ESC 鍵取消',
+                severity: 'info'
+            });
             
             // 設置畫布為選擇位置模式
             setupCanvasForPositionSelection(messageText);
@@ -172,12 +175,16 @@ export default function useChatMessages(canvas) {
             canvas.off('mouse:down', handleCanvasClick);
             window.removeEventListener('keydown', handleKeyDown);
             restoreCanvasState(clearPosition);
+            if (clearPosition) {
+                setInputNotification(null); // 清理時清除通知
+            }
         };
         
         // ESC 鍵取消選取的處理函數
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
                 cleanup(true); // 清除位置
+                setInputNotification(null); // 清除通知
                 showAlert('已取消物件生成', 'info', 2000);
             }
         };
@@ -189,6 +196,9 @@ export default function useChatMessages(canvas) {
             // 儲存點擊位置到畫布
             canvas._generateObjectPosition = { x: pointer.x, y: pointer.y };
             console.log('保存點擊位置:', canvas._generateObjectPosition);
+            
+            // 清除通知
+            setInputNotification(null);
             
             // 移除事件監聽器但不清除位置
             canvas.off('mouse:down', handleCanvasClick);

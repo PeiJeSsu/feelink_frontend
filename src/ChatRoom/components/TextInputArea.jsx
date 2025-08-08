@@ -1,9 +1,10 @@
-import { Box, TextField, Button, IconButton } from "@mui/material";
+import { Box, TextField, Button, IconButton, Alert, Collapse } from "@mui/material";
 import {
     AutoAwesomeOutlined,
     BrokenImageOutlined,
     Send,
     FaceRetouchingNaturalOutlined,
+    Close,
 } from "@mui/icons-material";
 import { useTextInput } from "../hooks/UseTextInput";
 import { isValidMessage } from "../helpers/TextInputHandlers";
@@ -23,13 +24,14 @@ export default function TextInputArea({
     onAIDrawing,
     onGenerateObject,
     disabled,
+    inputNotification,
+    onClearNotification,
 }) {
     const {
         message,
         textInputRef,
         imageInputRef,
         sendText,
-        sendImage,
         messageChange,
         imageChange,
         handleAnalyzeCanvas,
@@ -47,6 +49,35 @@ export default function TextInputArea({
 
     return (
         <Box sx={containerStyle}>
+            {/* 通知區域 */}
+            <Collapse in={!!inputNotification}>
+                {inputNotification && (
+                    <Alert
+                        severity={inputNotification.severity || "info"}
+                        onClose={onClearNotification}
+                        action={
+                            <IconButton
+                                size="small"
+                                onClick={onClearNotification}
+                                sx={{ color: "inherit" }}
+                            >
+                                <Close fontSize="small" />
+                            </IconButton>
+                        }
+                        sx={{
+                            marginBottom: "12px",
+                            fontSize: "14px",
+                            borderRadius: "8px",
+                            "& .MuiAlert-message": {
+                                fontFamily: '"Noto Sans TC", sans-serif',
+                            },
+                        }}
+                    >
+                        {inputNotification.message}
+                    </Alert>
+                )}
+            </Collapse>
+
             {/* 輸入框 */}
             <Box sx={inputContainer}>
                 <input
@@ -133,4 +164,9 @@ TextInputArea.propTypes = {
     onAIDrawing: PropTypes.func.isRequired,
     onGenerateObject: PropTypes.func.isRequired,
     disabled: PropTypes.bool,
+    inputNotification: PropTypes.shape({
+        message: PropTypes.string.isRequired,
+        severity: PropTypes.oneOf(['error', 'warning', 'info', 'success']),
+    }),
+    onClearNotification: PropTypes.func,
 };
