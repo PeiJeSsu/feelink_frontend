@@ -1,9 +1,11 @@
-import {addMessages, appendMessage, getNewId} from "./usage/MessageFactory";
-import {sendAIDrawingToBackend, sendCanvasAnalysisToBackend, sendCanvasAnalysisToBackendStreamService, sendImageToBackend, sendImageToBackendStreamService, sendTextToBackend, sendTextToBackendStream} from './MessageService';
+// MessageController.js - 修復版本
+
+import {addMessages, appendMessage, getNewId, createNewMessage} from "./usage/MessageFactory";
+import {sendAIDrawingToBackend, sendAIDrawingToBackendStream, sendCanvasAnalysisToBackend, sendCanvasAnalysisToBackendStreamService, sendImageToBackend, sendImageToBackendStreamService, sendTextToBackend, sendTextToBackendStream} from './MessageService';
 import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
 
-// 修改：添加 chatroomId 參數到流式處理函數
+// 🔧 修復：流式訊息處理函數
 const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, chatroomId, streamFunction, errorMessage) => {
     console.log('handleStreamMessage called with chatroomId:', chatroomId);
     if (!messageText && !image) return;
@@ -12,16 +14,155 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         return;
     }
 
+    // 🔧 確保獲得有效的 ID
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
+    
     setLoading(true);
     
-    // 不立即加入 AI 回應訊息，等到第一個字符到達時再加入
+    // 🔧 修復串流回應處理邏輯
     let responseMessageAdded = false;
     let displayedContent = "";
     let pendingQueue = [];
     let typewriterTimer = null;
     let isTypewriting = false;
+    let aiResponseId = finalId; // AI 回應的 ID
+
+    const typewriterEffect = () => {
+        if (pendingQueue.length > 0) {
+            isTypewriting = true;
+            const nextChar = pendingQueue.shift();
+            displayedContent += nextChar;
+
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === aiResponseId) {
+                        return {...msg, message: displayedContent};
+                    }
+                    return msg;
+                });
+            });
+            
+            typewriterTimer = setTimeout(typewriterEffect, 30);
+        } else {
+            isTypewriting = false;
+            typewriterTimer = null;
+        }
+    };
+
+    const startTypewriter = () => {
+        if (!isTypewriting && pendingQueue.length > 0 && responseMessageAdded) {
+            typewriterEffect();
+        }
+    };
+
+    const onToken = (token) => {
+        console.log('Token received:', token);
+        
+        // 🔧 收到第一個字符時，創建 AI 回應訊息
+        if (!responseMessageAdded) {
+            const responseMessage = createNewMessage(aiResponseId, "", false, false);
+            setMessages(prevMessages => [...prevMessages, responseMessage]);
+            setLoading(false); // 收到第一個字符時關閉載入狀態
+            responseMessageAdded = true;
+            console.log('AI 回應訊息已創建，ID:', aiResponseId);
+        }
+        
+        // 將 token 加入佇列
+        if (token && typeof token === 'string') {
+            for (const char of token) {
+                pendingQueue.push(char);
+            }
+            startTypewriter();
+        }
+    };
+
+    const onComplete = () => {
+        console.log('Stream completed');
+        // 清理定時器
+        if (typewriterTimer) {
+            clearTimeout(typewriterTimer);
+            typewriterTimer = null;
+        }
+        
+        // 確保所有剩餘內容都顯示出來
+        if (pendingQueue.length > 0) {
+            displayedContent += pendingQueue.join('');
+            pendingQueue = [];
+            
+            if (responseMessageAdded) {
+                setMessages(prevMessages => {
+                    return prevMessages.map(msg => {
+                        if (msg.id === aiResponseId) {
+                            return {...msg, message: displayedContent};
+                        }
+                        return msg;
+                    });
+                });
+            }
+        }
+    };
+
+    const onError = (error) => {
+        console.error('Stream error:', error);
+        
+        // 清理定時器
+        if (typewriterTimer) {
+            clearTimeout(typewriterTimer);
+            typewriterTimer = null;
+        }
+        isTypewriting = false;
+        
+        // 🔧 如果還沒有加入 AI 回應訊息，在錯誤時加入錯誤訊息
+        if (!responseMessageAdded) {
+            const errorMessage = createNewMessage(aiResponseId, "抱歉，發生了錯誤", false, false);
+            setMessages(prevMessages => [...prevMessages, errorMessage]);
+            responseMessageAdded = true;
+        } else if (pendingQueue.length > 0) {
+            // 顯示所有剩餘內容
+            displayedContent += pendingQueue.join('');
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === aiResponseId) {
+                        return {...msg, message: displayedContent || "發生錯誤"};
+                    }
+                    return msg;
+                });
+            });
+        }
+        
+        setLoading(false);
+        handleError(error, errorMessage, messages, setMessages);
+    };
+    
+    try {
+        await streamFunction(messageText, image, chatroomId, onToken, onComplete, onError);
+    } catch (error) {
+        onError(error);
+    }
+};
+
+// 🎯 新增：處理 AI 繪圖串流的特殊函數
+const handleAIDrawingStream = async (messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId) => {
+    console.log('handleAIDrawingStream called with chatroomId:', chatroomId);
+    if (!canvasImage) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for AI drawing');
+        return;
+    }
+
+    const currentId = getNewId(messages);
+    const canvasData = await convertBlobToBase64(canvasImage);
+    const finalId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
+    setLoading(true);
+    
+    // 文字回應處理
+    let textResponseMessageAdded = false;
+    let displayedContent = "";
+    let pendingQueue = [];
+    let typewriterTimer = null;
+    let isTypewriting = false;
+    let textResponseId = finalId;
 
     const typewriterEffect = () => {
         if (pendingQueue.length > 0) {
@@ -30,7 +171,7 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
 
             setMessages(prevMessages => {
                 return prevMessages.map(msg => {
-                    if (msg.id === finalId) {
+                    if (msg.id === textResponseId) {
                         return {...msg, message: displayedContent};
                     }
                     return msg;
@@ -50,19 +191,14 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     };
 
     const onToken = (token) => {
-        console.log('Token received:', token);
+        console.log('AI Drawing Token received:', token);
         
-        // 收到第一個字符時，加入 AI 回應訊息並關閉載入狀態
-        if (!responseMessageAdded) {
-            const responseMessage = {
-                id: finalId,
-                message: "",
-                isUser: false,
-                isImage: false
-            };
+        // 收到第一個字符時，加入 AI 文字回應訊息並關閉載入狀態
+        if (!textResponseMessageAdded) {
+            const responseMessage = createNewMessage(textResponseId, "", false, false);
             setMessages(prevMessages => [...prevMessages, responseMessage]);
-            setLoading(false); // 收到第一個字符時關閉載入狀態
-            responseMessageAdded = true;
+            setLoading(false);
+            textResponseMessageAdded = true;
         }
         
         for (const char of token) {
@@ -71,8 +207,22 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         startTypewriter();
     };
 
+    const onImageGenerated = (imageData) => {
+        console.log('Image generated, updating canvas');
+        if (canvas && imageData) {
+            try {
+                const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+                clearCanvas(canvas);
+                const imageDataUrl = `data:image/png;base64,${imageData}`;
+                addImageToCanvas(canvas, imageDataUrl);
+            } catch (error) {
+                console.error('Error updating canvas with generated image:', error);
+            }
+        }
+    };
+
     const onComplete = () => {
-        console.log('Stream completed');
+        console.log('AI Drawing stream completed');
     };
 
     const onError = (error) => {
@@ -83,22 +233,17 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         isTypewriting = false;
         
         // 如果還沒有加入 AI 回應訊息，在錯誤時加入空訊息
-        if (!responseMessageAdded) {
-            const responseMessage = {
-                id: finalId,
-                message: "",
-                isUser: false,
-                isImage: false
-            };
+        if (!textResponseMessageAdded) {
+            const responseMessage = createNewMessage(textResponseId, "", false, false);
             setMessages(prevMessages => [...prevMessages, responseMessage]);
-            responseMessageAdded = true;
+            textResponseMessageAdded = true;
         }
         
         if (pendingQueue.length > 0) {
             displayedContent += pendingQueue.join('');
             setMessages(prevMessages => {
                 return prevMessages.map(msg => {
-                    if (msg.id === finalId) {
+                    if (msg.id === textResponseId) {
                         return {...msg, message: displayedContent};
                     }
                     return msg;
@@ -106,17 +251,17 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             });
         }
         setLoading(false);
-        handleError(error, errorMessage, messages, setMessages);
+        handleError(error, 'AI 繪圖失敗', messages, setMessages);
     };
-    
+
     try {
-        await streamFunction(messageText, image, chatroomId, onToken, onComplete, onError);
+        await sendAIDrawingToBackendStream(messageText, canvasData, chatroomId, onToken, onComplete, onError, onImageGenerated);
     } catch (error) {
         onError(error);
     }
 };
 
-// 修改：添加 chatroomId 參數
+// 🔧 修復：文字訊息串流處理
 export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
@@ -138,7 +283,7 @@ export const handleSendTextMessageStream = async (messageText, messages, setMess
     );
 };
 
-// 修改：添加 chatroomId 參數
+// 修復：圖片訊息串流處理
 export const handleSendImageMessageStream = async (messageText, messageImage, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
@@ -154,7 +299,7 @@ export const handleSendImageMessageStream = async (messageText, messageImage, me
     );
 };
 
-// 修改：畫布分析流式處理，添加 chatroomId 參數
+// 修復：畫布分析流式處理
 export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
@@ -170,7 +315,12 @@ export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, m
     );
 };
 
-// 修改：添加 chatroomId 參數
+// 🎯 新增：AI 繪圖串流處理
+export const handleSendAIDrawingStream = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
+    return handleAIDrawingStream(messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId);
+};
+
+// 修復：一般文字訊息處理
 export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, chatroomId, defaultQuestion = "", conversationCount = 1) => {
     if (!messageText) return;
     if (!chatroomId) {
@@ -196,7 +346,7 @@ export const handleSendTextMessage = async (messageText, messages, setMessages, 
     });
 };
 
-// 修改：添加 chatroomId 參數
+// 修復：圖片訊息處理
 export const handleSendImageMessage = async (messageText, messageImage, messages, setMessages, setLoading, chatroomId) => {
     if (!messageText && !messageImage) return;
     if (!chatroomId) {
@@ -218,7 +368,7 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
     });
 };
 
-// 修改：添加 chatroomId 參數
+// 修復：畫布分析處理
 export const handleSendCanvasAnalysis = async (canvasImage, messageText, messages, setMessages, setLoading, chatroomId) => {
     if (!canvasImage) return;
     if (!chatroomId) {
@@ -240,7 +390,7 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
     });
 };
 
-// 🎯 修改：AI 繪圖功能，添加 chatroomId 參數
+// 🎯 修復：AI 繪圖功能 (非串流版本)
 export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
     if (!canvasImage) return;
     if (!chatroomId) {
@@ -266,7 +416,7 @@ export const handleSendAIDrawing = async (canvasImage, messageText, messages, se
     });
 };
 
-// 修改：更新 runMessageTask 函數來處理 chatroomId
+// 修復：通用訊息處理函數
 const runMessageTask = async ({messageText, image = null, messages, setMessages, setLoading, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
     try {
         setLoading(true);
