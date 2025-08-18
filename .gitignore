@@ -35,3 +35,4 @@ yarn-error.log*
 .instructions.md
 .env
 eslint.config.mjs
+/jest-stare
