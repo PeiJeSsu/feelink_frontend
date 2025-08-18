@@ -19,7 +19,12 @@ export const handleSaveFile = (canvas) => {
 	}
 };
 
-export const handleLoadFile = (fileInputRef) => {
+export const handleLoadFile = (fileInputRef, isCanvasReady = true) => {
+	if (!isCanvasReady) {
+		alert("畫布尚未準備好，請稍後再試");
+		return;
+	}
+	
 	fileInputRef.current.click();
 };
 
