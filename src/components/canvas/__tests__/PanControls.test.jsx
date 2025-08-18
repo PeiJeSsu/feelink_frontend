@@ -67,7 +67,7 @@ describe("PanControls 測試", () => {
 
 	test("當 canvas 為 null 時，useEffect 中應提前返回", () => {
 		// 模擬 useEffect
-		mockUseEffectSpy.mockImplementation((cb, deps) => {
+		mockUseEffectSpy.mockImplementation((cb) => {
 			// 執行回調
 			const cleanup = cb();
 			// 確保回調沒有返回清理函數
@@ -90,7 +90,7 @@ describe("PanControls 測試", () => {
 
 	test("handleMouseMove 應處理拖曳狀態", () => {
 		// 使 setupMiddleButtonPan 返回我們需要的函數
-		setupMiddleButtonPan.mockImplementation((canvas, setIsDragging, setDragStart, handleMouseMove, handleMouseUp) => {
+		setupMiddleButtonPan.mockImplementation((canvas, setIsDragging, setDragStart, handleMouseMove) => {
 			if (handleMouseMove) {
 				const mockEvent = { e: { clientX: 150, clientY: 120 } };
 				handleMouseMove(mockEvent);
@@ -126,7 +126,7 @@ describe("PanControls 測試", () => {
 			return [initialValue, jest.fn()];
 		});
 
-		mockUseEffectSpy.mockImplementation((cb, deps) => {
+		mockUseEffectSpy.mockImplementation((cb) => {
 			// 執行回調
 			cb();
 
@@ -164,7 +164,7 @@ describe("PanControls 測試", () => {
 		let effectCallback;
 		let returnedCleanup;
 
-		mockUseEffectSpy.mockImplementation((cb, deps) => {
+		mockUseEffectSpy.mockImplementation((cb) => {
 			effectCallback = cb;
 			returnedCleanup = effectCallback();
 		});

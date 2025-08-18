@@ -1,5 +1,4 @@
 import * as ClipboardOperations from "../ClipboardOperations";
-import * as fabric from "fabric";
 
 jest.mock('fabric', () => ({
 	ActiveSelection: jest.fn().mockImplementation((objects, options) => ({

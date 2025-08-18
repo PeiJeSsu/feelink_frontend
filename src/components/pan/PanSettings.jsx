@@ -1,8 +1,7 @@
-import PropTypes from "prop-types";
 import { Box, Typography, Alert } from "@mui/material";
 import { MouseOutlined, TouchAppOutlined } from "@mui/icons-material";
 
-const PanSettings = ({ canvas }) => {
+const PanSettings = () => {
 	return (
 		<Box sx={{ padding: "12px 8px", height: "100%", overflow: "auto" }}>
 			{/* 提醒訊息 */}
@@ -142,8 +141,5 @@ const PanSettings = ({ canvas }) => {
 	);
 };
 
-PanSettings.propTypes = {
-	canvas: PropTypes.object,
-};
 
 export default PanSettings;

@@ -50,7 +50,7 @@ jest.mock("../../../helpers/eraser/PathEraserTools", () => ({
 
 // 子組件 mock
 jest.mock("../CanvasControls", () => {
-	const MockCanvasControls = (props) => <div data-testid="canvas-controls">CanvasControls</div>;
+	const MockCanvasControls = () => <div data-testid="canvas-controls">CanvasControls</div>;
 	return MockCanvasControls;
 });
 

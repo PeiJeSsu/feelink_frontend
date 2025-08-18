@@ -39,7 +39,7 @@ describe("LongfurBrush", () => {
 			return {};
 		});
 		global.fabric = global.fabric || {};
-		global.fabric.FabricImage = { fromURL: jest.fn((url) => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
+		global.fabric.FabricImage = { fromURL: jest.fn(() => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
 		require("../../../../utils/BrushUtils").colorValues.mockReturnValue([255, 0, 0]);
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve({ setCoords: jest.fn() }));
 	});
@@ -124,7 +124,10 @@ describe("LongfurBrush", () => {
 		const brush = new LongfurBrush(mockCanvas);
 		brush._count = 5; // 模擬有繪製
 
-		await brush.onMouseUp();
+		brush.onMouseUp();
+
+		// 等待 Promise 解析
+		await new Promise(resolve => setTimeout(resolve, 0));
 
 		expect(require("../../../../utils/BrushUtils").convertToImg).toHaveBeenCalledWith(mockCanvas);
 		expect(mockCanvas.add).toHaveBeenCalled();
@@ -133,11 +136,11 @@ describe("LongfurBrush", () => {
 		expect(brush._points).toEqual([]);
 	});
 
-	it("onMouseUp 無繪製時不呼叫 convertToImg", async () => {
+	it("onMouseUp 無繪製時不呼叫 convertToImg", () => {
 		const brush = new LongfurBrush(mockCanvas);
 		brush._count = 0; // 無繪製
 
-		await brush.onMouseUp();
+		brush.onMouseUp();
 
 		expect(require("../../../../utils/BrushUtils").convertToImg).not.toHaveBeenCalled();
 		expect(mockCanvas.add).not.toHaveBeenCalled();
@@ -151,7 +154,10 @@ describe("LongfurBrush", () => {
 		const mockImg = { setCoords: jest.fn() };
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve(mockImg));
 
-		await brush.onMouseUp();
+		brush.onMouseUp();
+
+		// 等待 Promise 解析
+		await new Promise(resolve => setTimeout(resolve, 0));
 
 		expect(mockImg.setCoords).toHaveBeenCalled();
 		expect(mockCanvas.add).toHaveBeenCalledWith(mockImg);

@@ -23,7 +23,6 @@ const LeftToolbar = ({
 	paintBucketSettings,
 	setTextSettings,
 	textSettings,
-	onClearCanvas,
 	canvas,
 }) => {
 	const handleToolClick = (tool) => {
@@ -240,7 +239,6 @@ LeftToolbar.propTypes = {
 	paintBucketSettings: PropTypes.object.isRequired,
 	setTextSettings: PropTypes.func.isRequired,
 	textSettings: PropTypes.object.isRequired,
-	onClearCanvas: PropTypes.func.isRequired,
 	canvas: PropTypes.object.isRequired,
 };
 

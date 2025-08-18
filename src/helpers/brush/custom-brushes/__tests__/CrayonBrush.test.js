@@ -43,7 +43,7 @@ describe("CrayonBrush", () => {
 			return {};
 		});
 		global.fabric = global.fabric || {};
-		global.fabric.FabricImage = { fromURL: jest.fn((url) => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
+		global.fabric.FabricImage = { fromURL: jest.fn(() => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
 		jest.spyOn(fabric, "Point").mockImplementation(function (x = 0, y = 0) {
 			this.x = x;
 			this.y = y;
@@ -98,7 +98,12 @@ describe("CrayonBrush", () => {
 		brush._drawn = true;
 		const img = { set: jest.fn(), setCoords: jest.fn() };
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve(img));
-		await brush.onMouseUp();
+		
+		brush.onMouseUp();
+		
+		// 等待 Promise 解析
+		await new Promise(resolve => setTimeout(resolve, 0));
+		
 		expect(mockCanvas.add).toHaveBeenCalled();
 		expect(mockCanvas.add.mock.calls[0][0]).toBe(img);
 		expect(mockCanvas.clearContext).toHaveBeenCalledWith(mockCtx);
@@ -106,10 +111,10 @@ describe("CrayonBrush", () => {
 		expect(brush._latestStrokeLength).toBe(0);
 	});
 
-	it("onMouseUp 無繪製時不呼叫 convertToImg", async () => {
+	it("onMouseUp 無繪製時不呼叫 convertToImg", () => {
 		const brush = new CrayonBrush(mockCanvas);
 		brush._drawn = false;
-		await brush.onMouseUp();
+		brush.onMouseUp();
 		expect(mockCanvas.add).not.toHaveBeenCalled();
 	});
 

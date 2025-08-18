@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button, Box, Paper, Typography, IconButton, LinearProgress } from '@mui/material';
 import { ArrowBack, ArrowForward, Close, SkipNext } from '@mui/icons-material';
+import PropTypes from 'prop-types';
 
 const AppTour = ({ runTour, setRunTour }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -39,7 +40,7 @@ const AppTour = ({ runTour, setRunTour }) => {
     },
     {
       target: '.chat-toggle',
-      title: 'AI 情感助手',
+      title: 'AI 情感夥伴',
       content: '開啟智慧聊天室，與 AI 分享您的創作靈感和當下情感，獲得個人化的創作建議與情感支持。',
       placement: 'bottom',
     },
@@ -52,7 +53,7 @@ const AppTour = ({ runTour, setRunTour }) => {
     {
       target: '.left-toolbar',
       title: '創作工具箱',
-      content: '豐富的數位創作工具，從基礎繪圖到進階設計，讓您的情感透過多元方式表達。',
+      content: '豐富的創作工具，從基礎繪圖到進階設計，讓您的情感透過多元方式表達。',
       placement: 'right',
     },
     {
@@ -70,7 +71,7 @@ const AppTour = ({ runTour, setRunTour }) => {
     {
       target: '.chat-container',
       title: 'AI 情感聊天室',
-      content: '與智慧 AI 助手即時對話，分享創作過程中的想法與情感。AI 會分析您的情緒狀態，提供個人化的創作靈感和情感支持建議。',
+      content: '與智慧 AI 夥伴即時對話，分享創作過程中的想法與情感。AI 會分析您的情緒狀態，提供個人化的創作靈感和情感支持建議。',
       placement: 'left',
     },
   ], []);
@@ -318,6 +319,11 @@ const AppTour = ({ runTour, setRunTour }) => {
       </Paper>
     </>
   );
+};
+
+AppTour.propTypes = {
+  runTour: PropTypes.bool.isRequired,
+  setRunTour: PropTypes.func.isRequired,
 };
 
 export default AppTour;
