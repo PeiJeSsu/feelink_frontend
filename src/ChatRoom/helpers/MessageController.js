@@ -1,9 +1,8 @@
-import {addMessages, getNewId} from "./usage/MessageFactory";
+import {addMessages, getNewId, createNewMessage} from "./usage/MessageFactory";
 import {sendAIDrawingToBackend, sendCanvasAnalysisToBackendStreamService, sendImageToBackendStreamService, sendTextToBackendStream} from './MessageService';
 import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
 import {clearCanvas, addImageToCanvas} from "../../helpers/canvas/CanvasOperations";
-import { createNewMessage } from "./usage/MessageFactory";
 
 const handleStreamMessage = async ({messageText, image = null, messages, setMessages, setLoading, setDisabled, generatePayload, streamFunction, onSuccess, onErrorMessage}) => {
     if (!messageText && !image) return;

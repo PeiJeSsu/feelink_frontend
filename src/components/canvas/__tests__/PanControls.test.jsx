@@ -20,6 +20,7 @@ describe("PanControls 測試", () => {
 		mockCanvas = {
 			renderAll: jest.fn(),
 			setViewportTransform: jest.fn(),
+			upperCanvasEl: document.createElement('canvas'),
 		};
 
 		// 重置所有模擬函數

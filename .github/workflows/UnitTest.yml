@@ -16,5 +16,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Unit Tests
-        run: npm test
+      - name: Run Unit Tests with Coverage
+        run: npm run test:coverage:ci
+
+      - name: Upload Coverage to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/

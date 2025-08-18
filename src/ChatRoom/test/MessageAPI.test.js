@@ -129,7 +129,8 @@ describe('API Functions', () => {
         {
           text: messageText,
           imageData: canvasData,
-          removeBackground: true
+          removeBackground: true,
+          mode: 'drawing'
         },
         {
           headers: {

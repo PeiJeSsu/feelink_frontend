@@ -9,6 +9,7 @@ jest.mock("../../../../utils/BrushUtils", () => {
 		...original,
 		convertToImg: jest.fn(),
 		colorValues: jest.fn(),
+		getRandom: jest.fn(),
 	};
 });
 
@@ -130,6 +131,11 @@ describe("InkBrush", () => {
 	});
 
 	it("drawSplash 應呼叫 ctx.arc 與 fill", () => {
+		const { getRandom } = require("../../../../utils/BrushUtils");
+		// 模擬 getRandom 返回值確保 for 循環執行
+		getRandom.mockReturnValueOnce(3) // num = Math.floor(3) = 3
+			.mockReturnValue(1); // 其他調用返回 1
+		
 		const brush = new InkBrush(mockCanvas);
 		brush.color = "#abc";
 		brush.drawSplash({ x: 10, y: 10 }, 2);

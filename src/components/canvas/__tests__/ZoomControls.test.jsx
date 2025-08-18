@@ -26,7 +26,6 @@ jest.mock("@mui/material", () => ({
 
 describe("ZoomControls 測試", () => {
 	let mockCanvas;
-	const originalUseRef = React.useRef;
 
 	beforeEach(() => {
 		jest.useFakeTimers();
@@ -157,13 +156,6 @@ describe("ZoomControls 測試", () => {
 	});
 
 	test("應設置輪詢更新縮放級別", () => {
-		// 在這個測試中，我們不再嘗試模擬具體的計時器實現
-		// 而是專注於測試組件的行為
-
-		// 模擬 useRef 的返回值
-		const mockRef = { current: null };
-		React.useRef = jest.fn().mockReturnValue(mockRef);
-
 		// 記錄原始的全局函數
 		const originalSetInterval = global.setInterval;
 		const originalClearInterval = global.clearInterval;
@@ -183,19 +175,15 @@ describe("ZoomControls 測試", () => {
 			// 驗證 setInterval 被調用
 			expect(mockSetInterval).toHaveBeenCalledWith(expect.any(Function), 100);
 
-			// 手動設置 ref 值模擬定時器 ID
-			mockRef.current = 123;
-
 			// 卸載組件以觸發清理函數
 			unmount();
 
-			// 驗證 clearInterval 被調用
+			// 驗證 clearInterval 被調用，參數應該是 setInterval 返回的值
 			expect(mockClearInterval).toHaveBeenCalledWith(123);
 		} finally {
 			// 恢復原始函數
 			global.setInterval = originalSetInterval;
 			global.clearInterval = originalClearInterval;
-			React.useRef = originalUseRef;
 		}
 	});
 });
