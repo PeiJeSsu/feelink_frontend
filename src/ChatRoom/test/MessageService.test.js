@@ -240,7 +240,8 @@ describe('MessageService', () => {
             expect(callAIDrawingAPI).toHaveBeenCalledWith(
                 messageText,
                 canvasData,
-                true
+                true,
+                'drawing'
             );
             expect(result).toEqual({
                 success: true,
@@ -262,7 +263,8 @@ describe('MessageService', () => {
             expect(callAIDrawingAPI).toHaveBeenCalledWith(
                 '請根據這張圖片生成新的內容',
                 canvasData,
-                true
+                true,
+                'drawing'
             );
             expect(result.success).toBe(true);
         });
@@ -281,7 +283,8 @@ describe('MessageService', () => {
             expect(callAIDrawingAPI).toHaveBeenCalledWith(
                 '請根據這張圖片生成新的內容',
                 canvasData,
-                true
+                true,
+                'drawing'
             );
             expect(result.success).toBe(true);
         });

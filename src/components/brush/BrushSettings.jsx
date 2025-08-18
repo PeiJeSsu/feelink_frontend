@@ -265,7 +265,7 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
                         sx={{ mb: 2, mt: 0 }}
                     />
 
-                    <Typography gutterBottom>水平偏移</Typography>
+                    <Typography gutterBottom>水平陰影偏移</Typography>
                     <Slider
                         value={brushSettings.shadow?.offsetX || 0}
                         onChange={(e, val) =>
@@ -277,7 +277,7 @@ const BrushSettings = ({ brushSettings, onBrushSettingsChange }) => {
                     />
 
                     <Typography gutterBottom sx={{ mt: 2 }}>
-                        垂直偏移
+                        垂直陰影偏移
                     </Typography>
                     <Slider
                         value={brushSettings.shadow?.offsetY || 0}
