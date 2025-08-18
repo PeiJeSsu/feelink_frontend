@@ -15,7 +15,6 @@ const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(true);
 	const [chatWidth, setChatWidth] = useState(400);
-	const [isResizing, setIsResizing] = useState(false);
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
 		size: 5,
@@ -95,12 +94,10 @@ const Layout = () => {
 	};
 
 	const handleResizeStart = useCallback(() => {
-		setIsResizing(true);
 		document.body.style.cursor = "col-resize";
 	}, []);
 
 	const handleResizeStop = useCallback(() => {
-		setIsResizing(false);
 		document.body.style.cursor = "";
 	}, []);
 
@@ -132,7 +129,6 @@ const Layout = () => {
 					<TopToolbar
 						onClearClick={handleClearCanvas}
 						canvas={canvasRef.current}
-						canvasReady={canvasReady}
 						chatWidth={0}
 					/>
 				</Box>

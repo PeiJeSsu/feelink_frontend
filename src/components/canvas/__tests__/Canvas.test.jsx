@@ -58,7 +58,7 @@ jest.mock("../../../hooks/useCanvasTools", () => ({
 
 // 模擬子組件
 jest.mock("../CanvasControls", () => {
-	const MockCanvasControls = (props) => <div data-testid="canvas-controls">CanvasControls</div>;
+	const MockCanvasControls = () => <div data-testid="canvas-controls">CanvasControls</div>;
 	return MockCanvasControls;
 });
 

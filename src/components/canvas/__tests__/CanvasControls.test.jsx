@@ -19,7 +19,7 @@ jest.mock("../ZoomControls", () => {
 });
 
 jest.mock("../PanControls", () => {
-	const MockPanControls = (_props) => <div data-testid="pan-controls">平移控制項</div>;
+	const MockPanControls = () => <div data-testid="pan-controls">平移控制項</div>;
 	MockPanControls.displayName = "PanControls";
 	return MockPanControls;
 });

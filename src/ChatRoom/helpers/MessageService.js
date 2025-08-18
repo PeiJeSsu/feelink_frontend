@@ -31,10 +31,6 @@ export const sendAIDrawingToBackend = async (messageText, canvasData, mode = 'dr
     return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, mode));
 };
 
-// 通用的後端訊息發送函數
-const sendToBackend = async (messageText, messageImage = null, conversationCount = null, hasDefaultQuestion = false) => {
-    return handleServiceCall(() => sendMessage(messageText, messageImage, conversationCount, hasDefaultQuestion));
-};
 
 export const sendTextToBackendStream = async (payload, onToken, onComplete, onError) => {
     const sessionId = getSessionId();

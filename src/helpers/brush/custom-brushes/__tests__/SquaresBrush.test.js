@@ -42,7 +42,7 @@ describe("SquaresBrush", () => {
 			return {};
 		});
 		global.fabric = global.fabric || {};
-		global.fabric.FabricImage = { fromURL: jest.fn((url) => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
+		global.fabric.FabricImage = { fromURL: jest.fn(() => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
 		require("../../../../utils/BrushUtils").colorValues.mockImplementation((color) => {
 			if (color === "#123") return [10, 20, 30, 0.5];
 			if (color === "#fff") return [200, 200, 200, 0.8];
@@ -96,16 +96,21 @@ describe("SquaresBrush", () => {
 		brush._drawn = true;
 		const img = { setCoords: jest.fn() };
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve(img));
-		await brush.onMouseUp();
+		
+		brush.onMouseUp();
+		
+		// 等待 Promise 解析
+		await new Promise(resolve => setTimeout(resolve, 0));
+		
 		expect(mockCanvas.add).toHaveBeenCalledWith(img);
 		expect(mockCanvas.clearContext.mock.calls[0][0]).toMatchObject(mockCanvas.contextTop);
 		expect(mockCanvas.contextTop.globalAlpha).toBe(1);
 	});
 
-	it("onMouseUp 無繪製時不呼叫 convertToImg", async () => {
+	it("onMouseUp 無繪製時不呼叫 convertToImg", () => {
 		const brush = new SquaresBrush(mockCanvas);
 		brush._drawn = false;
-		await brush.onMouseUp();
+		brush.onMouseUp();
 		expect(mockCanvas.add).not.toHaveBeenCalled();
 		expect(mockCanvas.contextTop.globalAlpha).toBe(1);
 	});

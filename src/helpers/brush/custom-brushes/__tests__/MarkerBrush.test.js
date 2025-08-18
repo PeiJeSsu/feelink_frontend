@@ -42,7 +42,7 @@ describe("MarkerBrush", () => {
 			return {};
 		});
 		global.fabric = global.fabric || {};
-		global.fabric.FabricImage = { fromURL: jest.fn((url) => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
+		global.fabric.FabricImage = { fromURL: jest.fn(() => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
 		jest.spyOn(fabric, "Point").mockImplementation(function (x = 0, y = 0) {
 			this.x = x;
 			this.y = y;
@@ -72,7 +72,7 @@ describe("MarkerBrush", () => {
 	});
 
 	it("建構時應設置 canvas context 屬性", () => {
-		const _ = new MarkerBrush(mockCanvas, { opacity: 0.7 });
+		new MarkerBrush(mockCanvas, { opacity: 0.7 });
 		expect(mockCtx.globalAlpha).toBe(0.7);
 		expect(mockCtx.lineJoin).toBe("round");
 		expect(mockCtx.lineCap).toBe("round");

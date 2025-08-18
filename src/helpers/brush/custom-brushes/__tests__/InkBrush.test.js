@@ -51,7 +51,7 @@ describe("InkBrush", () => {
 			return {};
 		});
 		global.fabric = global.fabric || {};
-		global.fabric.FabricImage = { fromURL: jest.fn((url) => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
+		global.fabric.FabricImage = { fromURL: jest.fn(() => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
 		jest.spyOn(fabric, "Point").mockImplementation(function (x = 0, y = 0) {
 			this.x = x;
 			this.y = y;
@@ -111,7 +111,12 @@ describe("InkBrush", () => {
 		brush._lastPoint = new fabric.Point(0, 0);
 		const img = { set: jest.fn(), setCoords: jest.fn() };
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve(img));
-		await brush.onMouseUp();
+		
+		brush.onMouseUp();
+		
+		// 等待 Promise 解析
+		await new Promise(resolve => setTimeout(resolve, 0));
+		
 		expect(mockCanvas.add).toHaveBeenCalled();
 		expect(mockCanvas.add.mock.calls[0][0]).toBe(img);
 		expect(mockCanvas.clearContext).toHaveBeenCalledWith(mockCtx);

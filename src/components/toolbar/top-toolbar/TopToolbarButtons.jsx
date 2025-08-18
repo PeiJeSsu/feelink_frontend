@@ -18,7 +18,6 @@ const TopToolbarButtons = ({
 	onRedoClick,
 	onExportClick,
 	onImportClick,
-	canvas,
 }) => {
 	const buttonStyle = {
 		width: 40,
@@ -116,7 +115,6 @@ TopToolbarButtons.propTypes = {
 	onRedoClick: PropTypes.func,
 	onExportClick: PropTypes.func.isRequired,
 	onImportClick: PropTypes.func.isRequired,
-	canvas: PropTypes.object,
 };
 
 export default TopToolbarButtons;
