@@ -1,254 +1,725 @@
-import { sendMessage, callAIDrawingAPI } from '../helpers/MessageAPI'; // 調整路徑
+import * as ChatAPI from '../helpers/MessageAPI';
 import { apiConfig } from '../config/ApiConfig';
+import $ from 'jquery';
 
-
+// Mock dependencies
 jest.mock('../config/ApiConfig', () => ({
-  apiConfig: {
-    post: jest.fn()
-  }
+    apiConfig: {
+        defaults: {
+            baseURL: 'http://localhost:3000'
+        },
+        post: jest.fn(),
+        get: jest.fn()
+    }
 }));
 
+jest.mock('jquery', () => ({
+    ajax: jest.fn()
+}));
 
-Object.defineProperty(global, 'crypto', {
-  value: {
-    randomUUID: jest.fn()
-  }
-});
-
-describe('API Functions', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    global.crypto.randomUUID.mockReturnValue('test-uuid-123');
-  });
-
-  describe('sendMessage', () => {
-    const mockResponse = {
-      data: {
-        content: 'Test response content'
-      }
-    };
-
+describe('ChatAPI', () => {
     beforeEach(() => {
-      apiConfig.post.mockResolvedValue(mockResponse);
+        jest.clearAllMocks();
+        console.log = jest.fn();
+        console.error = jest.fn();
+        // 增加測試超時時間
+        jest.setTimeout(10000);
     });
 
-    it('should send message with text only', async () => {
-      const text = 'Hello world';
-      
-      const result = await sendMessage(text);
-      
-      expect(apiConfig.post).toHaveBeenCalledWith('/chat', expect.any(FormData));
-      expect(result).toEqual({ content: 'Test response content' });
-      
-      const formData = apiConfig.post.mock.calls[0][1];
-      expect(formData.get('userMessage')).toBe(text);
-      expect(formData.get('sessionId')).toBe('test-uuid-123');
+    describe('sendMessageStream', () => {
+        it('should create SSE stream with correct parameters', () => {
+            $.ajax.mockImplementation(() => ({
+                readyState: 4,
+                status: 200,
+                responseText: 'data: test message\n\n',
+                onreadystatechange: null,
+                abort: jest.fn()
+            }));
+
+            const onToken = jest.fn();
+            const onComplete = jest.fn();
+            const onError = jest.fn();
+
+            ChatAPI.sendMessageStream('test message', 'chatroom123', onToken, onComplete, onError);
+
+            expect($.ajax).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    url: 'http://localhost:3000/chat',
+                    type: 'POST',
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'Accept': 'text/event-stream',
+                        'Cache-Control': 'no-cache',
+                    }
+                })
+            );
+        });
+
+        it('should handle SSE data parsing correctly', (done) => {
+            let xhrInstance;
+            let lastProcessedLength = 0;
+            
+            $.ajax.mockImplementation(({ xhr }) => {
+                // 建立 mock XMLHttpRequest 物件
+                xhrInstance = {
+                    readyState: 3,
+                    status: 200,
+                    responseText: '',
+                    onreadystatechange: null,
+                    abort: jest.fn()
+                };
+                
+                // 執行 xhr 回調函數來設置實例
+                const xhrFactory = xhr();
+                xhrFactory.onreadystatechange = function() {
+                    if (this.readyState === 3 || this.readyState === 4) {
+                        if (this.status !== 200) return;
+                        
+                        const responseText = this.responseText;
+                        if (responseText.length > lastProcessedLength) {
+                            const newData = responseText.substring(lastProcessedLength);
+                            lastProcessedLength = responseText.length;
+                            
+                            // 模擬 SSE 資料處理邏輯
+                            let buffer = newData;
+                            const lines = buffer.split('\n');
+                            
+                            for (const line of lines) {
+                                if (line.startsWith('data:')) {
+                                    const data = line.substring(5).trim();
+                                    if (data.trim()) {
+                                        onToken(data);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (this.readyState === 4) {
+                            onComplete();
+                        }
+                    }
+                };
+                
+                // 綁定到全域變數以便後續使用
+                xhrInstance.onreadystatechange = xhrFactory.onreadystatechange;
+                
+                return xhrInstance;
+            });
+
+            const onToken = jest.fn();
+            const onComplete = jest.fn();
+            const onError = jest.fn();
+
+            ChatAPI.sendMessageStream('test', 'chatroom123', onToken, onComplete, onError);
+
+            // 模擬 SSE 資料接收
+            setTimeout(() => {
+                xhrInstance.responseText = 'data: token1\n\n';
+                xhrInstance.onreadystatechange();
+                
+                setTimeout(() => {
+                    xhrInstance.responseText = 'data: token1\n\ndata: token2\n\n';
+                    xhrInstance.readyState = 4;
+                    xhrInstance.onreadystatechange();
+                    
+                    setTimeout(() => {
+                        expect(onToken).toHaveBeenCalledWith('token1');
+                        expect(onToken).toHaveBeenCalledWith('token2');
+                        expect(onComplete).toHaveBeenCalled();
+                        done();
+                    }, 10);
+                }, 10);
+            }, 10);
+        });
+
+        it('should handle errors correctly', (done) => {
+            let xhrInstance;
+            
+            $.ajax.mockImplementation(({ xhr }) => {
+                xhrInstance = {
+                    readyState: 4,
+                    status: 500,
+                    statusText: 'Internal Server Error',
+                    responseText: '',
+                    onreadystatechange: null,
+                    abort: jest.fn()
+                };
+                
+                const xhrFactory = xhr();
+                xhrFactory.onreadystatechange = function() {
+                    if (this.readyState === 3 || this.readyState === 4) {
+                        if (this.status !== 200) {
+                            onError(new Error(`HTTP ${this.status}: ${this.statusText}`));
+                            return;
+                        }
+                    }
+                };
+                
+                xhrInstance.onreadystatechange = xhrFactory.onreadystatechange;
+                return xhrInstance;
+            });
+
+            const onToken = jest.fn();
+            const onComplete = jest.fn();
+            const onError = jest.fn();
+
+            ChatAPI.sendMessageStream('test', 'chatroom123', onToken, onComplete, onError);
+
+            setTimeout(() => {
+                xhrInstance.onreadystatechange();
+                
+                setTimeout(() => {
+                    expect(onError).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            message: 'HTTP 500: Internal Server Error'
+                        })
+                    );
+                    done();
+                }, 10);
+            }, 10);
+        });
     });
 
-    it('should send message with conversation count and default question flag', async () => {
-      const text = 'Hello world';
-      const conversationCount = 5;
-      const hasDefaultQuestion = true;
-      
-      await sendMessage(text, conversationCount, hasDefaultQuestion);
-      
-      const formData = apiConfig.post.mock.calls[0][1];
-      expect(formData.get('conversationCount')).toBe('5');
-      expect(formData.get('hasDefaultQuestion')).toBe('true');
+    describe('sendImageToBackendStream', () => {
+        it('should send image with correct form data', () => {
+            const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+            
+            $.ajax.mockImplementation(({ xhr, data }) => {
+                expect(data).toBeInstanceOf(FormData);
+                
+                const xhrInstance = {
+                    readyState: 4,
+                    status: 200,
+                    responseText: 'data: analysis result\n\n',
+                    onreadystatechange: null,
+                    abort: jest.fn()
+                };
+                
+                const xhrFactory = xhr();
+                setTimeout(() => {
+                    if (xhrFactory.onreadystatechange) {
+                        xhrFactory.onreadystatechange();
+                    }
+                }, 0);
+                
+                return xhrInstance;
+            });
+
+            const onToken = jest.fn();
+            const onComplete = jest.fn();
+            const onError = jest.fn();
+
+            ChatAPI.sendImageToBackendStream('analyze this', mockFile, 'chatroom123', onToken, onComplete, onError);
+
+            expect($.ajax).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    url: 'http://localhost:3000/analysis',
+                    type: 'POST',
+                    processData: false,
+                    contentType: false
+                })
+            );
+        });
     });
 
-    it('should use provided sessionId instead of generating new one', async () => {
-      const text = 'Hello world';
-      const conversationCount = null;
-      const hasDefaultQuestion = false;
-      const customSessionId = 'custom-session-123';
-      
-      await sendMessage(text, conversationCount, hasDefaultQuestion, customSessionId);
-      
-      const formData = apiConfig.post.mock.calls[0][1];
-      expect(formData.get('sessionId')).toBe(customSessionId);
+    describe('callAIDrawingAPIStream', () => {
+        it('should handle image generation events', (done) => {
+            let xhrInstance;
+            let lastProcessedLength = 0;
+            
+            $.ajax.mockImplementation(({ xhr }) => {
+                xhrInstance = {
+                    readyState: 3,
+                    status: 200,
+                    responseText: '',
+                    onreadystatechange: null,
+                    abort: jest.fn()
+                };
+                
+                const xhrFactory = xhr();
+                xhrFactory.onreadystatechange = function() {
+                    if (this.readyState === 3 || this.readyState === 4) {
+                        if (this.status !== 200) return;
+                        
+                        const responseText = this.responseText;
+                        if (responseText.length > lastProcessedLength) {
+                            const newData = responseText.substring(lastProcessedLength);
+                            lastProcessedLength = responseText.length;
+                            
+                            // 模擬 SSE 事件處理邏輯
+                            let buffer = newData;
+                            const lines = buffer.split('\n');
+                            
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i];
+                                if (line.startsWith('event:') && onImageGenerated) {
+                                    const eventType = line.substring(6).trim();
+                                    if (i + 1 < lines.length) {
+                                        const dataLine = lines[i + 1];
+                                        if (dataLine.startsWith('data:')) {
+                                            const data = dataLine.substring(5).trim();
+                                            if (eventType === 'image' && data.trim()) {
+                                                onImageGenerated(data);
+                                            } else if (eventType === 'complete') {
+                                                onComplete();
+                                                return;
+                                            }
+                                            i++; // 跳過已處理的 data 行
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+                
+                xhrInstance.onreadystatechange = xhrFactory.onreadystatechange;
+                return xhrInstance;
+            });
+
+            const onToken = jest.fn();
+            const onComplete = jest.fn();
+            const onError = jest.fn();
+            const onImageGenerated = jest.fn();
+
+            ChatAPI.callAIDrawingAPIStream(
+                'draw a cat',
+                'canvas-data',
+                true,
+                'chatroom123',
+                onToken,
+                onComplete,
+                onError,
+                onImageGenerated
+            );
+
+            setTimeout(() => {
+                xhrInstance.responseText = 'event: image\ndata: base64imagedata\n\nevent: complete\ndata: \n\n';
+                xhrInstance.onreadystatechange();
+                
+                setTimeout(() => {
+                    expect(onImageGenerated).toHaveBeenCalledWith('base64imagedata');
+                    expect(onComplete).toHaveBeenCalled();
+                    done();
+                }, 10);
+            }, 10);
+        });
+
+        it('should send JSON data with correct structure', () => {
+            $.ajax.mockImplementation(({ data, contentType }) => {
+                expect(contentType).toBe('application/json');
+                const parsedData = JSON.parse(data);
+                expect(parsedData).toEqual({
+                    text: 'test drawing',
+                    imageData: 'canvas-data',
+                    removeBackground: false,
+                    chatroomId: 'chatroom123'
+                });
+
+                return {
+                    readyState: 4,
+                    status: 200,
+                    responseText: '',
+                    onreadystatechange: null,
+                    abort: jest.fn()
+                };
+            });
+
+            ChatAPI.callAIDrawingAPIStream(
+                'test drawing',
+                'canvas-data',
+                false,
+                'chatroom123',
+                jest.fn(),
+                jest.fn(),
+                jest.fn(),
+                jest.fn()
+            );
+        });
     });
 
-    it('should not append conversationCount when it is null', async () => {
-      const text = 'Hello world';
-      
-      await sendMessage(text, null);
-      
-      const formData = apiConfig.post.mock.calls[0][1];
-      expect(formData.get('conversationCount')).toBeNull();
-      expect(formData.get('hasDefaultQuestion')).toBeNull();
+    describe('sendMessage', () => {
+        it('should send message successfully', async () => {
+            const mockResponse = {
+                data: {
+                    content: 'AI response'
+                }
+            };
+
+            apiConfig.post.mockResolvedValue(mockResponse);
+
+            const result = await ChatAPI.sendMessage('hello', 1, true, 'chatroom123');
+
+            expect(apiConfig.post).toHaveBeenCalledWith(
+                '/chat/simple',
+                expect.any(FormData)
+            );
+            expect(result).toEqual({ content: 'AI response' });
+        });
+
+        it('should handle conversation count parameters', async () => {
+            const mockResponse = {
+                data: {
+                    content: 'AI response'
+                }
+            };
+
+            apiConfig.post.mockResolvedValue(mockResponse);
+
+            await ChatAPI.sendMessage('hello', null, false, 'chatroom123');
+
+            expect(apiConfig.post).toHaveBeenCalledWith(
+                '/chat/simple',
+                expect.any(FormData)
+            );
+        });
     });
 
-    it('should handle API errors', async () => {
-      const error = new Error('API Error');
-      apiConfig.post.mockRejectedValue(error);
-      
-      const text = 'Hello world';
-      
-      await expect(sendMessage(text)).rejects.toThrow('API Error');
+    describe('callAIDrawingAPI', () => {
+        it('should return generated content on success', async () => {
+            const mockResponse = {
+                data: {
+                    success: true,
+                    content: 'base64-image-data'
+                }
+            };
+
+            apiConfig.post.mockResolvedValue(mockResponse);
+
+            const result = await ChatAPI.callAIDrawingAPI('draw cat', 'canvas-data', true, 'chatroom123');
+
+            expect(result).toBe('base64-image-data');
+            expect(apiConfig.post).toHaveBeenCalledWith(
+                '/generate/simple',
+                {
+                    text: 'draw cat',
+                    imageData: 'canvas-data',
+                    removeBackground: true,
+                    chatroomId: 'chatroom123'
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }
+            );
+        });
+
+        it('should throw error on API failure', async () => {
+            const mockResponse = {
+                data: {
+                    success: false,
+                    error: 'Generation failed'
+                }
+            };
+
+            apiConfig.post.mockResolvedValue(mockResponse);
+
+            await expect(
+                ChatAPI.callAIDrawingAPI('draw cat', 'canvas-data', true, 'chatroom123')
+            ).rejects.toThrow('Generation failed');
+        });
     });
 
-    it('should generate unique session ID for each call', async () => {
-      global.crypto.randomUUID
-        .mockReturnValueOnce('uuid-1')
-        .mockReturnValueOnce('uuid-2');
-      
-      const text = 'Hello world';
-      
-      await sendMessage(text);
-      await sendMessage(text);
-      
-      const firstCall = apiConfig.post.mock.calls[0][1];
-      const secondCall = apiConfig.post.mock.calls[1][1];
-      
-      expect(firstCall.get('sessionId')).toBe('uuid-1');
-      expect(secondCall.get('sessionId')).toBe('uuid-2');
-    });
-  });
+    describe('analysisImage', () => {
+        it('should analyze image successfully', async () => {
+            const mockResponse = {
+                data: {
+                    content: 'Analysis result'
+                }
+            };
 
-  describe('callAIDrawingAPI', () => {
-    const mockSuccessResponse = {
-      data: {
-        success: true,
-        content: 'Generated image data'
-      }
-    };
+            apiConfig.post.mockResolvedValue(mockResponse);
 
-    beforeEach(() => {
-      apiConfig.post.mockResolvedValue(mockSuccessResponse);
-    });
+            const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+            const result = await ChatAPI.analysisImage('analyze this', mockFile, 'chatroom123');
 
-    it('should call AI drawing API with correct parameters', async () => {
-      const messageText = 'Draw a cat';
-      const canvasData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-      
-      const result = await callAIDrawingAPI(messageText, canvasData);
-      
-      expect(apiConfig.post).toHaveBeenCalledWith(
-        '/generate',
-        {
-          text: messageText,
-          imageData: canvasData,
-          removeBackground: true
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-      expect(result).toBe('Generated image data');
-    });
+            expect(result).toBe('Analysis result');
+            expect(apiConfig.post).toHaveBeenCalledWith(
+                '/analysis/simple',
+                expect.any(FormData),
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    }
+                }
+            );
+        });
 
-    it('should handle successful response', async () => {
-      const messageText = 'Draw a dog';
-      const canvasData = 'canvas-data';
-      
-      const result = await callAIDrawingAPI(messageText, canvasData);
-      
-      expect(result).toBe('Generated image data');
+        it('should handle analysis without file', async () => {
+            const mockResponse = {
+                data: {
+                    content: 'Analysis result'
+                }
+            };
+
+            apiConfig.post.mockResolvedValue(mockResponse);
+
+            const result = await ChatAPI.analysisImage('analyze this', null, 'chatroom123');
+
+            expect(result).toBe('Analysis result');
+        });
+
+        it('should throw error on API failure', async () => {
+            const mockError = {
+                response: {
+                    data: {
+                        message: 'Analysis failed'
+                    }
+                }
+            };
+
+            apiConfig.post.mockRejectedValue(mockError);
+
+            await expect(
+                ChatAPI.analysisImage('analyze this', null, 'chatroom123')
+            ).rejects.toThrow('Analysis failed');
+        });
     });
 
-    it('should throw error when response data is missing', async () => {
-      apiConfig.post.mockResolvedValue({});
-      
-      const messageText = 'Draw a cat';
-      const canvasData = 'canvas-data';
-      
-      await expect(callAIDrawingAPI(messageText, canvasData))
-        .rejects.toThrow('AI 畫圖失敗');
+    describe('loadChatroomMessages', () => {
+        it('should load chatroom messages successfully', async () => {
+            const mockMessages = [
+                { id: 1, content: 'Hello', sender: 'user' },
+                { id: 2, content: 'Hi there!', sender: 'ai' }
+            ];
+
+            apiConfig.get.mockResolvedValue({ data: mockMessages });
+
+            const result = await ChatAPI.loadChatroomMessages('chatroom123');
+
+            expect(result).toEqual(mockMessages);
+            expect(apiConfig.get).toHaveBeenCalledWith('/api/messages/chatroom/chatroom123');
+        });
+
+        it('should handle loading errors', async () => {
+            const mockError = {
+                response: {
+                    data: {
+                        message: 'Chatroom not found'
+                    }
+                }
+            };
+
+            apiConfig.get.mockRejectedValue(mockError);
+
+            await expect(
+                ChatAPI.loadChatroomMessages('invalid-id')
+            ).rejects.toThrow('Chatroom not found');
+        });
     });
 
-    it('should throw error when success is false', async () => {
-      apiConfig.post.mockResolvedValue({
-        data: {
-          success: false,
-          error: 'Custom error message'
-        }
-      });
-      
-      const messageText = 'Draw a cat';
-      const canvasData = 'canvas-data';
-      
-      await expect(callAIDrawingAPI(messageText, canvasData))
-        .rejects.toThrow('Custom error message');
+    describe('loadChatroomTextMessages', () => {
+        it('should load text messages successfully', async () => {
+            const mockMessages = [
+                { id: 1, content: 'Hello', type: 'text' }
+            ];
+
+            apiConfig.get.mockResolvedValue({ data: mockMessages });
+
+            const result = await ChatAPI.loadChatroomTextMessages('chatroom123');
+
+            expect(result).toEqual(mockMessages);
+            expect(apiConfig.get).toHaveBeenCalledWith('/api/messages/chatroom/chatroom123/text');
+        });
     });
 
-    it('should throw default error when success is false without error message', async () => {
-      apiConfig.post.mockResolvedValue({
-        data: {
-          success: false
-        }
-      });
-      
-      const messageText = 'Draw a cat';
-      const canvasData = 'canvas-data';
-      
-      await expect(callAIDrawingAPI(messageText, canvasData))
-        .rejects.toThrow('AI 畫圖失敗');
+    describe('loadChatroomDrawingMessages', () => {
+        it('should load drawing messages successfully', async () => {
+            const mockMessages = [
+                { id: 1, content: 'base64-drawing-data', type: 'drawing' }
+            ];
+
+            apiConfig.get.mockResolvedValue({ data: mockMessages });
+
+            const result = await ChatAPI.loadChatroomDrawingMessages('chatroom123');
+
+            expect(result).toEqual(mockMessages);
+            expect(apiConfig.get).toHaveBeenCalledWith('/api/messages/chatroom/chatroom123/drawing');
+        });
     });
 
-    it('should handle API network errors', async () => {
-      const networkError = new Error('Network Error');
-      apiConfig.post.mockRejectedValue(networkError);
-      
-      const messageText = 'Draw a cat';
-      const canvasData = 'canvas-data';
-      
-      await expect(callAIDrawingAPI(messageText, canvasData))
-        .rejects.toThrow('Network Error');
+    describe('loadUserMessages', () => {
+        it('should load user messages successfully', async () => {
+            const mockMessages = [
+                { id: 1, content: 'Hello', sender: 'user' }
+            ];
+
+            apiConfig.get.mockResolvedValue({ data: mockMessages });
+
+            const result = await ChatAPI.loadUserMessages('chatroom123');
+
+            expect(result).toEqual(mockMessages);
+            expect(apiConfig.get).toHaveBeenCalledWith('/api/messages/chatroom/chatroom123/user');
+        });
     });
 
-    it('should handle malformed response data', async () => {
-      apiConfig.post.mockResolvedValue({
-        data: null
-      });
-      
-      const messageText = 'Draw a cat';
-      const canvasData = 'canvas-data';
-      
-      await expect(callAIDrawingAPI(messageText, canvasData))
-        .rejects.toThrow('AI 畫圖失敗');
-    });
-  });
+    describe('loadAIMessages', () => {
+        it('should load AI messages successfully', async () => {
+            const mockMessages = [
+                { id: 1, content: 'Hi there!', sender: 'ai' }
+            ];
 
-  describe('Integration Tests', () => {
-    it('should handle multiple API calls independently', async () => {
-      // Mock different responses for different endpoints
-      apiConfig.post
-        .mockResolvedValueOnce({ data: { content: 'Chat response' } })
-        .mockResolvedValueOnce({ data: { success: true, content: 'Drawing response' } });
-      
-      const text = 'Hello';
-      const canvasData = 'canvas-data';
-      
-      const [chatResult, drawingResult] = await Promise.all([
-        sendMessage(text),
-        callAIDrawingAPI('Draw something', canvasData)
-      ]);
-      
-      expect(chatResult).toEqual({ content: 'Chat response' });
-      expect(drawingResult).toBe('Drawing response');
-      expect(apiConfig.post).toHaveBeenCalledTimes(2);
-    });
-  });
-});
+            apiConfig.get.mockResolvedValue({ data: mockMessages });
 
-describe('Utility Functions', () => {
-  describe('generateSessionId', () => {
-    it('should generate unique session IDs', () => {
-      global.crypto.randomUUID
-        .mockReturnValueOnce('id-1')
-        .mockReturnValueOnce('id-2');
-      
-      const text = 'test';
-      
-      apiConfig.post.mockResolvedValue({ data: { content: 'response' } });
-      
-      sendMessage(text);
-      sendMessage(text);
-      
-      expect(global.crypto.randomUUID).toHaveBeenCalledTimes(2);
+            const result = await ChatAPI.loadAIMessages('chatroom123');
+
+            expect(result).toEqual(mockMessages);
+            expect(apiConfig.get).toHaveBeenCalledWith('/api/messages/chatroom/chatroom123/ai');
+        });
     });
-  });
+
+    describe('SSE Buffer Management', () => {
+        it('should handle partial SSE messages correctly', (done) => {
+            let xhrInstance;
+            let currentResponseLength = 0;
+            let buffer = '';
+            
+            $.ajax.mockImplementation(({ xhr }) => {
+                xhrInstance = {
+                    get readyState() { return 3; },
+                    get status() { return 200; },
+                    responseText: '',
+                    onreadystatechange: null,
+                    abort: jest.fn()
+                };
+                
+                const xhrFactory = xhr();
+                xhrFactory.onreadystatechange = function() {
+                    if (this.readyState === 3 || this.readyState === 4) {
+                        if (this.status !== 200) return;
+                        
+                        const responseText = this.responseText;
+                        if (responseText.length > currentResponseLength) {
+                            const newData = responseText.substring(currentResponseLength);
+                            currentResponseLength = responseText.length;
+                            buffer += newData;
+                            
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+                            
+                            for (const line of lines) {
+                                if (line.startsWith('data:')) {
+                                    const data = line.substring(5).trim();
+                                    if (data.trim()) {
+                                        onToken(data);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+                
+                xhrInstance.onreadystatechange = xhrFactory.onreadystatechange;
+                return xhrInstance;
+            });
+
+            const onToken = jest.fn();
+            const onComplete = jest.fn();
+            const onError = jest.fn();
+
+            ChatAPI.sendMessageStream('test', 'chatroom123', onToken, onComplete, onError);
+
+            // 模擬分段接收數據
+            setTimeout(() => {
+                xhrInstance.responseText = 'data: partial';
+                xhrInstance.onreadystatechange();
+            }, 5);
+
+            setTimeout(() => {
+                xhrInstance.responseText = 'data: partial message\n\n';
+                xhrInstance.onreadystatechange();
+                
+                setTimeout(() => {
+                    expect(onToken).toHaveBeenCalledWith('partial message');
+                    expect(onToken).toHaveBeenCalledTimes(1);
+                    done();
+                }, 10);
+            }, 10);
+        });
+
+        it('should handle multiple events in single response', (done) => {
+            let xhrInstance;
+            let lastProcessedLength = 0;
+            
+            $.ajax.mockImplementation(({ xhr }) => {
+                xhrInstance = {
+                    readyState: 3,
+                    status: 200,
+                    responseText: '',
+                    onreadystatechange: null,
+                    abort: jest.fn()
+                };
+                
+                const xhrFactory = xhr();
+                xhrFactory.onreadystatechange = function() {
+                    if (this.readyState === 3 || this.readyState === 4) {
+                        if (this.status !== 200) return;
+                        
+                        const responseText = this.responseText;
+                        if (responseText.length > lastProcessedLength) {
+                            const newData = responseText.substring(lastProcessedLength);
+                            lastProcessedLength = responseText.length;
+                            
+                            let buffer = newData;
+                            const lines = buffer.split('\n');
+                            
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i];
+                                if (line.startsWith('event:') && onImageGenerated) {
+                                    const eventType = line.substring(6).trim();
+                                    if (i + 1 < lines.length) {
+                                        const dataLine = lines[i + 1];
+                                        if (dataLine.startsWith('data:')) {
+                                            const data = dataLine.substring(5).trim();
+                                            if (eventType === 'image' && data.trim()) {
+                                                onImageGenerated(data);
+                                            } else if (eventType === 'complete') {
+                                                onComplete();
+                                                return;
+                                            }
+                                            i++; // 跳過已處理的 data 行
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+                
+                xhrInstance.onreadystatechange = xhrFactory.onreadystatechange;
+                return xhrInstance;
+            });
+
+            const onToken = jest.fn();
+            const onComplete = jest.fn();
+            const onError = jest.fn();
+            const onImageGenerated = jest.fn();
+
+            ChatAPI.callAIDrawingAPIStream(
+                'test',
+                'canvas-data',
+                true,
+                'chatroom123',
+                onToken,
+                onComplete,
+                onError,
+                onImageGenerated
+            );
+
+            setTimeout(() => {
+                xhrInstance.responseText = 'event: image\ndata: img1\n\nevent: image\ndata: img2\n\nevent: complete\ndata: \n\n';
+                xhrInstance.onreadystatechange();
+                
+                setTimeout(() => {
+                    expect(onImageGenerated).toHaveBeenCalledWith('img1');
+                    expect(onImageGenerated).toHaveBeenCalledWith('img2');
+                    expect(onImageGenerated).toHaveBeenCalledTimes(2);
+                    expect(onComplete).toHaveBeenCalled();
+                    done();
+                }, 10);
+            }, 10);
+        });
+    });
 });

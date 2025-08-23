@@ -21,15 +21,16 @@ export default function ChatRoom({ canvas }) {
         sendTextMessageStream,
         sendImageMessageStream,
         sendCanvasAnalysisStream,
+        sendAIDrawingWithTypewriter,
         reloadChatroomHistory,
         currentChatroomId
     } = useChatMessages(canvas);
 
-    // 🎯 新增：控制清空確認對話框
+    //  控制清空確認對話框
     const [openClearDialog, setOpenClearDialog] = useState(false);
     const [clearing, setClearing] = useState(false);
 
-    // 🎯 新增：清空聊天室函數
+    //  清空聊天室函數
     const handleClearChatroom = async () => {
         if (!currentChatroomId) {
             console.error('沒有可用的聊天室ID');
@@ -64,7 +65,7 @@ export default function ChatRoom({ canvas }) {
         }
     };
 
-    // 🎯 渲染載入歷史訊息的骨架屏
+    //  渲染載入歷史訊息的骨架屏
     const renderHistoryLoadingSkeleton = () => (
         <Box sx={{ padding: 2 }}>
             {[1, 2, 3].map((item) => (
@@ -79,7 +80,7 @@ export default function ChatRoom({ canvas }) {
         </Box>
     );
 
-    // 🎯 渲染空狀態
+    //  渲染空狀態
     const renderEmptyState = () => (
         <Box sx={{ 
             display: 'flex', 
@@ -104,14 +105,14 @@ export default function ChatRoom({ canvas }) {
 
     return (
         <Box sx={chatRoomStyles.container}>
-            {/* 🎯 修改：聊天標題 */}
+            {/*聊天標題 */}
             <Box sx={chatRoomStyles.header}>
                 <Box sx={chatRoomStyles.headerTitle}>
                     <AssistantIcon sx={chatRoomStyles.titleIcon} />
                     <Typography sx={chatRoomStyles.titleText}>
-                        AI 助手
+                        AI 夥伴
                     </Typography>
-                    {/* 🎯 新增：清空聊天室按鈕 */}
+                    {/* 清空聊天室按鈕 */}
                     {historyLoaded && messages.length > 0 && (
                         <IconButton
                             size="small"
@@ -133,7 +134,7 @@ export default function ChatRoom({ canvas }) {
                     )}
                 </Box>
                 
-                {/* 🎯 修改：只保留創藝好夥伴標籤，放在右側 */}
+                {/*  只保留創藝好夥伴標籤，放在右側 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Chip 
                         label="你的創藝好夥伴" 
@@ -145,13 +146,13 @@ export default function ChatRoom({ canvas }) {
 
             {/* 聊天訊息區域 */}
             <Box sx={chatRoomStyles.chatArea}>
-                {/* 🎯 載入歷史訊息時顯示骨架屏 */}
+                {/*  載入歷史訊息時顯示骨架屏 */}
                 {historyLoading && renderHistoryLoadingSkeleton()}
                 
-                {/* 🎯 沒有訊息且載入完成時顯示空狀態 */}
+                {/* 沒有訊息且載入完成時顯示空狀態 */}
                 {!historyLoading && messages.length === 0 && renderEmptyState()}
                 
-                {/* 🎯 顯示聊天訊息 */}
+                {/*  顯示聊天訊息 */}
                 {!historyLoading && messages.length > 0 && (
                     <>
                         {messages.map((message) => (
@@ -166,7 +167,7 @@ export default function ChatRoom({ canvas }) {
                     </>
                 )}
                 
-                {/* 🎯 發送新訊息時的載入指示器 */}
+                {/*  發送新訊息時的載入指示器 */}
                 {loading && (
                     <Box sx={chatRoomStyles.messageLoading}>
                         <CircularProgress size={20} sx={{ color: "#2563eb" }} />
@@ -183,12 +184,12 @@ export default function ChatRoom({ canvas }) {
                     onSendMessage={sendTextMessageStream}
                     onSendImage={sendImageMessageStream}
                     onAnalyzeCanvas={sendCanvasAnalysisStream}
-                    onAIDrawing={sendAIDrawing}
+                    onAIDrawing={sendAIDrawingWithTypewriter}
                     disabled={loading || historyLoading}
                 />
             </Box>
 
-            {/* 🎯 新增：清空確認對話框 */}
+            {/* 清空確認對話框 */}
             <Dialog
                 open={openClearDialog}
                 onClose={() => !clearing && setOpenClearDialog(false)}

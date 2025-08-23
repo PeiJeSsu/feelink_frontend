@@ -34,7 +34,7 @@ export const convertToImageDataURI = (content) => {
     return content;
 };
 
-// 🔧 修復：改進的 ID 生成邏輯
+// 改進的 ID 生成邏輯
 export const generateUniqueMessageId = (dbMessage, fallbackId) => {
     // 優先使用資料庫的 messageId
     if (dbMessage.messageId && !isNaN(dbMessage.messageId)) {
@@ -53,14 +53,14 @@ export const generateUniqueMessageId = (dbMessage, fallbackId) => {
     return fallbackId || Date.now();
 };
 
-// 🔧 修復：將資料庫的 ChatMessage 轉換為前端使用的訊息格式
+// 將資料庫的 ChatMessage 轉換為前端使用的訊息格式
 export const convertDBMessageToUIMessage = (dbMessage, index = 0) => {
     if (!dbMessage) return null;
     
     const content = dbMessage.content || '';
     const isImageContent = isBase64Image(content);
     
-    // 🔧 使用改進的 ID 生成邏輯
+    // 使用改進的 ID 生成邏輯
     const messageId = generateUniqueMessageId(dbMessage, Date.now() + index);
     
     return {
@@ -74,7 +74,7 @@ export const convertDBMessageToUIMessage = (dbMessage, index = 0) => {
     };
 };
 
-// 🔧 修復：批量轉換資料庫訊息
+// 批量轉換資料庫訊息
 export const convertDBMessagesToUIMessages = (dbMessages) => {
     if (!Array.isArray(dbMessages)) return [];
     
@@ -95,7 +95,7 @@ export const formatTimestamp = (timestamp) => {
     
     try {
         const date = new Date(timestamp);
-        // 🔧 檢查日期是否有效
+        //  檢查日期是否有效
         if (isNaN(date.getTime())) return '';
         
         const now = new Date();
@@ -149,7 +149,7 @@ export const convertBlobToBase64 = (blob) => {
     });
 };
 
-// 🔧 修復：驗證訊息資料的完整性
+// 驗證訊息資料的完整性
 export const validateMessageData = (message) => {
     if (!message) return false;
     
@@ -159,7 +159,7 @@ export const validateMessageData = (message) => {
     return !!(hasValidId && hasContent);
 };
 
-// 🔧 修復：清理重複的訊息（基於 ID 和時間戳記）
+// 清理重複的訊息（基於 ID 和時間戳記）
 export const removeDuplicateMessages = (messages) => {
     if (!Array.isArray(messages)) return [];
     
@@ -190,7 +190,7 @@ export const removeDuplicateMessages = (messages) => {
     });
 };
 
-// 🔧 新增：修復訊息 ID 的工具函數
+// 修復訊息 ID 的工具函數
 export const ensureValidMessageIds = (messages) => {
     if (!Array.isArray(messages)) return [];
     
@@ -206,7 +206,7 @@ export const ensureValidMessageIds = (messages) => {
     });
 };
 
-// 🔧 新增：Debug 用的訊息檢查函數
+// Debug 用的訊息檢查函數
 export const debugMessages = (messages, context = '') => {
     console.group(`🔍 Debug Messages - ${context}`);
     console.log('訊息總數:', messages.length);
@@ -222,15 +222,15 @@ export const debugMessages = (messages, context = '') => {
         }
         
         if (isNaN(msg.id)) {
-            console.error(`❌ 第 ${index} 條訊息 ID 為 NaN:`, msg);
+            console.error(`第 ${index} 條訊息 ID 為 NaN:`, msg);
         }
     });
     
     if (duplicateIds.length > 0) {
-        console.error('❌ 發現重複 ID:', duplicateIds);
+        console.error('發現重複 ID:', duplicateIds);
     }
     
-    console.log('✅ ID 檢查完成');
+    console.log(' ID 檢查完成');
     console.groupEnd();
     
     return messages;

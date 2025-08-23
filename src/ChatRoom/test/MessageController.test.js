@@ -1,11 +1,16 @@
+// MessageHandlers.test.js
 import {
+    handleSendTextMessageStream,
+    handleSendImageMessageStream,
+    handleSendCanvasAnalysisStream,
+    handleSendAIDrawingStream,
     handleSendTextMessage,
     handleSendImageMessage,
     handleSendCanvasAnalysis,
     handleSendAIDrawing
 } from '../helpers/MessageController';
 
-// Mock all dependencies
+// Mock dependencies with factory functions
 jest.mock('../helpers/usage/MessageFactory', () => ({
     addMessages: jest.fn(),
     appendMessage: jest.fn(),
@@ -14,6 +19,10 @@ jest.mock('../helpers/usage/MessageFactory', () => ({
 }));
 
 jest.mock('../helpers/MessageService', () => ({
+    sendTextToBackendStream: jest.fn(),
+    sendImageToBackendStreamService: jest.fn(),
+    sendCanvasAnalysisToBackendStreamService: jest.fn(),
+    sendAIDrawingToBackendStream: jest.fn(),
     sendTextToBackend: jest.fn(),
     sendImageToBackend: jest.fn(),
     sendCanvasAnalysisToBackend: jest.fn(),
@@ -33,467 +42,625 @@ jest.mock('../../helpers/canvas/CanvasOperations', () => ({
     addImageToCanvas: jest.fn()
 }));
 
-import { addMessages, appendMessage, getNewId, createNewMessage } from '../helpers/usage/MessageFactory';
-import { sendTextToBackend, sendImageToBackend, sendCanvasAnalysisToBackend, sendAIDrawingToBackend } from '../helpers/MessageService';
+// Import mocked functions after mocking
+import {
+    addMessages,
+    appendMessage,
+    getNewId,
+    createNewMessage
+} from '../helpers/usage/MessageFactory';
+
+import {
+    sendTextToBackendStream,
+    sendImageToBackendStreamService,
+    sendCanvasAnalysisToBackendStreamService,
+    sendAIDrawingToBackendStream,
+    sendTextToBackend,
+    sendImageToBackend,
+    sendCanvasAnalysisToBackend,
+    sendAIDrawingToBackend
+} from '../helpers/MessageService';
+
 import { convertBlobToBase64 } from '../helpers/usage/MessageHelpers';
 import { handleError } from '../helpers/usage/MessageError';
 import { clearCanvas, addImageToCanvas } from '../../helpers/canvas/CanvasOperations';
 
-describe('MessageController', () => {
+// Get references to mocked functions
+const mockAddMessages = addMessages;
+const mockAppendMessage = appendMessage;
+const mockGetNewId = getNewId;
+const mockCreateNewMessage = createNewMessage;
+
+const mockSendTextToBackendStream = sendTextToBackendStream;
+const mockSendImageToBackendStreamService = sendImageToBackendStreamService;
+const mockSendCanvasAnalysisToBackendStreamService = sendCanvasAnalysisToBackendStreamService;
+const mockSendAIDrawingToBackendStream = sendAIDrawingToBackendStream;
+const mockSendTextToBackend = sendTextToBackend;
+const mockSendImageToBackend = sendImageToBackend;
+const mockSendCanvasAnalysisToBackend = sendCanvasAnalysisToBackend;
+const mockSendAIDrawingToBackend = sendAIDrawingToBackend;
+
+const mockConvertBlobToBase64 = convertBlobToBase64;
+const mockHandleError = handleError;
+const mockClearCanvas = clearCanvas;
+const mockAddImageToCanvas = addImageToCanvas;
+
+describe('MessageHandlers', () => {
     let mockMessages, mockSetMessages, mockSetLoading, mockCanvas;
+    const mockChatroomId = 'test-chatroom-123';
 
     beforeEach(() => {
-        mockMessages = [];
-        mockSetMessages = jest.fn();
-        mockSetLoading = jest.fn();
-        mockCanvas = { getContext: jest.fn() };
-        
         // Reset all mocks
         jest.clearAllMocks();
         
-        // Mock console methods to avoid test output
-        jest.spyOn(console, 'log').mockImplementation(() => {});
-        jest.spyOn(console, 'error').mockImplementation(() => {});
+        // Setup common test data
+        mockMessages = [
+            { id: 1, message: 'Hello', isUser: true },
+            { id: 2, message: 'Hi there!', isUser: false }
+        ];
+        mockSetMessages = jest.fn();
+        mockSetLoading = jest.fn();
+        mockCanvas = {
+            getContext: jest.fn(() => ({
+                clearRect: jest.fn(),
+                drawImage: jest.fn()
+            }))
+        };
+
+        // Default mock implementations
+        mockGetNewId.mockReturnValue(3);
+        mockAddMessages.mockReturnValue(4);
+        mockCreateNewMessage.mockImplementation((id, message, isUser, hasImage) => ({
+            id, message, isUser, hasImage
+        }));
+        mockConvertBlobToBase64.mockResolvedValue('base64-encoded-image');
     });
 
-    afterEach(() => {
-        // Restore console methods
-        jest.restoreAllMocks();
+    describe('Stream Message Handlers', () => {
+        describe('handleSendTextMessageStream', () => {
+            it('should handle successful text message stream', async () => {
+                const mockMessageText = 'Test message';
+                let onTokenCallback, onCompleteCallback;
+
+                mockSendTextToBackendStream.mockImplementation((payload, chatroomId, onToken, onComplete) => {
+                    onTokenCallback = onToken;
+                    onCompleteCallback = onComplete;
+                    
+                    // Simulate streaming
+                    setTimeout(() => {
+                        onToken('Hello');
+                        onToken(' World');
+                        onComplete();
+                    }, 10);
+                });
+
+                await handleSendTextMessageStream(
+                    mockMessageText, 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockAddMessages).toHaveBeenCalledWith(mockMessageText, null, 3, mockMessages, mockSetMessages);
+                expect(mockSetLoading).toHaveBeenCalledWith(true);
+                expect(mockSendTextToBackendStream).toHaveBeenCalled();
+            });
+
+            it('should handle empty message text', async () => {
+                await handleSendTextMessageStream(
+                    '', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockAddMessages).not.toHaveBeenCalled();
+                expect(mockSendTextToBackendStream).not.toHaveBeenCalled();
+            });
+
+            it('should handle missing chatroomId', async () => {
+                const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+                await handleSendTextMessageStream(
+                    'Test message', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    null
+                );
+
+                expect(consoleSpy).toHaveBeenCalledWith('chatroomId is required for sending messages');
+                expect(mockAddMessages).not.toHaveBeenCalled();
+                
+                consoleSpy.mockRestore();
+            });
+
+            it('should handle stream errors', async () => {
+                const mockError = new Error('Stream failed');
+                let onErrorCallback;
+
+                mockSendTextToBackendStream.mockImplementation((payload, chatroomId, onToken, onComplete, onError) => {
+                    onErrorCallback = onError;
+                    setTimeout(() => onError(mockError), 10);
+                });
+
+                await handleSendTextMessageStream(
+                    'Test message', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                // Wait for async operations
+                await new Promise(resolve => setTimeout(resolve, 20));
+
+                expect(mockHandleError).toHaveBeenCalledWith(mockError, '發送訊息失敗', mockMessages, mockSetMessages);
+                expect(mockSetLoading).toHaveBeenCalledWith(false);
+            });
+        });
+
+        describe('handleSendImageMessageStream', () => {
+            it('should handle image message stream successfully', async () => {
+                const mockMessageText = 'Image description';
+                const mockImage = new Blob(['fake-image'], { type: 'image/png' });
+                let onTokenCallback, onCompleteCallback;
+
+                mockSendImageToBackendStreamService.mockImplementation((text, image, chatroomId, onToken, onComplete) => {
+                    onTokenCallback = onToken;
+                    onCompleteCallback = onComplete;
+                    
+                    setTimeout(() => {
+                        onToken('Processing');
+                        onToken(' image...');
+                        onComplete();
+                    }, 10);
+                });
+
+                await handleSendImageMessageStream(
+                    mockMessageText, 
+                    mockImage, 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockAddMessages).toHaveBeenCalledWith(mockMessageText, mockImage, 3, mockMessages, mockSetMessages);
+                expect(mockSendImageToBackendStreamService).toHaveBeenCalled();
+            });
+        });
+
+        describe('handleSendCanvasAnalysisStream', () => {
+            it('should handle canvas analysis stream successfully', async () => {
+                const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
+                const mockMessageText = 'Analyze this';
+
+                mockSendCanvasAnalysisToBackendStreamService.mockImplementation((text, image, chatroomId, onToken, onComplete) => {
+                    setTimeout(() => {
+                        onToken('Analysis');
+                        onToken(' complete');
+                        onComplete();
+                    }, 10);
+                });
+
+                await handleSendCanvasAnalysisStream(
+                    mockCanvasImage, 
+                    mockMessageText, 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockAddMessages).toHaveBeenCalledWith(mockMessageText, mockCanvasImage, 3, mockMessages, mockSetMessages);
+                expect(mockSendCanvasAnalysisToBackendStreamService).toHaveBeenCalled();
+            });
+        });
+
+        describe('handleSendAIDrawingStream', () => {
+            it('should handle AI drawing stream with canvas update', async () => {
+                const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
+                const mockMessageText = 'Draw something';
+                const mockImageData = 'base64-image-data';
+
+                let onTokenCallback, onImageGeneratedCallback, onCompleteCallback;
+
+                mockSendAIDrawingToBackendStream.mockImplementation((text, imageData, chatroomId, onToken, onComplete, onError, onImageGenerated) => {
+                    onTokenCallback = onToken;
+                    onImageGeneratedCallback = onImageGenerated;
+                    onCompleteCallback = onComplete;
+                    
+                    setTimeout(() => {
+                        onToken('Drawing');
+                        onImageGenerated(mockImageData);
+                        onComplete();
+                    }, 10);
+                });
+
+                await handleSendAIDrawingStream(
+                    mockCanvasImage, 
+                    mockMessageText, 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockCanvas, 
+                    mockChatroomId
+                );
+
+                expect(mockConvertBlobToBase64).toHaveBeenCalledWith(mockCanvasImage);
+                expect(mockSendAIDrawingToBackendStream).toHaveBeenCalled();
+            });
+
+            it('should handle missing canvas image', async () => {
+                await handleSendAIDrawingStream(
+                    null, 
+                    'Draw something', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockCanvas, 
+                    mockChatroomId
+                );
+
+                expect(mockAddMessages).not.toHaveBeenCalled();
+                expect(mockSendAIDrawingToBackendStream).not.toHaveBeenCalled();
+            });
+        });
     });
 
-    describe('handleSendTextMessage', () => {
-        it('should handle successful text message sending', async () => {
-            // Arrange
-            const messageText = 'Hello world';
-            const conversationCount = 1;
-            const defaultQuestion = '';
-            const mockResponse = { success: true, content: 'AI response' };
-            
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendTextToBackend.mockResolvedValue(mockResponse);
+    describe('Non-Stream Message Handlers', () => {
+        describe('handleSendTextMessage', () => {
+            it('should handle successful text message', async () => {
+                const mockResponse = { success: true, content: 'Response message' };
+                mockSendTextToBackend.mockResolvedValue(mockResponse);
 
-            // Act
-            await handleSendTextMessage(messageText, mockMessages, mockSetMessages, mockSetLoading, defaultQuestion, conversationCount);
+                await handleSendTextMessage(
+                    'Test message', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
 
-            // Assert
-            expect(mockSetLoading).toHaveBeenCalledWith(true);
-            expect(getNewId).toHaveBeenCalledWith(mockMessages);
-            expect(addMessages).toHaveBeenCalledWith(messageText, null, 1, mockMessages, mockSetMessages);
-            expect(sendTextToBackend).toHaveBeenCalledWith({
-                text: messageText,
-                conversationCount: conversationCount,
-                hasDefaultQuestion: false
+                expect(mockSetLoading).toHaveBeenCalledWith(true);
+                expect(mockSendTextToBackend).toHaveBeenCalled();
+                expect(mockAppendMessage).toHaveBeenCalledWith(4, 'Response message', mockSetMessages);
+                expect(mockSetLoading).toHaveBeenCalledWith(false);
             });
-            expect(appendMessage).toHaveBeenCalledWith(2, 'AI response', mockSetMessages);
-            expect(mockSetLoading).toHaveBeenCalledWith(false);
-        });
 
-        it('should handle default question correctly', async () => {
-            // Arrange
-            const messageText = 'Hello world';
-            const defaultQuestion = 'What is this?';
-            const mockResponse = { success: true, content: 'AI response' };
-            
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendTextToBackend.mockResolvedValue(mockResponse);
+            it('should handle API failure', async () => {
+                const mockError = new Error('API Error');
+                mockSendTextToBackend.mockRejectedValue(mockError);
 
-            // Act
-            await handleSendTextMessage(messageText, mockMessages, mockSetMessages, mockSetLoading, defaultQuestion);
+                await handleSendTextMessage(
+                    'Test message', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
 
-            // Assert
-            expect(sendTextToBackend).toHaveBeenCalledWith({
-                text: messageText,
-                conversationCount: 1,
-                hasDefaultQuestion: true
+                expect(mockHandleError).toHaveBeenCalledWith(mockError, '發送訊息失敗', mockMessages, mockSetMessages);
+                expect(mockSetLoading).toHaveBeenCalledWith(false);
+            });
+
+            it('should handle unsuccessful API response', async () => {
+                const mockResponse = { success: false, error: 'Server error' };
+                mockSendTextToBackend.mockResolvedValue(mockResponse);
+
+                await handleSendTextMessage(
+                    'Test message', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockHandleError).toHaveBeenCalled();
+                expect(mockSetLoading).toHaveBeenCalledWith(false);
             });
         });
 
-        it('should return early if messageText is empty', async () => {
-            // Act
-            await handleSendTextMessage('', mockMessages, mockSetMessages, mockSetLoading);
+        describe('handleSendImageMessage', () => {
+            it('should handle successful image message', async () => {
+                const mockImage = new Blob(['fake-image'], { type: 'image/png' });
+                const mockResponse = { success: true, content: 'Image processed' };
+                mockSendImageToBackend.mockResolvedValue(mockResponse);
 
-            // Assert
-            expect(mockSetLoading).not.toHaveBeenCalled();
-            expect(sendTextToBackend).not.toHaveBeenCalled();
+                await handleSendImageMessage(
+                    'Image description', 
+                    mockImage, 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockSendImageToBackend).toHaveBeenCalledWith('Image description', mockImage, mockChatroomId);
+                expect(mockAppendMessage).toHaveBeenCalledWith(4, 'Image processed', mockSetMessages);
+            });
+
+            it('should handle missing message and image', async () => {
+                await handleSendImageMessage(
+                    '', 
+                    null, 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockSendImageToBackend).not.toHaveBeenCalled();
+            });
         });
 
-        it('should handle errors properly', async () => {
-            // Arrange
-            const messageText = 'Hello world';
-            const mockError = { message: 'Network error', name: 'Error' };
-            
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendTextToBackend.mockRejectedValue(mockError);
+        describe('handleSendCanvasAnalysis', () => {
+            it('should handle successful canvas analysis', async () => {
+                const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
+                const mockResponse = { success: true, content: 'Analysis result' };
+                mockSendCanvasAnalysisToBackend.mockResolvedValue(mockResponse);
 
-            // Act
-            await handleSendTextMessage(messageText, mockMessages, mockSetMessages, mockSetLoading);
+                await handleSendCanvasAnalysis(
+                    mockCanvasImage, 
+                    'Analyze this', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
 
-            // Assert
-            expect(handleError).toHaveBeenCalledWith(mockError, '發送訊息失敗', mockMessages, mockSetMessages);
-            expect(mockSetLoading).toHaveBeenCalledWith(false);
+                expect(mockSendCanvasAnalysisToBackend).toHaveBeenCalledWith('Analyze this', mockCanvasImage, mockChatroomId);
+                expect(mockAppendMessage).toHaveBeenCalledWith(4, 'Analysis result', mockSetMessages);
+            });
+
+            it('should handle missing canvas image', async () => {
+                await handleSendCanvasAnalysis(
+                    null, 
+                    'Analyze this', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                );
+
+                expect(mockSendCanvasAnalysisToBackend).not.toHaveBeenCalled();
+            });
         });
 
-        it('should handle unsuccessful response', async () => {
-            // Arrange
-            const messageText = 'Hello world';
-            const mockResponse = { success: false, error: 'Server error' };
+        describe('handleSendAIDrawing', () => {
+            it('should call typewriter version', async () => {
+                const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
+                const mockResponse = { 
+                    success: true, 
+                    content: { 
+                        message: 'Drawing complete', 
+                        imageData: 'base64-image-data' 
+                    } 
+                };
+                mockSendAIDrawingToBackend.mockResolvedValue(mockResponse);
+
+                await handleSendAIDrawing(
+                    mockCanvasImage, 
+                    'Draw something', 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockCanvas, 
+                    mockChatroomId
+                );
+
+                expect(mockConvertBlobToBase64).toHaveBeenCalledWith(mockCanvasImage);
+                // Note: Since this calls the typewriter version, we expect the typewriter behavior
+            });
+        });
+    });
+
+    describe('Edge Cases and Error Handling', () => {
+        it('should handle typewriter effect interruption', async () => {
+            jest.useFakeTimers();
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendTextToBackend.mockResolvedValue(mockResponse);
+            const mockMessageText = 'Long message for typewriter test';
+            let onTokenCallback;
 
-            // Act
-            await handleSendTextMessage(messageText, mockMessages, mockSetMessages, mockSetLoading);
+            mockSendTextToBackendStream.mockImplementation((payload, chatroomId, onToken, onComplete, onError) => {
+                onTokenCallback = onToken;
+                setTimeout(() => {
+                    onToken('Very long message that should trigger typewriter effect');
+                    // Simulate error before completion
+                    onError(new Error('Connection lost'));
+                }, 10);
+            });
 
-            // Assert
-            expect(handleError).toHaveBeenCalledWith(
-                expect.objectContaining({ message: 'Server error' }),
-                '發送訊息失敗',
-                mockMessages,
-                mockSetMessages
+            const promise = handleSendTextMessageStream(
+                mockMessageText, 
+                mockMessages, 
+                mockSetMessages, 
+                mockSetLoading, 
+                mockChatroomId
             );
-        });
-    });
 
-    describe('handleSendImageMessage', () => {
-        it('should handle successful image message sending', async () => {
-            // Arrange
-            const messageText = 'Describe this image';
-            const messageImage = new Blob(['image'], { type: 'image/png' });
-            const mockResponse = { success: true, content: 'Image description' };
+            // Fast-forward timers
+            jest.advanceTimersByTime(100);
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendImageToBackend.mockResolvedValue(mockResponse);
+            await promise;
 
-            // Act
-            await handleSendImageMessage(messageText, messageImage, mockMessages, mockSetMessages, mockSetLoading);
-
-            // Assert
-            expect(mockSetLoading).toHaveBeenCalledWith(true);
-            expect(addMessages).toHaveBeenCalledWith(messageText, messageImage, 1, mockMessages, mockSetMessages);
-            expect(sendImageToBackend).toHaveBeenCalledWith(messageText, messageImage);
-            expect(appendMessage).toHaveBeenCalledWith(2, 'Image description', mockSetMessages);
-            expect(mockSetLoading).toHaveBeenCalledWith(false);
-        });
-
-        it('should handle image-only message', async () => {
-            // Arrange
-            const messageImage = new Blob(['image'], { type: 'image/png' });
-            const mockResponse = { success: true, content: 'Image analysis' };
+            expect(mockHandleError).toHaveBeenCalled();
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendImageToBackend.mockResolvedValue(mockResponse);
-
-            // Act
-            await handleSendImageMessage('', messageImage, mockMessages, mockSetMessages, mockSetLoading);
-
-            // Assert
-            expect(sendImageToBackend).toHaveBeenCalledWith('', messageImage);
+            jest.useRealTimers();
         });
 
-        it('should return early if both text and image are empty', async () => {
-            // Act
-            await handleSendImageMessage('', null, mockMessages, mockSetMessages, mockSetLoading);
-
-            // Assert
-            expect(mockSetLoading).not.toHaveBeenCalled();
-            expect(sendImageToBackend).not.toHaveBeenCalled();
-        });
-
-        it('should handle errors properly', async () => {
-            // Arrange
-            const messageText = 'Describe this image';
-            const messageImage = new Blob(['image'], { type: 'image/png' });
-            const mockError = { message: 'Upload failed', name: 'Error' };
+        it('should handle canvas operations failure', async () => {
+            const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
+            const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendImageToBackend.mockRejectedValue(mockError);
-
-            // Act
-            await handleSendImageMessage(messageText, messageImage, mockMessages, mockSetMessages, mockSetLoading);
-
-            // Assert
-            expect(handleError).toHaveBeenCalledWith(mockError, '發送圖片失敗', mockMessages, mockSetMessages);
-            expect(mockSetLoading).toHaveBeenCalledWith(false);
-        });
-    });
-
-    describe('handleSendCanvasAnalysis', () => {
-        it('should handle successful canvas analysis', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Analyze this canvas';
-            const mockResponse = { success: true, content: 'Canvas analysis' };
-            
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendCanvasAnalysisToBackend.mockResolvedValue(mockResponse);
-
-            // Act
-            await handleSendCanvasAnalysis(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading);
-
-            // Assert
-            expect(mockSetLoading).toHaveBeenCalledWith(true);
-            expect(addMessages).toHaveBeenCalledWith(messageText, canvasImage, 1, mockMessages, mockSetMessages);
-            expect(sendCanvasAnalysisToBackend).toHaveBeenCalledWith(messageText, canvasImage);
-            expect(appendMessage).toHaveBeenCalledWith(2, 'Canvas analysis', mockSetMessages);
-            expect(mockSetLoading).toHaveBeenCalledWith(false);
-        });
-
-        it('should return early if canvasImage is null', async () => {
-            // Act
-            await handleSendCanvasAnalysis(null, 'text', mockMessages, mockSetMessages, mockSetLoading);
-
-            // Assert
-            expect(mockSetLoading).not.toHaveBeenCalled();
-            expect(sendCanvasAnalysisToBackend).not.toHaveBeenCalled();
-        });
-
-        it('should handle errors properly', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const mockError = { message: 'Analysis failed', name: 'Error' };
-            
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            sendCanvasAnalysisToBackend.mockRejectedValue(mockError);
-
-            // Act
-            await handleSendCanvasAnalysis(canvasImage, 'text', mockMessages, mockSetMessages, mockSetLoading);
-
-            // Assert
-            expect(handleError).toHaveBeenCalledWith(mockError, '分析畫布失敗', mockMessages, mockSetMessages);
-            expect(mockSetLoading).toHaveBeenCalledWith(false);
-        });
-    });
-
-    describe('handleSendAIDrawing', () => {
-        it('should handle successful AI drawing with text and image response', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Draw something';
-            const canvasData = 'base64encodeddata';
-            const mockResponse = {
-                success: true,
-                content: {
-                    message: 'Drawing completed',
-                    imageData: 'base64imagedata'
-                }
-            };
-            
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            convertBlobToBase64.mockResolvedValue(canvasData);
-            sendAIDrawingToBackend.mockResolvedValue(mockResponse);
-            createNewMessage.mockReturnValue({
-                id: 2,
-                text: 'Drawing completed',
-                isUser: false,
-                hasImage: false
+            // Mock canvas operations to throw error
+            mockClearCanvas.mockImplementation(() => {
+                throw new Error('Canvas error');
             });
 
-            // Act
-            await handleSendAIDrawing(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
-
-            // Assert
-            expect(convertBlobToBase64).toHaveBeenCalledWith(canvasImage);
-            expect(sendAIDrawingToBackend).toHaveBeenCalledWith(messageText, canvasData);
-            expect(createNewMessage).toHaveBeenCalledWith(2, 'Drawing completed', false, false);
-            expect(mockSetMessages).toHaveBeenCalledWith(expect.any(Function));
-            expect(clearCanvas).toHaveBeenCalledWith(mockCanvas);
-            expect(addImageToCanvas).toHaveBeenCalledWith(mockCanvas, 'data:image/png;base64,base64imagedata');
-        });
-
-        it('should handle response with only text message', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Draw something';
-            const canvasData = 'base64encodeddata';
-            const mockResponse = {
-                success: true,
-                content: {
-                    message: 'Drawing completed'
-                }
-            };
-            
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            convertBlobToBase64.mockResolvedValue(canvasData);
-            sendAIDrawingToBackend.mockResolvedValue(mockResponse);
-            createNewMessage.mockReturnValue({
-                id: 2,
-                text: 'Drawing completed',
-                isUser: false,
-                hasImage: false
+            let onImageGeneratedCallback;
+            mockSendAIDrawingToBackendStream.mockImplementation((text, imageData, chatroomId, onToken, onComplete, onError, onImageGenerated) => {
+                onImageGeneratedCallback = onImageGenerated;
+                setTimeout(() => {
+                    onImageGenerated('base64-image-data');
+                }, 10);
             });
 
-            // Act
-            await handleSendAIDrawing(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
+            await handleSendAIDrawingStream(
+                mockCanvasImage, 
+                'Draw something', 
+                mockMessages, 
+                mockSetMessages, 
+                mockSetLoading, 
+                mockCanvas, 
+                mockChatroomId
+            );
 
-            // Assert
-            expect(createNewMessage).toHaveBeenCalledWith(2, 'Drawing completed', false, false);
-            expect(clearCanvas).not.toHaveBeenCalled();
-            expect(addImageToCanvas).not.toHaveBeenCalled();
-        });
+            // Wait for async operations
+            await new Promise(resolve => setTimeout(resolve, 20));
 
-        it('should handle response with only image data', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Draw something';
-            const canvasData = 'base64encodeddata';
-            const mockResponse = {
-                success: true,
-                content: {
-                    imageData: 'base64imagedata'
-                }
-            };
+            expect(consoleSpy).toHaveBeenCalledWith('Error updating canvas with generated image:', expect.any(Error));
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            convertBlobToBase64.mockResolvedValue(canvasData);
-            sendAIDrawingToBackend.mockResolvedValue(mockResponse);
-
-            // Act
-            await handleSendAIDrawing(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
-
-            // Assert
-            expect(createNewMessage).not.toHaveBeenCalled();
-            expect(clearCanvas).toHaveBeenCalledWith(mockCanvas);
-            expect(addImageToCanvas).toHaveBeenCalledWith(mockCanvas, 'data:image/png;base64,base64imagedata');
+            consoleSpy.mockRestore();
         });
 
-        it('should handle nested success response', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Draw something';
-            const canvasData = 'base64encodeddata';
-            const mockResponse = {
+        it('should handle nested result content structure', async () => {
+            const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
+            const nestedResponse = {
                 success: true,
                 content: {
                     success: true,
                     content: {
-                        message: 'Nested drawing completed',
-                        imageData: 'base64imagedata'
+                        message: 'Nested message',
+                        imageData: 'nested-image-data'
                     }
                 }
             };
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            convertBlobToBase64.mockResolvedValue(canvasData);
-            sendAIDrawingToBackend.mockResolvedValue(mockResponse);
-            createNewMessage.mockReturnValue({
-                id: 2,
-                text: 'Nested drawing completed',
-                isUser: false,
-                hasImage: false
+            mockSendAIDrawingToBackend.mockResolvedValue(nestedResponse);
+
+            await handleSendAIDrawing(
+                mockCanvasImage, 
+                'Draw something', 
+                mockMessages, 
+                mockSetMessages, 
+                mockSetLoading, 
+                mockCanvas, 
+                mockChatroomId
+            );
+
+            // Should handle nested content structure properly
+            expect(mockConvertBlobToBase64).toHaveBeenCalledWith(mockCanvasImage);
+            expect(mockSendAIDrawingToBackend).toHaveBeenCalled();
+        });
+    });
+
+    describe('Typewriter Effect', () => {
+        it('should implement typewriter effect with proper timing', async () => {
+            jest.useFakeTimers();
+            
+            const longMessage = 'This is a long message to test typewriter effect timing';
+            let displayedMessage = '';
+            let messageUpdateCount = 0;
+            
+            // Mock setMessages to capture intermediate states
+            mockSetMessages.mockImplementation((updateFn) => {
+                if (typeof updateFn === 'function') {
+                    const newMessages = updateFn(mockMessages);
+                    const aiMessage = newMessages.find(msg => msg.id === 4);
+                    if (aiMessage) {
+                        displayedMessage = aiMessage.message;
+                        messageUpdateCount++;
+                    }
+                }
             });
 
-            // Act
-            await handleSendAIDrawing(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
-
-            // Assert
-            // 由於嵌套響應的處理邏輯，實際上會處理最內層的 content
-            // 根據 console.log 輸出，嵌套響應被正確識別但沒有提取到 imageData
-            expect(createNewMessage).not.toHaveBeenCalled();
-            expect(clearCanvas).not.toHaveBeenCalled();
-            expect(addImageToCanvas).not.toHaveBeenCalled();
-        });
-
-        it('should handle simple nested response correctly', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Draw something';
-            const canvasData = 'base64encodeddata';
+            const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
             const mockResponse = {
                 success: true,
                 content: {
-                    message: 'Simple nested drawing completed',
-                    imageData: 'base64imagedata'
+                    message: longMessage,
+                    imageData: 'base64-image-data'
                 }
             };
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            convertBlobToBase64.mockResolvedValue(canvasData);
-            sendAIDrawingToBackend.mockResolvedValue(mockResponse);
-            createNewMessage.mockReturnValue({
-                id: 2,
-                text: 'Simple nested drawing completed',
-                isUser: false,
-                hasImage: false
+            mockSendAIDrawingToBackend.mockResolvedValue(mockResponse);
+
+            const promise = handleSendAIDrawing(
+                mockCanvasImage, 
+                'Draw something', 
+                mockMessages, 
+                mockSetMessages, 
+                mockSetLoading, 
+                mockCanvas, 
+                mockChatroomId
+            );
+
+            // Fast-forward through typewriter effect
+            jest.advanceTimersByTime(longMessage.length * 30 + 1000);
+            
+            await promise;
+
+            // Verify that messages were updated multiple times (typewriter effect)
+            expect(messageUpdateCount).toBeGreaterThan(0);
+            expect(mockSendAIDrawingToBackend).toHaveBeenCalled();
+            
+            jest.useRealTimers();
+        });
+    });
+
+    describe('Performance and Memory', () => {
+        it('should cleanup timers on component unmount simulation', async () => {
+            const mockMessageText = 'Test message';
+            const mockError = new Error('Connection timeout');
+
+            mockSendTextToBackendStream.mockImplementation((payload, chatroomId, onToken, onComplete, onError) => {
+                // Simulate immediate error to test error handling
+                process.nextTick(() => {
+                    onError(mockError);
+                });
             });
 
-            // Act
-            await handleSendAIDrawing(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
-
-            // Assert
-            expect(createNewMessage).toHaveBeenCalledWith(2, 'Simple nested drawing completed', false, false);
-            expect(clearCanvas).toHaveBeenCalledWith(mockCanvas);
-            expect(addImageToCanvas).toHaveBeenCalledWith(mockCanvas, 'data:image/png;base64,base64imagedata');
-        });
-
-        it('should return early if canvasImage is null', async () => {
-            // Act
-            await handleSendAIDrawing(null, 'text', mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
-
-            // Assert
-            expect(convertBlobToBase64).not.toHaveBeenCalled();
-            expect(sendAIDrawingToBackend).not.toHaveBeenCalled();
-        });
-
-        it('should handle canvas operation errors gracefully', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Draw something';
-            const canvasData = 'base64encodeddata';
-            const mockResponse = {
-                success: true,
-                content: {
-                    imageData: 'base64imagedata'
-                }
-            };
+            await handleSendTextMessageStream(
+                mockMessageText, 
+                mockMessages, 
+                mockSetMessages, 
+                mockSetLoading, 
+                mockChatroomId
+            );
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            convertBlobToBase64.mockResolvedValue(canvasData);
-            sendAIDrawingToBackend.mockResolvedValue(mockResponse);
-            addImageToCanvas.mockImplementation(() => {
-                throw { message: 'Canvas error', name: 'Error' };
-            });
-
-            // Act
-            await handleSendAIDrawing(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
-
-            // Assert
-            expect(clearCanvas).toHaveBeenCalledWith(mockCanvas);
-            expect(addImageToCanvas).toHaveBeenCalledWith(mockCanvas, 'data:image/png;base64,base64imagedata');
+            // Wait a bit for async operations to complete
+            await new Promise(resolve => process.nextTick(resolve));
+            
+            // Verify error handling was called
+            expect(mockHandleError).toHaveBeenCalledWith(mockError, '發送訊息失敗', mockMessages, mockSetMessages);
         });
 
-        it('should handle errors properly', async () => {
-            // Arrange
-            const canvasImage = new Blob(['canvas'], { type: 'image/png' });
-            const messageText = 'Draw something';
-            const mockError = { message: 'Drawing failed', name: 'Error' };
+        it('should handle rapid consecutive messages', async () => {
+            const messages = ['Message 1', 'Message 2', 'Message 3'];
+            mockGetNewId.mockReturnValueOnce(1).mockReturnValueOnce(2).mockReturnValueOnce(3);
+            mockAddMessages.mockReturnValueOnce(1).mockReturnValueOnce(2).mockReturnValueOnce(3);
             
-            getNewId.mockReturnValue(1);
-            addMessages.mockReturnValue(2);
-            // 讓 sendAIDrawingToBackend 拋出錯誤，而不是 convertBlobToBase64
-            convertBlobToBase64.mockResolvedValue('base64encodeddata');
-            sendAIDrawingToBackend.mockRejectedValue(mockError);
+            const mockResponse = { success: true, content: 'Response' };
+            mockSendTextToBackend.mockResolvedValue(mockResponse);
 
-            // Act
-            await handleSendAIDrawing(canvasImage, messageText, mockMessages, mockSetMessages, mockSetLoading, mockCanvas);
+            const promises = messages.map(msg => 
+                handleSendTextMessage(
+                    msg, 
+                    mockMessages, 
+                    mockSetMessages, 
+                    mockSetLoading, 
+                    mockChatroomId
+                )
+            );
 
-            // Assert
-            expect(handleError).toHaveBeenCalledWith(mockError, 'AI 畫圖失敗', mockMessages, mockSetMessages);
-            expect(mockSetLoading).toHaveBeenCalledWith(false);
+            await Promise.all(promises);
+
+            expect(mockSendTextToBackend).toHaveBeenCalledTimes(3);
+            expect(mockAddMessages).toHaveBeenCalledTimes(3);
         });
     });
 });

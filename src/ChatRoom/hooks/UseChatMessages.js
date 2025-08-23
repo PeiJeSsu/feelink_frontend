@@ -5,7 +5,9 @@ import {
     handleSendImageMessage, 
     handleSendTextMessage, 
     handleSendCanvasAnalysis, 
-    handleSendAIDrawing, 
+    handleSendAIDrawing,  
+    handleSendAIDrawingWithTypewriter, 
+    handleSendAIDrawingStream, 
     handleSendTextMessageStream, 
     handleSendImageMessageStream, 
     handleSendCanvasAnalysisStream
@@ -32,10 +34,10 @@ export default function useChatMessages(canvas) {
     const [conversationCount, setConversationCount] = useState(0);
     const questionAdded = useRef(false);
     
-    // 🎯 修復：使用 ref 來追蹤當前處理的聊天室ID，避免重複載入
+    // 使用 ref 來追蹤當前處理的聊天室ID，避免重複載入
     const processingChatroomId = useRef(null);
 
-    // 🎯 修復：移除依賴，避免循環依賴
+    // 移除依賴，避免循環依賴
     const loadChatroomHistory = useCallback(async (chatroomId) => {
         if (!chatroomId || historyLoading || processingChatroomId.current === chatroomId) {
             console.log('跳過載入歷史訊息:', { 
@@ -53,7 +55,7 @@ export default function useChatMessages(canvas) {
             
             const result = await loadChatroomHistoryService(chatroomId);
             
-            // 🎯 修復：檢查聊天室是否已經切換
+            // 檢查聊天室是否已經切換
             if (processingChatroomId.current !== chatroomId) {
                 console.log('聊天室已切換，忽略此次載入結果');
                 return;
@@ -88,14 +90,14 @@ export default function useChatMessages(canvas) {
         } finally {
             setHistoryLoaded(true);
             setHistoryLoading(false);
-            // 🎯 修復：只有在是當前聊天室時才清除 processing 標記
+            // 只有在是當前聊天室時才清除 processing 標記
             if (processingChatroomId.current === chatroomId) {
                 processingChatroomId.current = null;
             }
         }
-    }, [historyLoading]); // 🎯 修復：只依賴 historyLoading
+    }, [historyLoading]); // 只依賴 historyLoading
 
-    // 🎯 修復：簡化 useEffect，移除 loadChatroomHistory 依賴
+    // 簡化 useEffect，移除 loadChatroomHistory 依賴
     useEffect(() => {
         let isCurrentEffect = true;
         
@@ -133,7 +135,7 @@ export default function useChatMessages(canvas) {
         return () => {
             isCurrentEffect = false;
         };
-    }, [currentChatroomId, chatroomLoading]); // 🎯 修復：移除 loadChatroomHistory 依賴
+    }, [currentChatroomId, chatroomLoading]); // 移除 loadChatroomHistory 依賴
 
     // 只有在沒有歷史訊息時才顯示預設問題
     useEffect(() => {
@@ -194,6 +196,28 @@ export default function useChatMessages(canvas) {
         }
     }, [messages, setMessages, setLoading, canvas, currentChatroomId]);
 
+    // 新增：AI 繪圖串流版本（真實 SSE）
+    const sendAIDrawingStream = useCallback(async (messageText) => {
+        if (!currentChatroomId) {
+            console.error('No current chatroom ID available');
+            return;
+        }
+        try {
+            const blob = await convertCanvasToBlob();
+            await handleSendAIDrawingStream(
+                blob, 
+                messageText, 
+                messages, 
+                setMessages, 
+                setLoading, 
+                canvas, 
+                currentChatroomId
+            );
+        } catch (error) {
+            console.error(error.message);
+        }
+    }, [messages, setMessages, setLoading, canvas, currentChatroomId]);
+
     // 一般訊息發送函數
     const sendTextMessage = useCallback((messageText) => {
         if (!currentChatroomId) {
@@ -248,19 +272,34 @@ export default function useChatMessages(canvas) {
         }
     }, [messages, setMessages, setLoading, canvas, currentChatroomId]);
 
+    // AI 繪圖功能（使用模擬打字機效果版本）
     const sendAIDrawing = useCallback(async (messageText) => {
-    if (!currentChatroomId) {
-        console.error('No current chatroom ID available');
-        return;
-    }
-    try {
-        const blob = await convertCanvasToBlob();
-        await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas, currentChatroomId);
-        //                                                                                             
-    } catch (error) {
-        console.error(error.message);
-    }
-}, [messages, setMessages, setLoading, canvas, currentChatroomId]);
+        if (!currentChatroomId) {
+            console.error('No current chatroom ID available');
+            return;
+        }
+        try {
+            const blob = await convertCanvasToBlob();
+            // 使用帶打字機效果的版本（非串流 API + 前端打字機模擬）
+            await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, canvas, currentChatroomId);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }, [messages, setMessages, setLoading, canvas, currentChatroomId]);
+
+    // 明確的打字機效果版本
+    const sendAIDrawingWithTypewriter = useCallback(async (messageText) => {
+        if (!currentChatroomId) {
+            console.error('No current chatroom ID available');
+            return;
+        }
+        try {
+            const blob = await convertCanvasToBlob();
+            await handleSendAIDrawingWithTypewriter(blob, messageText, messages, setMessages, setLoading, canvas, currentChatroomId);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }, [messages, setMessages, setLoading, canvas, currentChatroomId]);
 
     const addSystemMessage = useCallback((text) => {
         setCurrentQuestion(text);
@@ -278,7 +317,7 @@ export default function useChatMessages(canvas) {
         return await (await fetch(dataUrl)).blob();
     }, [canvas]);
 
-    // 🎯 修復：重新載入歷史訊息函數
+    // 重新載入歷史訊息函數
     const reloadChatroomHistory = useCallback(() => {
         if (currentChatroomId && !historyLoading) {
             console.log('手動重新載入聊天室歷史訊息:', currentChatroomId);
@@ -322,6 +361,7 @@ export default function useChatMessages(canvas) {
         sendTextMessageStream,
         sendImageMessageStream,
         sendCanvasAnalysisStream,
+        sendAIDrawingWithTypewriter, 
         reloadChatroomHistory,
         currentChatroomId
     };

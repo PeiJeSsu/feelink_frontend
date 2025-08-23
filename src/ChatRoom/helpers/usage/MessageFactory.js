@@ -1,6 +1,6 @@
 // MessageFactory.js - 修復版本
 
-// 🔧 修復：取得新訊息的 ID
+// 取得新訊息的 ID
 export const getNewId = (messages) => {
     if (!Array.isArray(messages) || messages.length === 0) {
         return Date.now(); // 使用時間戳作為起始 ID
@@ -20,7 +20,7 @@ export const getNewId = (messages) => {
     return maxId + 1;
 };
 
-// 🔧 修復：創建新訊息物件
+// 創建新訊息物件
 export const createNewMessage = (id, message, isUser, isImage) => {
     // 確保 ID 是有效的數字
     const validId = id && !isNaN(id) ? Number(id) : Date.now();
@@ -38,7 +38,7 @@ export const createNewMessage = (id, message, isUser, isImage) => {
     };
 };
 
-// 🔧 修復：添加使用者訊息到聊天
+// 添加使用者訊息到聊天
 export const addMessages = (messageText, messageImage, currentId, messages, setMessages) => {
     let newId = currentId && !isNaN(currentId) ? Number(currentId) : getNewId(messages);
     
@@ -56,7 +56,7 @@ export const addMessages = (messageText, messageImage, currentId, messages, setM
     return newId;
 };
 
-// 🔧 修復：共用函式：根據內容建立訊息並加入訊息陣列
+// 共用函式：根據內容建立訊息並加入訊息陣列
 const addSingleMessage = (id, content, isUser, isImage, setMessages) => {
     const message = createNewMessage(id, content, isUser, isImage);
     setMessages(prevMessages => {
@@ -70,7 +70,7 @@ const addSingleMessage = (id, content, isUser, isImage, setMessages) => {
     });
 };
 
-// 🔧 修復：追加訊息
+// 追加訊息
 export const appendMessage = (id, content, setMessages, isUser = false, isError = false) => {
     const validId = id && !isNaN(id) ? Number(id) : Date.now();
     const message = createNewMessage(validId, content, isUser, isError);

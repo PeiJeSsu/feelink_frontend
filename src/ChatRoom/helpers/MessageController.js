@@ -1,11 +1,9 @@
-// MessageController.js - 修復版本
-
 import {addMessages, appendMessage, getNewId, createNewMessage} from "./usage/MessageFactory";
 import {sendAIDrawingToBackend, sendAIDrawingToBackendStream, sendCanvasAnalysisToBackend, sendCanvasAnalysisToBackendStreamService, sendImageToBackend, sendImageToBackendStreamService, sendTextToBackend, sendTextToBackendStream} from './MessageService';
 import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
 
-// 🔧 修復：流式訊息處理函數
+// 流式訊息處理函數
 const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, chatroomId, streamFunction, errorMessage) => {
     console.log('handleStreamMessage called with chatroomId:', chatroomId);
     if (!messageText && !image) return;
@@ -14,13 +12,13 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         return;
     }
 
-    // 🔧 確保獲得有效的 ID
+    // 確保獲得有效的 ID
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
     
     setLoading(true);
     
-    // 🔧 修復串流回應處理邏輯
+    // 修復串流回應處理邏輯
     let responseMessageAdded = false;
     let displayedContent = "";
     let pendingQueue = [];
@@ -59,7 +57,7 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     const onToken = (token) => {
         console.log('Token received:', token);
         
-        // 🔧 收到第一個字符時，創建 AI 回應訊息
+        // 收到第一個字符時，創建 AI 回應訊息
         if (!responseMessageAdded) {
             const responseMessage = createNewMessage(aiResponseId, "", false, false);
             setMessages(prevMessages => [...prevMessages, responseMessage]);
@@ -113,7 +111,7 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         }
         isTypewriting = false;
         
-        // 🔧 如果還沒有加入 AI 回應訊息，在錯誤時加入錯誤訊息
+        // 如果還沒有加入 AI 回應訊息，在錯誤時加入錯誤訊息
         if (!responseMessageAdded) {
             const errorMessage = createNewMessage(aiResponseId, "抱歉，發生了錯誤", false, false);
             setMessages(prevMessages => [...prevMessages, errorMessage]);
@@ -142,7 +140,7 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     }
 };
 
-// 🎯 新增：處理 AI 繪圖串流的特殊函數
+// 處理 AI 繪圖串流的特殊函數
 const handleAIDrawingStream = async (messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId) => {
     console.log('handleAIDrawingStream called with chatroomId:', chatroomId);
     if (!canvasImage) return;
@@ -223,6 +221,28 @@ const handleAIDrawingStream = async (messageText, canvasImage, messages, setMess
 
     const onComplete = () => {
         console.log('AI Drawing stream completed');
+        // 清理定時器
+        if (typewriterTimer) {
+            clearTimeout(typewriterTimer);
+            typewriterTimer = null;
+        }
+        
+        // 確保所有剩餘內容都顯示出來
+        if (pendingQueue.length > 0) {
+            displayedContent += pendingQueue.join('');
+            pendingQueue = [];
+            
+            if (textResponseMessageAdded) {
+                setMessages(prevMessages => {
+                    return prevMessages.map(msg => {
+                        if (msg.id === textResponseId) {
+                            return {...msg, message: displayedContent};
+                        }
+                        return msg;
+                    });
+                });
+            }
+        }
     };
 
     const onError = (error) => {
@@ -261,7 +281,113 @@ const handleAIDrawingStream = async (messageText, canvasImage, messages, setMess
     }
 };
 
-// 🔧 修復：文字訊息串流處理
+// 
+const handleAIDrawingWithTypewriter = async (messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId) => {
+    console.log('handleAIDrawingWithTypewriter called with chatroomId:', chatroomId);
+    if (!canvasImage) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for AI drawing');
+        return;
+    }
+    
+    const canvasData = await convertBlobToBase64(canvasImage);
+
+    await runMessageTaskWithTypewriter({
+        messageText,
+        image: canvasImage,
+        messages,
+        setMessages,
+        setLoading,
+        chatroomId,
+        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
+        sendFunction: ({ text, imageData }, chatroomId) => sendAIDrawingToBackend(text, imageData, chatroomId),
+        onSuccess: (result, finalId) => {
+            return processDrawingResultWithTypewriter(result, finalId, messages, setMessages, canvas, setLoading);
+        },
+        onErrorMessage: 'AI 畫圖失敗',
+    });
+};
+
+// 帶打字機效果的任務執行器
+const runMessageTaskWithTypewriter = async ({messageText, image = null, messages, setMessages, setLoading, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
+    try {
+        setLoading(true);
+
+        const { finalId, payload } = await prepareMessageAndPayload(messageText, image, messages, setMessages, generatePayload);
+
+        const result = await sendFunction(payload, chatroomId);
+        handleResult(result, res => onSuccess(res, finalId));
+    } catch (error) {
+        handleError(error, onErrorMessage, messages, setMessages);
+    } finally {
+        setLoading(false);
+    }
+};
+
+// 帶打字機效果的繪圖結果處理器
+const processDrawingResultWithTypewriter = async (result, currentId, messages, setMessages, canvas, setLoading) => {
+    const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+    
+    let actualResult = result;
+    if (result.success && result.content) {
+        actualResult = result.content;
+    }
+
+    // 處理文字回應 - 使用打字機效果
+    if (actualResult.message) {
+        const textResponseMessage = createNewMessage(currentId, "", false, false);
+        setMessages(prevMessages => [...prevMessages, textResponseMessage]);
+        setLoading(false); // 開始顯示文字時關閉載入狀態
+        
+        let displayedContent = "";
+        
+        
+        for (let i = 0; i < actualResult.message.length; i++) {
+            displayedContent += actualResult.message[i];
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === currentId) {
+                        return {...msg, message: displayedContent};
+                    }
+                    return msg;
+                });
+            });
+            await new Promise(resolve => setTimeout(resolve, 30)); // 30ms 延遲
+        }
+        currentId++;
+    }
+
+    // 處理圖片 - 直接更新畫布
+    if (actualResult.imageData && canvas) {
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500)); // 等待文字顯示完成
+            
+            clearCanvas(canvas);
+            const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
+            addImageToCanvas(canvas, imageDataUrl, { mode: 'fillViewport' });
+
+            // 更新訊息以包含圖片數據（供歷史記錄使用）
+            setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                    if (msg.id === currentId - 1) {
+                        return {
+                            ...msg,
+                            imageData: actualResult.imageData,
+                            hasImage: true
+                        };
+                    }
+                    return msg;
+                });
+            });
+        } catch (error) {
+            console.error('Error adding image to canvas:', error);
+        }
+    }
+
+    return currentId;
+};
+
+// 文字訊息串流處理
 export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
@@ -283,7 +409,7 @@ export const handleSendTextMessageStream = async (messageText, messages, setMess
     );
 };
 
-// 修復：圖片訊息串流處理
+// 圖片訊息串流處理
 export const handleSendImageMessageStream = async (messageText, messageImage, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
@@ -299,7 +425,7 @@ export const handleSendImageMessageStream = async (messageText, messageImage, me
     );
 };
 
-// 修復：畫布分析流式處理
+// 畫布分析流式處理
 export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
@@ -315,9 +441,12 @@ export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, m
     );
 };
 
-// 🎯 新增：AI 繪圖串流處理
 export const handleSendAIDrawingStream = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
     return handleAIDrawingStream(messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId);
+};
+
+export const handleSendAIDrawingWithTypewriter = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
+    return handleAIDrawingWithTypewriter(messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId);
 };
 
 // 修復：一般文字訊息處理
@@ -390,30 +519,10 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
     });
 };
 
-// 🎯 修復：AI 繪圖功能 (非串流版本)
+// 🎯 修復：AI 繪圖功能 (使用模擬打字機效果版本)
 export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
-    if (!canvasImage) return;
-    if (!chatroomId) {
-        console.error('chatroomId is required for AI drawing');
-        return;
-    }
-    
-    const canvasData = await convertBlobToBase64(canvasImage);
-
-    await runMessageTask({
-        messageText,
-        image: canvasImage,
-        messages,
-        setMessages,
-        setLoading,
-        chatroomId,
-        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
-        sendFunction: ({ text, imageData }, chatroomId) => sendAIDrawingToBackend(text, imageData, chatroomId),
-        onSuccess: (result, finalId) => {
-            return processDrawingResult(result, finalId, messages, setMessages, canvas);
-        },
-        onErrorMessage: 'AI 畫圖失敗',
-    });
+    // 使用模擬打字機效果版本
+    return handleSendAIDrawingWithTypewriter(canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId);
 };
 
 // 修復：通用訊息處理函數
