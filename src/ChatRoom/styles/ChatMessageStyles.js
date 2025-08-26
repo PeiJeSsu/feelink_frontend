@@ -21,7 +21,7 @@ export const chatMessageStyles = {
         backgroundColor: isUser ? "#2563eb" : "#f8fafc",
         color: isUser ? "#ffffff" : "#374151",
         borderRadius: isUser ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-        border: isUser ? "none" : "1px solid #e5e7eb",
+        border: isUser ? "none" : "1px solid #d5daeaf5",
         boxShadow: "none",
     }),
     text: {

@@ -1,16 +1,23 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import AppLoader from '../auth/AppLoader';
-import PropTypes from 'prop-types';
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import AppLoader from "../auth/AppLoader";
+import PropTypes from "prop-types";
 
 const ProtectedRoute = ({ children }) => {
     const { user, initializing } = useAuth();
-    
+    const location = useLocation();
     if (initializing) {
         return <AppLoader />;
     }
-    
-    return user ? children : <Navigate to="/login" replace />;
+
+    if (!user) return <Navigate to="/login" replace />;
+
+    const personality = localStorage.getItem("selectedPersonality");
+
+    if (location.pathname === "/personality") return children;
+
+    if (!personality) return <Navigate to="/personality" replace />;
+    return children;
 };
 
 ProtectedRoute.propTypes = {

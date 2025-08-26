@@ -57,27 +57,60 @@ export const setDrawingMode = (canvas, isDrawingMode) => {
 	canvas.isDrawingMode = isDrawingMode;
 };
 
-export const addImageToCanvas = (canvas, imageData) => {
+export const addImageToCanvas = (canvas, imageData, options = {}) => {
 	if (!canvas || !imageData) return;
+
+	const {
+		mode = 'fillViewport', // 'fillViewport' 或 'originalSize'
+		targetPosition = null, // { x, y } 指定位置
+		maxSize = 200, // 當mode為'originalSize'時的最大尺寸
+	} = options;
 
 	const imgObj = new Image();
 	imgObj.src = imageData;
 	imgObj.onload = () => {
 		const fabricImage = new fabric.FabricImage(imgObj);
+		let finalScale, finalLeft, finalTop;
 
-		// 取得視窗大小
-		const windowWidth = window.innerWidth;
-		const windowHeight = window.innerHeight;
-
-		// 計算縮放比例，讓圖片填滿視窗
-		const scale = Math.max(windowWidth / fabricImage.width, windowHeight / fabricImage.height);
+		if (mode === 'fillViewport') {
+			// 畫畫接龍模式：填滿視口，考慮當前縮放和視角
+			const zoom = canvas.getZoom();
+			const vpt = canvas.viewportTransform;
+			
+			// 計算當前可見區域
+			const canvasWidth = canvas.width / zoom;
+			const canvasHeight = canvas.height / zoom;
+			
+			// 計算縮放比例讓圖片填滿可見區域
+			finalScale = Math.max(canvasWidth / fabricImage.width, canvasHeight / fabricImage.height);
+			
+			// 計算位置讓圖片在可見區域中央
+			const viewportCenterX = -vpt[4] / zoom + canvasWidth / 2;
+			const viewportCenterY = -vpt[5] / zoom + canvasHeight / 2;
+			
+			finalLeft = viewportCenterX - (fabricImage.width * finalScale) / 2;
+			finalTop = viewportCenterY - (fabricImage.height * finalScale) / 2;
+		} else if (mode === 'originalSize') {
+			// 生成物件模式：保持原始比例，限制最大尺寸
+			const maxDimension = Math.max(fabricImage.width, fabricImage.height);
+			finalScale = maxDimension > maxSize ? maxSize / maxDimension : 1;
+			
+			if (targetPosition) {
+				finalLeft = targetPosition.x - (fabricImage.width * finalScale) / 2;
+				finalTop = targetPosition.y - (fabricImage.height * finalScale) / 2;
+			} else {
+				// 如果沒有指定位置，放在畫布中央
+				finalLeft = (canvas.width - fabricImage.width * finalScale) / 2;
+				finalTop = (canvas.height - fabricImage.height * finalScale) / 2;
+			}
+		}
 
 		// 設定圖片屬性
 		fabricImage.set({
-			scaleX: scale,
-			scaleY: scale,
-			left: (windowWidth - fabricImage.width * scale) / 2,
-			top: (windowHeight - fabricImage.height * scale) / 2,
+			scaleX: finalScale,
+			scaleY: finalScale,
+			left: finalLeft,
+			top: finalTop,
 		});
 
 		canvas.add(fabricImage);

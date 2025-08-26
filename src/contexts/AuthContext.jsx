@@ -166,6 +166,8 @@ export const AuthProvider = ({ children }) => {
             setUserChatrooms([]);
             setChatroomLoading(false);
             
+            localStorage.removeItem('selectedPersonality');
+            localStorage.removeItem('currentSessionId');
             await signOut(auth);
             console.log('登出完成');
         } catch (error) {

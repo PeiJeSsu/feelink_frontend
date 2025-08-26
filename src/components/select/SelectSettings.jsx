@@ -185,7 +185,7 @@ const SelectSettings = ({ canvas }) => {
 							},
 							"&:disabled": {
 								color: "#cbd5e1",
-								borderColor: "#e2e8f0",
+								borderColor: "#cbd5e1",
 								backgroundColor: "#f8fafc",
 							},
 						}}
@@ -218,7 +218,7 @@ const SelectSettings = ({ canvas }) => {
 							},
 							"&:disabled": {
 								color: "#cbd5e1",
-								borderColor: "#e2e8f0",
+								borderColor: "#cbd5e1",
 								backgroundColor: "#f8fafc",
 							},
 						}}
@@ -251,7 +251,7 @@ const SelectSettings = ({ canvas }) => {
 							},
 							"&:disabled": {
 								color: "#cbd5e1",
-								borderColor: "#e2e8f0",
+								borderColor: "#cbd5e1",
 								backgroundColor: "#f8fafc",
 							},
 						}}
@@ -305,7 +305,7 @@ const SelectSettings = ({ canvas }) => {
 							},
 							"&:disabled": {
 								color: "#cbd5e1",
-								borderColor: "#e2e8f0",
+								borderColor: "#cbd5e1",
 								backgroundColor: "#f8fafc",
 							},
 						}}
@@ -339,7 +339,7 @@ const SelectSettings = ({ canvas }) => {
 							},
 							"&:disabled": {
 								color: "#cbd5e1",
-								borderColor: "#e2e8f0",
+								borderColor: "#cbd5e1",
 								backgroundColor: "#f8fafc",
 							},
 						}}

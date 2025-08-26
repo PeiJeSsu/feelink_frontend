@@ -277,6 +277,7 @@ describe('MessageService', () => {
                 mockCallbacks.onToken,
                 mockCallbacks.onComplete,
                 mockCallbacks.onError
+
             );
 
             expect(sendImageToBackendStream).toHaveBeenCalledWith(

@@ -52,8 +52,8 @@ jest.mock("@mui/material", () => {
 		return (
 			<div
 				data-testid="radio-group"
-				onChange={(e) => props.onChange(e)}
-				onClick={(e) => {
+				onChange={props.onChange}
+				onClick={() => {
 					if (props.onChange) {
 						props.onChange({ target: { value: "path" } });
 					}

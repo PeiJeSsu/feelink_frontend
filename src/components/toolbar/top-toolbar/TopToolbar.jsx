@@ -6,12 +6,11 @@ import { handleSaveFile, handleLoadFile, handleFileInputChange } from "../../../
 import { importImage } from "../../../helpers/image/ImageImport";
 import ImageExportDialog from "../../image/ImageExportDialog";
 
-const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
+const TopToolbar = ({ onClearClick, canvas, chatWidth = 0 }) => {
 	const fileInputRef = useRef(null);
 	const imageInputRef = useRef(null);
 	const historyManager = useRef(null);
 	const [exportDialogOpen, setExportDialogOpen] = useState(false);
-	const [availableWidth, setAvailableWidth] = useState(0);
 	const RESERVED_LAST_BUTTON_WIDTH = 72; // 與 TopToolbarButtons 保持一致
 
 	// 監聽工具欄容器寬度變化
@@ -19,9 +18,7 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 
 	useEffect(() => {
 		const updateAvailableWidth = () => {
-			if (containerRef.current) {
-				setAvailableWidth(containerRef.current.getBoundingClientRect().width - RESERVED_LAST_BUTTON_WIDTH);
-			}
+			// 目前不需要計算可用寬度
 		};
 		updateAvailableWidth();
 		const resizeObserver = new ResizeObserver(updateAvailableWidth);
@@ -32,7 +29,7 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 		return () => {
 			resizeObserver.disconnect();
 		};
-	}, [chatWidth]);
+	}, [chatWidth, RESERVED_LAST_BUTTON_WIDTH]);
 
 	// 設置歷史管理器引用
 	useEffect(() => {
@@ -80,7 +77,7 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 			<TopToolbarButtons
 				onClearClick={onClearClick}
 				onSaveClick={() => handleSaveFile(canvas)}
-				onLoadClick={() => handleLoadFile(fileInputRef, canvasReady)}
+				onLoadClick={() => handleLoadFile(fileInputRef)}
 				onUndoClick={handleUndo}
 				onRedoClick={handleRedo}
 				onExportClick={handleExportClick}
@@ -93,7 +90,7 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 				ref={fileInputRef}
 				style={{ display: "none" }}
 				accept=".feelink"
-				onChange={(e) => handleFileInputChange(e, canvas, canvasReady)}
+				onChange={(e) => handleFileInputChange(e, canvas)}
 			/>
 
 			<input
@@ -118,7 +115,6 @@ const TopToolbar = ({ onClearClick, canvas, canvasReady, chatWidth = 0 }) => {
 TopToolbar.propTypes = {
 	onClearClick: PropTypes.func.isRequired,
 	canvas: PropTypes.object,
-	canvasReady: PropTypes.bool,
 	chatWidth: PropTypes.number,
 };
 

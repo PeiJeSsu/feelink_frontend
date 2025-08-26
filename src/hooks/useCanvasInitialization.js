@@ -36,13 +36,17 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth 
 	useEffect(() => {
 		try {
 			const container = document.querySelector(".canvas-container");
-			if (!container) {
-				console.error("找不到畫布容器");
-				return;
+			let containerWidth, containerHeight;
+			
+			if (container) {
+				containerWidth = container.clientWidth;
+				containerHeight = container.clientHeight;
+			} else {
+				// 如果沒有容器，使用視窗大小
+				containerWidth = window.innerWidth - 60;
+				containerHeight = window.innerHeight;
+				console.warn("找不到畫布容器，使用視窗大小初始化");
 			}
-
-			const containerWidth = container.clientWidth;
-			const containerHeight = container.clientHeight;
 
 			fabricCanvasRef.current = initializeCanvas(canvasRef.current, containerWidth, containerHeight);
 
