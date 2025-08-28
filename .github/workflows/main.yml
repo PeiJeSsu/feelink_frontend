@@ -1,16 +1,19 @@
 name: main
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened]
+    push:
+        branches:
+            - main
+    pull_request:
+        types: [opened, synchronize, reopened]
 jobs:
-  invoke-sonarqube:
-    name: Run SonarQube Analysis
-    uses: ./.github/workflows/SonarQube.yml
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-  invoke-unittest:
-    name: Run UnitTest
-    uses: ./.github/workflows/UnitTest.yml
+    invoke-unittest:
+        name: Run UnitTest
+        uses: ./.github/workflows/UnitTest.yml
+
+    invoke-sonarqube:
+        name: Run SonarQube Analysis
+        needs: invoke-unittest
+        if: always()
+        uses: ./.github/workflows/SonarQube.yml
+        secrets:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

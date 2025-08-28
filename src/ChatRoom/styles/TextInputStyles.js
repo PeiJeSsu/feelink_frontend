@@ -22,7 +22,7 @@ export const textFieldStyle = {
 		fontSize: "14px",
 		backgroundColor: "#f8fafc",
 		"& fieldset": {
-			borderColor: "#e5e7eb",
+			borderColor: "#aeb8d5f5",
 		},
 		"&:hover fieldset": {
 			borderColor: "#2563eb",
@@ -48,13 +48,13 @@ export const sendButtonStyle = {
 		backgroundColor: "#1d4ed8",
 	},
 	"&:disabled": {
-		backgroundColor: "#e5e7eb",
+		backgroundColor: "#cbd5e1",
 		color: "#9ca3af",
 	},
 };
 
 export const quickActionButton = {
-	borderColor: "#e2e8f0",
+	borderColor: "#8b93a9ff",
 	color: "#64748b",
 	fontSize: "12px",
 	borderRadius: "20px",
@@ -65,7 +65,7 @@ export const quickActionButton = {
 		color: "#2563eb",
 	},
 	"&:disabled": {
-		borderColor: "#e5e7eb",
+		borderColor: "#cbd5e1",
 		color: "#9ca3af",
 		backgroundColor: "transparent",
 	},

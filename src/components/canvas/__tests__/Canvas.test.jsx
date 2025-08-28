@@ -58,7 +58,7 @@ jest.mock("../../../hooks/useCanvasTools", () => ({
 
 // 模擬子組件
 jest.mock("../CanvasControls", () => {
-	const MockCanvasControls = (props) => <div data-testid="canvas-controls">CanvasControls</div>;
+	const MockCanvasControls = () => <div data-testid="canvas-controls">CanvasControls</div>;
 	return MockCanvasControls;
 });
 
@@ -144,6 +144,8 @@ describe("Canvas 測試（一般流程）", () => {
 		expect(useCanvasInitialization).toHaveBeenCalledWith({
 			onCanvasInit: mockOnCanvasInit,
 			clearTrigger: 0,
+			chatWidth: 0,
+			isChatOpen: false,
 		});
 
 		expect(useCanvasTools).toHaveBeenCalledWith(mockCanvas, {
@@ -178,6 +180,8 @@ describe("Canvas 測試（一般流程）", () => {
 		expect(useCanvasInitialization).toHaveBeenCalledWith({
 			onCanvasInit: undefined,
 			clearTrigger: 0,
+			chatWidth: 0,
+			isChatOpen: false,
 		});
 
 		expect(useCanvasTools).toHaveBeenCalledWith(mockCanvas, {
@@ -217,6 +221,8 @@ describe("Canvas 測試（一般流程）", () => {
 		expect(useCanvasInitialization).toHaveBeenCalledWith({
 			onCanvasInit: expect.any(Function),
 			clearTrigger: 1,
+			chatWidth: 0,
+			isChatOpen: false,
 		});
 	});
 
@@ -243,6 +249,8 @@ describe("Canvas 測試（一般流程）", () => {
 		expect(useCanvasInitialization).toHaveBeenCalledWith({
 			onCanvasInit: mockOnCanvasInit,
 			clearTrigger: 0,
+			chatWidth: 0,
+			isChatOpen: false,
 		});
 	});
 });

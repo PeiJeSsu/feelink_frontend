@@ -45,7 +45,7 @@ describe("LoadCanvas 測試", () => {
 		global.FileReader = jest.fn(() => mockFileReader);
 
 		// 模擬 setTimeout
-		mockSetTimeout = jest.fn().mockImplementation((callback, delay) => {
+		mockSetTimeout = jest.fn().mockImplementation((callback) => {
 			return originalSetTimeout(callback, 0); // 立即執行，但仍然是異步的
 		});
 		global.setTimeout = mockSetTimeout;

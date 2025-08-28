@@ -19,15 +19,16 @@ export const handleSaveFile = (canvas) => {
 	}
 };
 
-export const handleLoadFile = (fileInputRef, canvasReady) => {
-	if (!canvasReady) {
+export const handleLoadFile = (fileInputRef, isCanvasReady = true) => {
+	if (!isCanvasReady) {
 		alert("畫布尚未準備好，請稍後再試");
 		return;
 	}
+	
 	fileInputRef.current.click();
 };
 
-export const handleFileInputChange = (event, canvas, canvasReady) => {
+export const handleFileInputChange = (event, canvas) => {
 	const file = event.target.files[0];
 	if (!file) return;
 

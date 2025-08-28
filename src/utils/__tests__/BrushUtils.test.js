@@ -146,7 +146,7 @@ describe("BrushUtils", () => {
 
 	describe("normalize", () => {
 		it("應正確標準化向量", () => {
-			const point = { x: 3, y: 4, distanceFrom: ({ x, y }) => Math.hypot(3, 4) };
+			const point = { x: 3, y: 4, distanceFrom: () => Math.hypot(3, 4) };
 			const result = BrushUtils.normalize(point, 5);
 			expect(result.x).toBeCloseTo(3);
 			expect(result.y).toBeCloseTo(4);
