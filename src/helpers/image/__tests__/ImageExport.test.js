@@ -222,7 +222,7 @@ describe("ImageExport 測試", () => {
 
 			// 修改 toDataURL 函數以在調用時捕獲當前背景色
 			let capturedBackgroundColor;
-			mockCanvas.toDataURL = jest.fn().mockImplementation(() => {
+			mockCanvas.toDataURL = jest.fn().mockImplementation((options) => {
 				// 捕獲調用 toDataURL 時的背景色
 				capturedBackgroundColor = mockCanvas.backgroundColor;
 				return "data:image/png;base64,test-data";

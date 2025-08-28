@@ -15,7 +15,7 @@ const LeftToolbarButtons = ({ activeTool, onToolClick }) => {
 	];
 
 	return (
-		<Box className="tool-buttons" sx={{ 
+		<Box sx={{ 
 			display: "flex",
 			flexDirection: "column",
 			gap: "8px",

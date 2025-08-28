@@ -11,8 +11,6 @@ import PublicRoute from "./components/routing/PublicRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CanvasPage from "./pages/CanvasPage";
-import PersonalitySelectPage from "./pages/PersonalitySelectPage";
-import './i18n'; 
 
 function App() {
     return (
@@ -37,12 +35,6 @@ function App() {
                                 </PublicRoute>
                             }
                         />
-                        <Route path="/personality"
-                            element={
-                            <ProtectedRoute>
-                                <PersonalitySelectPage />
-                            </ProtectedRoute>
-                        } />
                         <Route
                             path="/canvas"
                             element={
@@ -53,7 +45,7 @@ function App() {
                         />
                         <Route
                             path="/"
-                            element={<Navigate to="/personality" replace />}
+                            element={<Navigate to="/canvas" replace />}
                         />
                         <Route
                             path="*"

@@ -47,7 +47,7 @@ const AuthForm = ({
     onEmailAuth,
     onGoogleAuth,
 }) => {
-    const title = isLogin ? "歡迎回到 FeelInk" : "加入 FeelInk";
+    const title = isLogin ? "歡迎回到 Feelink" : "加入 Feelink";
     const subtitle = isLogin ? "登入以繼續您的創作之旅" : "註冊帳號開始您的創作之旅";
     const modeTitle = isLogin ? "登入帳號" : "註冊帳號";
     const buttonText = isLogin ? "開始創作" : "建立帳號";

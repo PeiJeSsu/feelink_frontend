@@ -48,7 +48,7 @@ describe("FurBrush", () => {
 			return {};
 		});
 		global.fabric = global.fabric || {};
-		global.fabric.FabricImage = { fromURL: jest.fn(() => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
+		global.fabric.FabricImage = { fromURL: jest.fn((url) => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
 	});
 
 	afterEach(() => {
@@ -89,12 +89,7 @@ describe("FurBrush", () => {
 		brush._points = [{ x: 1, y: 2 }];
 		const img = { set: jest.fn(), setCoords: jest.fn() };
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve(img));
-		
-		brush.onMouseUp();
-		
-		// 等待 Promise 解析
-		await new Promise(resolve => setTimeout(resolve, 0));
-		
+		await brush.onMouseUp();
 		expect(mockCanvas.add).toHaveBeenCalled();
 		expect(mockCanvas.add.mock.calls[0][0]).toBe(img);
 		expect(mockCanvas.clearContext).toHaveBeenCalledWith(mockCtx);
@@ -102,10 +97,10 @@ describe("FurBrush", () => {
 		expect(brush._points.length).toBe(0);
 	});
 
-	it("onMouseUp 無繪製時不呼叫 convertToImg", () => {
+	it("onMouseUp 無繪製時不呼叫 convertToImg", async () => {
 		const brush = new FurBrush(mockCanvas);
 		brush._count = 0;
-		brush.onMouseUp();
+		await brush.onMouseUp();
 		expect(mockCanvas.add).not.toHaveBeenCalled();
 	});
 

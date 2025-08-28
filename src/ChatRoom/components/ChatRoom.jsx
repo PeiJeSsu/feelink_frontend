@@ -9,44 +9,28 @@ import PropTypes from "prop-types";
 import { IconButton } from "@mui/material";
 
 export default function ChatRoom({ canvas }) {
-    const [inputNotification, setInputNotification] = useState(null);
-    
     const { 
         messages, 
         loading,
-        disabled,
         historyLoading,
         historyLoaded,
         sendTextMessage, 
         sendImageMessage, 
         sendCanvasAnalysis, 
         sendAIDrawing,
-        sendGenerateObject,
         sendTextMessageStream,
         sendImageMessageStream,
         sendCanvasAnalysisStream,
         sendAIDrawingWithTypewriter,
         reloadChatroomHistory,
         currentChatroomId
-    } = useChatMessages(canvas, setInputNotification);
+    } = useChatMessages(canvas);
 
-    // 控制清空確認對話框
+    //  控制清空確認對話框
     const [openClearDialog, setOpenClearDialog] = useState(false);
     const [clearing, setClearing] = useState(false);
 
-    // 取得 AI 夥伴名稱的函數
-    const getAIPartnerName = () => {
-        const aiPartnerName = localStorage.getItem('aiPartnerName');
-        const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
-        
-        if (!aiPartnerName) {
-            return currentLanguage === 'zh-TW' ? 'AI 夥伴' : 'AI Partner';
-        }
-        
-        return currentLanguage === 'zh-TW' ? `AI 夥伴 — ${aiPartnerName}` : `AI Partner ${aiPartnerName}`;
-    };
-
-    // 清空聊天室函數
+    //  清空聊天室函數
     const handleClearChatroom = async () => {
         if (!currentChatroomId) {
             console.error('沒有可用的聊天室ID');
@@ -81,7 +65,7 @@ export default function ChatRoom({ canvas }) {
         }
     };
 
-    // 渲染載入歷史訊息的骨架屏
+    //  渲染載入歷史訊息的骨架屏
     const renderHistoryLoadingSkeleton = () => (
         <Box sx={{ padding: 2 }}>
             {[1, 2, 3].map((item) => (
@@ -96,7 +80,7 @@ export default function ChatRoom({ canvas }) {
         </Box>
     );
 
-    // 渲染空狀態
+    //  渲染空狀態
     const renderEmptyState = () => (
         <Box sx={{ 
             display: 'flex', 
@@ -111,7 +95,7 @@ export default function ChatRoom({ canvas }) {
             <Typography variant="body2" sx={{ fontSize: "14px", textAlign: 'center' }}>
                 {historyLoaded ? '沒有聊天記錄，輸入訊息開始對話吧！' : '準備載入聊天記錄...'}
             </Typography>
-            {historyLoaded && currentChatroomId && (
+            {historyLoaded && (
                 <Typography variant="caption" sx={{ fontSize: "12px", marginTop: 0.5, opacity: 0.7 }}>
                     聊天室 ID: {currentChatroomId}
                 </Typography>
@@ -121,12 +105,12 @@ export default function ChatRoom({ canvas }) {
 
     return (
         <Box sx={chatRoomStyles.container}>
-            {/* 聊天標題 */}
+            {/*聊天標題 */}
             <Box sx={chatRoomStyles.header}>
                 <Box sx={chatRoomStyles.headerTitle}>
                     <AssistantIcon sx={chatRoomStyles.titleIcon} />
                     <Typography sx={chatRoomStyles.titleText}>
-                        {getAIPartnerName()}
+                        AI 夥伴
                     </Typography>
                     {/* 清空聊天室按鈕 */}
                     {historyLoaded && messages.length > 0 && (
@@ -150,7 +134,7 @@ export default function ChatRoom({ canvas }) {
                     )}
                 </Box>
                 
-                {/* 創藝好夥伴標籤，放在右側 */}
+                {/*  只保留創藝好夥伴標籤，放在右側 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Chip 
                         label="你的創藝好夥伴" 
@@ -162,13 +146,13 @@ export default function ChatRoom({ canvas }) {
 
             {/* 聊天訊息區域 */}
             <Box sx={chatRoomStyles.chatArea}>
-                {/* 載入歷史訊息時顯示骨架屏 */}
+                {/*  載入歷史訊息時顯示骨架屏 */}
                 {historyLoading && renderHistoryLoadingSkeleton()}
                 
                 {/* 沒有訊息且載入完成時顯示空狀態 */}
                 {!historyLoading && messages.length === 0 && renderEmptyState()}
                 
-                {/* 顯示聊天訊息 */}
+                {/*  顯示聊天訊息 */}
                 {!historyLoading && messages.length > 0 && (
                     <>
                         {messages.map((message) => (
@@ -183,7 +167,7 @@ export default function ChatRoom({ canvas }) {
                     </>
                 )}
                 
-                {/* 發送新訊息時的載入指示器 */}
+                {/*  發送新訊息時的載入指示器 */}
                 {loading && (
                     <Box sx={chatRoomStyles.messageLoading}>
                         <CircularProgress size={20} sx={{ color: "#2563eb" }} />
@@ -201,10 +185,7 @@ export default function ChatRoom({ canvas }) {
                     onSendImage={sendImageMessageStream}
                     onAnalyzeCanvas={sendCanvasAnalysisStream}
                     onAIDrawing={sendAIDrawingWithTypewriter}
-                    onGenerateObject={sendGenerateObject}
-                    disabled={disabled || loading || historyLoading}
-                    inputNotification={inputNotification}
-                    onClearNotification={() => setInputNotification(null)}
+                    disabled={loading || historyLoading}
                 />
             </Box>
 
@@ -222,11 +203,9 @@ export default function ChatRoom({ canvas }) {
                     <DialogContentText id="clear-dialog-description">
                         確定要清空這個聊天室的所有訊息嗎？此操作無法復原。
                     </DialogContentText>
-                    {currentChatroomId && (
-                        <DialogContentText sx={{ marginTop: 1, fontSize: '12px', color: '#6b7280' }}>
-                            聊天室 ID: {currentChatroomId}
-                        </DialogContentText>
-                    )}
+                    <DialogContentText sx={{ marginTop: 1, fontSize: '12px', color: '#6b7280' }}>
+                        聊天室 ID: {currentChatroomId}
+                    </DialogContentText>
                 </DialogContent>
                 <DialogActions>
                     <Button 

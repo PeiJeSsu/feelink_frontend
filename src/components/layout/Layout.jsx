@@ -1,20 +1,19 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Box, TextField, Typography, Button } from "@mui/material";
-import { Help } from "@mui/icons-material";
 import { ResizableBox } from "react-resizable";
 import LeftToolbar from "../toolbar/left-toolbar/LeftToolbar";
 import TopToolbar from "../toolbar/top-toolbar/TopToolbar";
 import Canvas from "../canvas/Canvas";
 import ChatRoom from "../../ChatRoom/components/ChatRoom";
 import UserProfileMenu from "../auth/UserProfileMenu";
-import AppTour from "./AppTour";
 import { layoutStyles } from "../../styles/layoutStyles";
 import "./Layout.css";
 
 const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(true);
-	const [chatWidth, setChatWidth] = useState(400);
+	const [chatWidth, setChatWidth] = useState(350);
+	const [isResizing, setIsResizing] = useState(false);
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
 		size: 5,
@@ -50,9 +49,6 @@ const Layout = () => {
 	});
 
 	const [clearTrigger, setClearTrigger] = useState(0);
-	
-	// 導覽相關狀態
-	const [runTour, setRunTour] = useState(false);
 
 	const canvasRef = useRef(null);
 
@@ -94,10 +90,12 @@ const Layout = () => {
 	};
 
 	const handleResizeStart = useCallback(() => {
+		setIsResizing(true);
 		document.body.style.cursor = "col-resize";
 	}, []);
 
 	const handleResizeStop = useCallback(() => {
+		setIsResizing(false);
 		document.body.style.cursor = "";
 	}, []);
 
@@ -109,13 +107,12 @@ const Layout = () => {
 	return (
 		<Box sx={layoutStyles.layoutContainer}>
 			{/* 現代化頂部導航欄 */}
-			<Box sx={layoutStyles.topToolbarContainer} className="top-toolbar">
+			<Box sx={layoutStyles.topToolbarContainer}>
 				{/* 左側：Logo 和主要功能 */}
 				<Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
 					{/* Logo */}
 					<Typography
 						variant="h5"
-						className="app-logo"
 						sx={{
 							fontWeight: 700,
 							color: "#1e293b",
@@ -129,6 +126,7 @@ const Layout = () => {
 					<TopToolbar
 						onClearClick={handleClearCanvas}
 						canvas={canvasRef.current}
+						canvasReady={canvasReady}
 						chatWidth={0}
 					/>
 				</Box>
@@ -139,7 +137,6 @@ const Layout = () => {
 						variant="outlined"
 						size="small"
 						placeholder="未命名畫布"
-						className="canvas-title"
 						sx={{
 							"& .MuiOutlinedInput-root": {
 								fontSize: "16px",
@@ -151,7 +148,7 @@ const Layout = () => {
 									border: "none",
 								},
 								"&:hover fieldset": {
-									border: "1px solid #cbd5e1",
+									border: "1px solid #e2e8f0",
 								},
 								"&.Mui-focused fieldset": {
 									border: "1px solid #2563eb",
@@ -172,7 +169,6 @@ const Layout = () => {
 					<Button
 						onClick={toggleChat}
 						variant={isChatOpen ? "text" : "outlined"}
-						className="chat-toggle"
 						sx={{
 							color: isChatOpen ? "#2563eb" : "#64748b",
 							backgroundColor: isChatOpen ? "#f1f5f9" : "transparent",
@@ -183,7 +179,6 @@ const Layout = () => {
 							borderRadius: "8px",
 							textTransform: "none",
 							fontFamily: '"Inter", "Noto Sans TC", sans-serif',
-							height: "36px", // 明確設定高度
 							"&:hover": {
 								backgroundColor: isChatOpen ? "#f1f5f9" : "#f9fafb",
 								color: "#2563eb",
@@ -193,68 +188,38 @@ const Layout = () => {
 					>
 						{isChatOpen ? "關閉聊天室" : "開啟聊天室"}
 					</Button>
-					
-					{/* 導覽按鈕 */}
-					<Button
-						onClick={() => setRunTour(true)}
-						variant="contained"
-						startIcon={<Help sx={{ fontSize: 16 }} />}
-						sx={{
-							color: "#ffffff",
-							backgroundColor: "#1e40af",
-							border: "none",
-							fontSize: "14px",
-							fontWeight: 600,
-							padding: "6px 12px",
-							borderRadius: "8px",
-							textTransform: "none",
-							fontFamily: '"Inter", "Noto Sans TC", sans-serif',
-							minWidth: "auto",
-							height: "36px", // 明確設定高度與聊天室按鈕一致
-							"&:hover": {
-								backgroundColor: "#1d4ed8",
-							},
-						}}
-					>
-						導覽
-					</Button>
-					
-					<Box className="user-profile">
-						<UserProfileMenu />
-					</Box>
+					<UserProfileMenu />
 				</Box>
 			</Box>
 
 			{/* 主要內容區域 */}
 			<Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
 				{/* 左側工具欄 */}
-				<Box className="left-toolbar">
-					<LeftToolbar
-						setActiveTool={setActiveTool}
-						activeTool={activeTool}
-						setBrushSettings={setBrushSettings}
-						brushSettings={brushSettings}
-						setShapeSettings={setShapeSettings}
-						shapeSettings={shapeSettings}
-						setEraserSettings={setEraserSettings}
-						eraserSettings={eraserSettings}
-						setPaintBucketSettings={setPaintBucketSettings}
-						paintBucketSettings={paintBucketSettings}
-						setTextSettings={setTextSettings}
-						textSettings={textSettings}
-						onClearCanvas={handleClearCanvas}
-						canvas={canvasRef.current}
-					/>
-				</Box>
+				<LeftToolbar
+					setActiveTool={setActiveTool}
+					activeTool={activeTool}
+					setBrushSettings={setBrushSettings}
+					brushSettings={brushSettings}
+					setShapeSettings={setShapeSettings}
+					shapeSettings={shapeSettings}
+					setEraserSettings={setEraserSettings}
+					eraserSettings={eraserSettings}
+					setPaintBucketSettings={setPaintBucketSettings}
+					paintBucketSettings={paintBucketSettings}
+					setTextSettings={setTextSettings}
+					textSettings={textSettings}
+					onClearCanvas={handleClearCanvas}
+					canvas={canvasRef.current}
+				/>
 
 				{/* 畫布區域 */}
-				<Box className="canvas-area" sx={{ 
+				<Box sx={{ 
 					flex: 1, 
 					display: "flex", 
 					flexDirection: "column",
-					background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-					padding: "20px",
-					paddingBottom: "20px",
+					backgroundColor: "#f8fafc",
+					padding: "16px",
+					paddingBottom: "16px",
 					minWidth: 0, // 確保可以縮小
 					transition: "all 0.3s ease-in-out",
 				}}>
@@ -262,7 +227,7 @@ const Layout = () => {
 						flex: 1,
 						backgroundColor: "#ffffff",
 						borderRadius: "12px",
-						border: "1px solid #aeb8d5f5",
+						border: "1px solid #e5e7eb",
 						overflow: "hidden",
 						boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
 					}}>
@@ -284,10 +249,10 @@ const Layout = () => {
 				{/* 聊天面板 - 修正佈局 */}
 				{isChatOpen && (
 					<ResizableBox
-						className="chat-container"
+						className={`chat-container ${isResizing ? "resizing" : ""}`}
 						width={chatWidth}
 						height={Infinity}
-						minConstraints={[400, Infinity]}
+						minConstraints={[350, Infinity]}
 						maxConstraints={[550, Infinity]}
 						axis="x"
 						resizeHandles={["w"]}
@@ -306,9 +271,6 @@ const Layout = () => {
 					</ResizableBox>
 				)}
 			</Box>
-			
-			{/* 導覽組件 */}
-			<AppTour runTour={runTour} setRunTour={setRunTour} />
 		</Box>
 	);
 };

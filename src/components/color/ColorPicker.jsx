@@ -37,8 +37,8 @@ const ColorPicker = ({ label, value, onChange, disabled = false, sx = {} }) => {
 							color: "#5c5c5c",
 							minWidth: "20px",
 							"&:hover": {
-								backgroundColor: "rgba(37, 99, 235, 0.1)",
-								color: "#2563eb",
+								backgroundColor: "rgba(247, 202, 201, 0.2)",
+								color: "#333333",
 							},
 						}}
 					>

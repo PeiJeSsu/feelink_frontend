@@ -2,10 +2,9 @@ import {addMessages, appendMessage, getNewId, createNewMessage} from "./usage/Me
 import {sendAIDrawingToBackend, sendAIDrawingToBackendStream, sendCanvasAnalysisToBackend, sendCanvasAnalysisToBackendStreamService, sendImageToBackend, sendImageToBackendStreamService, sendTextToBackend, sendTextToBackendStream} from './MessageService';
 import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
-import {clearCanvas, addImageToCanvas} from "../../helpers/canvas/CanvasOperations";
 
 // 流式訊息處理函數
-const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, setDisabled, chatroomId, streamFunction, errorMessage) => {
+const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, chatroomId, streamFunction, errorMessage) => {
     console.log('handleStreamMessage called with chatroomId:', chatroomId);
     if (!messageText && !image) return;
     if (!chatroomId) {
@@ -18,7 +17,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
     
     setLoading(true);
-    if (setDisabled) setDisabled(true);
     
     // 修復串流回應處理邏輯
     let responseMessageAdded = false;
@@ -26,7 +24,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     let pendingQueue = [];
     let typewriterTimer = null;
     let isTypewriting = false;
-    let streamCompleted = false;
     let aiResponseId = finalId; // AI 回應的 ID
 
     const typewriterEffect = () => {
@@ -48,9 +45,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         } else {
             isTypewriting = false;
             typewriterTimer = null;
-            if (streamCompleted) {
-                if (setDisabled) setDisabled(false);
-            }
         }
     };
 
@@ -83,8 +77,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
 
     const onComplete = () => {
         console.log('Stream completed');
-        streamCompleted = true;
-        
         // 清理定時器
         if (typewriterTimer) {
             clearTimeout(typewriterTimer);
@@ -107,10 +99,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
                 });
             }
         }
-        
-        if (!isTypewriting && setDisabled) {
-            setDisabled(false);
-        }
     };
 
     const onError = (error) => {
@@ -122,12 +110,11 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             typewriterTimer = null;
         }
         isTypewriting = false;
-        streamCompleted = true;
         
         // 如果還沒有加入 AI 回應訊息，在錯誤時加入錯誤訊息
         if (!responseMessageAdded) {
-            const errorMessageObj = createNewMessage(aiResponseId, "抱歉，發生了錯誤", false, false);
-            setMessages(prevMessages => [...prevMessages, errorMessageObj]);
+            const errorMessage = createNewMessage(aiResponseId, "抱歉，發生了錯誤", false, false);
+            setMessages(prevMessages => [...prevMessages, errorMessage]);
             responseMessageAdded = true;
         } else if (pendingQueue.length > 0) {
             // 顯示所有剩餘內容
@@ -143,7 +130,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         }
         
         setLoading(false);
-        if (setDisabled) setDisabled(false);
         handleError(error, errorMessage, messages, setMessages);
     };
     
@@ -155,7 +141,7 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
 };
 
 // 處理 AI 繪圖串流的特殊函數
-const handleAIDrawingStream = async (messageText, canvasImage, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
+const handleAIDrawingStream = async (messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId) => {
     console.log('handleAIDrawingStream called with chatroomId:', chatroomId);
     if (!canvasImage) return;
     if (!chatroomId) {
@@ -167,7 +153,6 @@ const handleAIDrawingStream = async (messageText, canvasImage, messages, setMess
     const canvasData = await convertBlobToBase64(canvasImage);
     const finalId = addMessages(messageText, canvasImage, currentId, messages, setMessages);
     setLoading(true);
-    if (setDisabled) setDisabled(true);
     
     // 文字回應處理
     let textResponseMessageAdded = false;
@@ -224,6 +209,7 @@ const handleAIDrawingStream = async (messageText, canvasImage, messages, setMess
         console.log('Image generated, updating canvas');
         if (canvas && imageData) {
             try {
+                const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
                 clearCanvas(canvas);
                 const imageDataUrl = `data:image/png;base64,${imageData}`;
                 addImageToCanvas(canvas, imageDataUrl);
@@ -257,8 +243,6 @@ const handleAIDrawingStream = async (messageText, canvasImage, messages, setMess
                 });
             }
         }
-        
-        if (setDisabled) setDisabled(false);
     };
 
     const onError = (error) => {
@@ -287,24 +271,47 @@ const handleAIDrawingStream = async (messageText, canvasImage, messages, setMess
             });
         }
         setLoading(false);
-        if (setDisabled) setDisabled(false);
         handleError(error, 'AI 繪圖失敗', messages, setMessages);
     };
 
     try {
         await sendAIDrawingToBackendStream(messageText, canvasData, chatroomId, onToken, onComplete, onError, onImageGenerated);
     } catch (error) {
-        handleError(error, 'AI 繪圖失敗', messages, setMessages);
-        setLoading(false);
-        if (setDisabled) setDisabled(false);
+        onError(error);
     }
 };
 
+// 
+const handleAIDrawingWithTypewriter = async (messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId) => {
+    console.log('handleAIDrawingWithTypewriter called with chatroomId:', chatroomId);
+    if (!canvasImage) return;
+    if (!chatroomId) {
+        console.error('chatroomId is required for AI drawing');
+        return;
+    }
+    
+    const canvasData = await convertBlobToBase64(canvasImage);
+
+    await runMessageTaskWithTypewriter({
+        messageText,
+        image: canvasImage,
+        messages,
+        setMessages,
+        setLoading,
+        chatroomId,
+        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
+        sendFunction: ({ text, imageData }, chatroomId) => sendAIDrawingToBackend(text, imageData, chatroomId),
+        onSuccess: (result, finalId) => {
+            return processDrawingResultWithTypewriter(result, finalId, messages, setMessages, canvas, setLoading);
+        },
+        onErrorMessage: 'AI 畫圖失敗',
+    });
+};
+
 // 帶打字機效果的任務執行器
-const runMessageTaskWithTypewriter = async ({messageText, image = null, messages, setMessages, setLoading, setDisabled, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
+const runMessageTaskWithTypewriter = async ({messageText, image = null, messages, setMessages, setLoading, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
     try {
         setLoading(true);
-        if (setDisabled) setDisabled(true);
 
         const { finalId, payload } = await prepareMessageAndPayload(messageText, image, messages, setMessages, generatePayload);
 
@@ -314,12 +321,13 @@ const runMessageTaskWithTypewriter = async ({messageText, image = null, messages
         handleError(error, onErrorMessage, messages, setMessages);
     } finally {
         setLoading(false);
-        if (setDisabled) setDisabled(false);
     }
 };
 
 // 帶打字機效果的繪圖結果處理器
-const processDrawingResultWithTypewriter = async (result, currentId, messages, setMessages, canvas, setLoading, setDisabled) => {
+const processDrawingResultWithTypewriter = async (result, currentId, messages, setMessages, canvas, setLoading) => {
+    const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+    
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
@@ -332,6 +340,7 @@ const processDrawingResultWithTypewriter = async (result, currentId, messages, s
         setLoading(false); // 開始顯示文字時關閉載入狀態
         
         let displayedContent = "";
+        
         
         for (let i = 0; i < actualResult.message.length; i++) {
             displayedContent += actualResult.message[i];
@@ -375,19 +384,17 @@ const processDrawingResultWithTypewriter = async (result, currentId, messages, s
         }
     }
 
-    if (setDisabled) setDisabled(false);
     return currentId;
 };
 
 // 文字訊息串流處理
-export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading, setDisabled, chatroomId) => {
+export const handleSendTextMessageStream = async (messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
         null,
         messages,
         setMessages,
         setLoading,
-        setDisabled,
         chatroomId,
         (text, image, chatroomId, onToken, onComplete, onError) => {
             sendTextToBackendStream(
@@ -403,14 +410,13 @@ export const handleSendTextMessageStream = async (messageText, messages, setMess
 };
 
 // 圖片訊息串流處理
-export const handleSendImageMessageStream = async (messageText, messageImage, messages, setMessages, setLoading, setDisabled, chatroomId) => {
+export const handleSendImageMessageStream = async (messageText, messageImage, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
         messageImage,
         messages,
         setMessages,
         setLoading,
-        setDisabled,
         chatroomId,
         (text, image, chatroomId, onToken, onComplete, onError) => {
             sendImageToBackendStreamService(text, image, chatroomId, onToken, onComplete, onError);
@@ -420,14 +426,13 @@ export const handleSendImageMessageStream = async (messageText, messageImage, me
 };
 
 // 畫布分析流式處理
-export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, chatroomId) => {
+export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, messages, setMessages, setLoading, chatroomId) => {
     return handleStreamMessage(
         messageText,
         canvasImage,
         messages,
         setMessages,
         setLoading,
-        setDisabled,
         chatroomId,
         (text, image, chatroomId, onToken, onComplete, onError) => {
             sendCanvasAnalysisToBackendStreamService(text, image, chatroomId, onToken, onComplete, onError);
@@ -436,44 +441,16 @@ export const handleSendCanvasAnalysisStream = async (canvasImage, messageText, m
     );
 };
 
-export const handleSendAIDrawingStream = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
-    return handleAIDrawingStream(messageText, canvasImage, messages, setMessages, setLoading, setDisabled, canvas, chatroomId);
+export const handleSendAIDrawingStream = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
+    return handleAIDrawingStream(messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId);
 };
 
-// 修復：帶打字機效果的AI繪圖處理函數
-const handleAIDrawingWithTypewriter = async (messageText, canvasImage, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
-    console.log('handleAIDrawingWithTypewriter called with chatroomId:', chatroomId);
-    if (!canvasImage) return;
-    if (!chatroomId) {
-        console.error('chatroomId is required for AI drawing');
-        return;
-    }
-    
-    const canvasData = await convertBlobToBase64(canvasImage);
-
-    await runMessageTaskWithTypewriter({
-        messageText,
-        image: canvasImage,
-        messages,
-        setMessages,
-        setLoading,
-        setDisabled,
-        chatroomId,
-        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData }),
-        sendFunction: ({ text, imageData }, chatroomId) => sendAIDrawingToBackend(text, imageData, chatroomId),
-        onSuccess: (result, finalId) => {
-            return processDrawingResultWithTypewriter(result, finalId, messages, setMessages, canvas, setLoading, setDisabled);
-        },
-        onErrorMessage: 'AI 畫圖失敗',
-    });
-};
-
-export const handleSendAIDrawingWithTypewriter = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
-    return handleAIDrawingWithTypewriter(messageText, canvasImage, messages, setMessages, setLoading, setDisabled, canvas, chatroomId);
+export const handleSendAIDrawingWithTypewriter = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
+    return handleAIDrawingWithTypewriter(messageText, canvasImage, messages, setMessages, setLoading, canvas, chatroomId);
 };
 
 // 修復：一般文字訊息處理
-export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, setDisabled, chatroomId, defaultQuestion = "", conversationCount = 1) => {
+export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, chatroomId, defaultQuestion = "", conversationCount = 1) => {
     if (!messageText) return;
     if (!chatroomId) {
         console.error('chatroomId is required for sending messages');
@@ -486,7 +463,6 @@ export const handleSendTextMessage = async (messageText, messages, setMessages, 
         messages,
         setMessages,
         setLoading,
-        setDisabled,
         chatroomId,
         generatePayload: () => Promise.resolve({
             text: messageText,
@@ -500,7 +476,7 @@ export const handleSendTextMessage = async (messageText, messages, setMessages, 
 };
 
 // 修復：圖片訊息處理
-export const handleSendImageMessage = async (messageText, messageImage, messages, setMessages, setLoading, setDisabled, chatroomId) => {
+export const handleSendImageMessage = async (messageText, messageImage, messages, setMessages, setLoading, chatroomId) => {
     if (!messageText && !messageImage) return;
     if (!chatroomId) {
         console.error('chatroomId is required for sending messages');
@@ -513,7 +489,6 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
         messages,
         setMessages,
         setLoading,
-        setDisabled,
         chatroomId,
         generatePayload: () => Promise.resolve({ text: messageText, image: messageImage }),
         sendFunction: (payload, chatroomId) => sendImageToBackend(payload.text, payload.image, chatroomId),
@@ -523,7 +498,7 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
 };
 
 // 修復：畫布分析處理
-export const handleSendCanvasAnalysis = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, chatroomId) => {
+export const handleSendCanvasAnalysis = async (canvasImage, messageText, messages, setMessages, setLoading, chatroomId) => {
     if (!canvasImage) return;
     if (!chatroomId) {
         console.error('chatroomId is required for sending messages');
@@ -536,7 +511,6 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
         messages,
         setMessages,
         setLoading,
-        setDisabled,
         chatroomId,
         generatePayload: () => Promise.resolve({ text: messageText, image: canvasImage }),
         sendFunction: (payload, chatroomId) => sendCanvasAnalysisToBackend(payload.text, payload.image, chatroomId),
@@ -545,44 +519,16 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
     });
 };
 
-// AI 繪圖功能（使用模擬打字機效果版本）
-export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
-    // 使用帶打字機效果的版本（非串流 API + 前端打字機模擬）
-    return handleSendAIDrawingWithTypewriter(canvasImage, messageText, messages, setMessages, setLoading, setDisabled, canvas, chatroomId);
-};
-
-// 物件生成功能
-export const handleSendGenerateObject = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
-    if (!canvasImage) return;
-    if (!chatroomId) {
-        console.error('chatroomId is required for object generation');
-        return;
-    }
-    
-    const canvasData = await convertBlobToBase64(canvasImage);
-
-    await runMessageTask({
-        messageText,
-        image: canvasImage,
-        messages,
-        setMessages,
-        setLoading,
-        setDisabled,
-        chatroomId,
-        generatePayload: () => Promise.resolve({ text: messageText, imageData: canvasData, mode: 'generateObject' }),
-        sendFunction: ({ text, imageData, mode }, chatroomId) => sendAIDrawingToBackend(text, imageData, chatroomId, mode),
-        onSuccess: (result, finalId) => {
-            return processGenerateObjectResult(result, finalId, messages, setMessages, canvas, setLoading, setDisabled);
-        },
-        onErrorMessage: 'AI 生成物件失敗',
-    });
+// 🎯 修復：AI 繪圖功能 (使用模擬打字機效果版本)
+export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId) => {
+    // 使用模擬打字機效果版本
+    return handleSendAIDrawingWithTypewriter(canvasImage, messageText, messages, setMessages, setLoading, canvas, chatroomId);
 };
 
 // 修復：通用訊息處理函數
-const runMessageTask = async ({messageText, image = null, messages, setMessages, setLoading, setDisabled, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
+const runMessageTask = async ({messageText, image = null, messages, setMessages, setLoading, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
     try {
         setLoading(true);
-        if (setDisabled) setDisabled(true);
 
         const { finalId, payload } = await prepareMessageAndPayload(messageText, image, messages, setMessages, generatePayload);
 
@@ -592,7 +538,6 @@ const runMessageTask = async ({messageText, image = null, messages, setMessages,
         handleError(error, onErrorMessage, messages, setMessages);
     } finally {
         setLoading(false);
-        if (setDisabled) setDisabled(false);
     }
 };
 
@@ -612,60 +557,9 @@ const handleResult = (result, onSuccess) => {
     }
 };
 
-const processDrawingResult = async (result, currentId, messages, setMessages, canvas, setLoading, setDisabled) => {
-    let actualResult = result;
-    if (result.success && result.content) {
-        actualResult = result.content;
-    }
-    if (actualResult.message) {
-        const textResponseMessage = createNewMessage(currentId, "", false, false);
-        setMessages(prevMessages => [...prevMessages, textResponseMessage]);
-        setLoading(false);
-        let displayedContent = "";
-        for (let i = 0; i < actualResult.message.length; i++) {
-            displayedContent += actualResult.message[i];
-            setMessages(prevMessages => {
-                return prevMessages.map(msg => {
-                    if (msg.id === currentId) {
-                        return {...msg, message: displayedContent};
-                    }
-                    return msg;
-                });
-            });
-            await new Promise(resolve => setTimeout(resolve, 30));
-        }
-        currentId++;
-    }
-
-    if (actualResult.imageData && canvas) {
-        try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            clearCanvas(canvas);
-            const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
-            addImageToCanvas(canvas, imageDataUrl, { mode: 'fillViewport' });
-
-            setMessages(prevMessages => {
-                return prevMessages.map(msg => {
-                    if (msg.id === currentId - 1) {
-                        return {
-                            ...msg,
-                            imageData: actualResult.imageData,
-                            hasImage: true
-                        };
-                    }
-                    return msg;
-                });
-            });
-        } catch (error) {
-            console.error('Error adding image to canvas:', error);
-        }
-    }
-    if (setDisabled) setDisabled(false);
-    return currentId;
-};
-
-const processGenerateObjectResult = async (result, currentId, messages, setMessages, canvas, setLoading, setDisabled) => {
+const processDrawingResult = (result, currentId, messages, setMessages, canvas) => {
+    const { clearCanvas, addImageToCanvas } = require("../../helpers/canvas/CanvasOperations");
+    const { createNewMessage } = require("./usage/MessageFactory");
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
@@ -673,46 +567,18 @@ const processGenerateObjectResult = async (result, currentId, messages, setMessa
     }
 
     if (actualResult.message) {
-        const textResponseMessage = createNewMessage(currentId, "", false, false);
+        const textResponseMessage = createNewMessage(currentId, actualResult.message, false, false);
         setMessages(prevMessages => [...prevMessages, textResponseMessage]);
-        setLoading(false);
-        let displayedContent = "";
-        for (let i = 0; i < actualResult.message.length; i++) {
-            displayedContent += actualResult.message[i];
-            setMessages(prevMessages => {
-                return prevMessages.map(msg => {
-                    if (msg.id === currentId) {
-                        return {...msg, message: displayedContent};
-                    }
-                    return msg;
-                });
-            });
-            await new Promise(resolve => setTimeout(resolve, 30));
-        }
         currentId++;
     }
 
     if (actualResult.imageData && canvas) {
         try {
+            clearCanvas(canvas);
             const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
-            // 取得儲存的點擊位置
-            const targetPosition = canvas._generateObjectPosition || null;
-            console.log('讀取到的點擊位置:', targetPosition);
-            addImageToCanvas(canvas, imageDataUrl, { 
-                mode: 'originalSize', 
-                targetPosition: targetPosition,
-                maxSize: 200 
-            });
-            // 清除儲存的位置
-            delete canvas._generateObjectPosition;
-            // 恢復畫布交互功能
-            canvas.selection = true;
-            canvas.getObjects().forEach(obj => {
-                obj.selectable = true;
-                obj.evented = true;
-            });
+            addImageToCanvas(canvas, imageDataUrl);
         } catch (error) {
-            console.error('Error adding generated object to canvas:', error); 
+            console.error('Error adding image to canvas:', error); 
         }
     } else {
         console.log('Missing data:', { 
@@ -721,6 +587,6 @@ const processGenerateObjectResult = async (result, currentId, messages, setMessa
             actualResult: actualResult
         });
     }
-    if (setDisabled) setDisabled(false);
+
     return currentId;
 };

@@ -246,10 +246,6 @@ describe("CanvasOperations", () => {
 				setActiveObject: jest.fn(),
 				renderAll: jest.fn(),
 				historyManager: { saveState: jest.fn() },
-				getZoom: jest.fn().mockReturnValue(1),
-				viewportTransform: [1, 0, 0, 1, 0, 0],
-				width: 800,
-				height: 600,
 			};
 			Object.defineProperty(window, "innerWidth", { value: 800, writable: true });
 			Object.defineProperty(window, "innerHeight", { value: 600, writable: true });
@@ -275,10 +271,6 @@ describe("CanvasOperations", () => {
 				add: jest.fn(),
 				setActiveObject: jest.fn(),
 				renderAll: jest.fn(),
-				getZoom: jest.fn().mockReturnValue(1),
-				viewportTransform: [1, 0, 0, 1, 0, 0],
-				width: 400,
-				height: 300,
 			};
 			Object.defineProperty(window, "innerWidth", { value: 400, writable: true });
 			Object.defineProperty(window, "innerHeight", { value: 300, writable: true });

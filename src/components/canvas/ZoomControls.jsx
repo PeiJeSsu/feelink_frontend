@@ -153,28 +153,10 @@ const ZoomControls = ({ canvas, chatWidth = 0, isChatOpen = false }) => {
 						aria-labelledby="zoom-slider"
 						sx={{
 							"& .MuiSlider-track": {
-								backgroundColor: "#2563eb",
+								backgroundColor: "#f7cac9",
 							},
 							"& .MuiSlider-rail": {
 								backgroundColor: "rgba(92, 92, 92, 0.2)",
-							},
-							"& .MuiSlider-thumb": {
-								backgroundColor: "#ffffff",
-								border: "2px solid #2563eb",
-								width: 20,
-								height: 20,
-								"&:hover": {
-									backgroundColor: "#ffffff",
-									boxShadow: "0 4px 8px rgba(37, 99, 235, 0.3)",
-								},
-								"&:focus": {
-									backgroundColor: "#ffffff",
-									boxShadow: "0 0 0 8px rgba(37, 99, 235, 0.16)",
-								},
-								"&.Mui-active": {
-									backgroundColor: "#ffffff",
-									boxShadow: "0 0 0 14px rgba(37, 99, 235, 0.16)",
-								},
 							},
 						}}
 					/>

@@ -1,6 +1,5 @@
 import PropTypes from "prop-types";
-import { Box, Paper, Typography, IconButton } from "@mui/material";
-import { Close } from "@mui/icons-material";
+import { Box, Paper, Typography } from "@mui/material";
 import LeftToolbarButtons from "./LeftToolbarButtons";
 import BrushSettings from "../../brush/BrushSettings";
 import ShapeSettings from "../../shape/ShapeSettings";
@@ -23,14 +22,11 @@ const LeftToolbar = ({
 	paintBucketSettings,
 	setTextSettings,
 	textSettings,
+	onClearCanvas,
 	canvas,
 }) => {
 	const handleToolClick = (tool) => {
 		setActiveTool(tool);
-	};
-
-	const handleCloseSettings = () => {
-		setActiveTool(null);
 	};
 
 	const renderSettingsPanel = () => {
@@ -53,49 +49,26 @@ const LeftToolbar = ({
 					width: "280px",
 					height: "100%",
 					backgroundColor: "#ffffff",
-					borderRight: "1px solid #aeb8d5f5",
+					borderRight: "1px solid #e2e8f0",
 					padding: "20px",
 					overflow: "auto",
 					display: "flex",
 					flexDirection: "column",
 				}}
 			>
-				<Box
+				<Typography
+					variant="h6"
 					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
+						fontSize: "16px",
+						fontWeight: 600,
+						color: "#1e293b",
 						marginBottom: "20px",
-						borderBottom: "1px solid #aeb8d5f5",
+						borderBottom: "1px solid #e2e8f0",
 						paddingBottom: "12px",
 					}}
 				>
-					<Typography
-						variant="h6"
-						sx={{
-							fontSize: "16px",
-							fontWeight: 600,
-							color: "#1e293b",
-						}}
-					>
-						{settings.title}
-					</Typography>
-					<IconButton
-						onClick={handleCloseSettings}
-						size="small"
-						sx={{
-							width: 32,
-							height: 32,
-							color: "#64748b",
-							"&:hover": {
-								backgroundColor: "#f1f5f9",
-								color: "#2563eb",
-							},
-						}}
-					>
-						<Close sx={{ fontSize: 18 }} />
-					</IconButton>
-				</Box>
+					{settings.title}
+				</Typography>
 				<Box 
 					sx={{
 						"& .MuiFormControl-root": {
@@ -109,7 +82,7 @@ const LeftToolbar = ({
 								borderRadius: "12px",
 								backgroundColor: "#f8fafc",
 								"& fieldset": {
-									borderColor: "#aeb8d5f5",
+									borderColor: "#e2e8f0",
 								},
 								"&:hover fieldset": {
 									borderColor: "#cbd5e1",
@@ -131,7 +104,7 @@ const LeftToolbar = ({
 								borderRadius: "3px",
 							},
 							"& .MuiSlider-rail": {
-								backgroundColor: "#aeb8d5f5",
+								backgroundColor: "#e2e8f0",
 								borderRadius: "3px",
 							},
 							"& .MuiSlider-thumb": {
@@ -163,35 +136,12 @@ const LeftToolbar = ({
 								"&.Mui-checked": {
 									color: "#2563eb",
 									"& + .MuiSwitch-track": {
-										backgroundColor: "#2563eb !important",
-										border: "2px solid #ffffff",
-										opacity: 1,
+										backgroundColor: "#2563eb",
 									},
-								},
-								"& + .MuiSwitch-track": {
-									border: "2px solid #cbd5e1",
 								},
 							},
 							"& .MuiSwitch-track": {
-								backgroundColor: "#cbd5e1",
-								border: "2px solid #cbd5e1",
-								opacity: 1,
-							},
-							"& .MuiSwitch-thumb": {
-								backgroundColor: "#ffffff",
-								border: "2px solid #cbd5e1",
-								boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-								"&:hover": {
-									boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
-								},
-							},
-							"& .Mui-checked .MuiSwitch-thumb": {
-								backgroundColor: "#ffffff",
-								border: "2px solid #2563eb",
-								boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
-								"&:hover": {
-									boxShadow: "0 4px 12px rgba(37, 99, 235, 0.4)",
-								},
+								backgroundColor: "#e2e8f0",
 							},
 						},
 					}}
@@ -208,7 +158,7 @@ const LeftToolbar = ({
 				sx={{
 					width: 72,
 					backgroundColor: "#ffffff",
-					borderRight: "1px solid #aeb8d5f5",
+					borderRight: "1px solid #d1d5db",
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",
@@ -239,6 +189,7 @@ LeftToolbar.propTypes = {
 	paintBucketSettings: PropTypes.object.isRequired,
 	setTextSettings: PropTypes.func.isRequired,
 	textSettings: PropTypes.object.isRequired,
+	onClearCanvas: PropTypes.func.isRequired,
 	canvas: PropTypes.object.isRequired,
 };
 

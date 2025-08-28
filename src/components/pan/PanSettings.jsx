@@ -1,7 +1,8 @@
+import PropTypes from "prop-types";
 import { Box, Typography, Alert } from "@mui/material";
-import { MouseOutlined, TouchAppOutlined } from "@mui/icons-material";
+import { PanTool, Mouse, TouchApp } from "@mui/icons-material";
 
-const PanSettings = () => {
+const PanSettings = ({ canvas }) => {
 	return (
 		<Box sx={{ padding: "12px 8px", height: "100%", overflow: "auto" }}>
 			{/* 提醒訊息 */}
@@ -31,7 +32,8 @@ const PanSettings = () => {
 					}}
 				>
 					<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-						檢視模式
+						<PanTool sx={{ fontSize: "18px" }} />
+						移動畫布工具
 					</Box>
 				</Typography>
 				<Typography 
@@ -44,7 +46,7 @@ const PanSettings = () => {
 						marginBottom: "8px",
 					}}
 				>
-					專門用於瀏覽和導航畫布
+					使用此工具來移動和瀏覽畫布區域
 				</Typography>
 			</Alert>
 
@@ -66,17 +68,17 @@ const PanSettings = () => {
 				<Box sx={{ 
 					marginBottom: "16px",
 					padding: "12px",
-					backgroundColor: "#F9FAFB",
+					backgroundColor: "#f8fafc",
 					borderRadius: "8px",
-					border: "1px solid #CBD5E1"
+					border: "1px solid #e2e8f0"
 				}}>
 					<Box sx={{ display: "flex", alignItems: "center", gap: 1, marginBottom: "8px" }}>
-						<MouseOutlined sx={{ fontSize: "24px", color: "#4B5563" }} />
+						<Mouse sx={{ fontSize: "16px", color: "#6b7280" }} />
 						<Typography 
 							sx={{ 
-								fontSize: "14px !important",
+								fontSize: "13px !important",
 								fontWeight: "600 !important",
-								color: "#1F2937 !important",
+								color: "#374151 !important",
 								fontFamily: '"Noto Sans TC", sans-serif !important',
 							}}
 						>
@@ -86,7 +88,7 @@ const PanSettings = () => {
 					<Typography 
 						sx={{ 
 							fontSize: "12px !important",
-							color: "#374151 !important",
+							color: "#6b7280 !important",
 							fontFamily: '"Noto Sans TC", sans-serif !important',
 							lineHeight: 1.5,
 						}}
@@ -103,17 +105,17 @@ const PanSettings = () => {
 				{/* 平板端操作 */}
 				<Box sx={{ 
 					padding: "12px",
-					backgroundColor: "#F9FAFB",
+					backgroundColor: "#f0f9ff",
 					borderRadius: "8px",
-					border: "1px solid #CBD5E1"
+					border: "1px solid #bae6fd"
 				}}>
 					<Box sx={{ display: "flex", alignItems: "center", gap: 1, marginBottom: "8px" }}>
-						<TouchAppOutlined sx={{ fontSize: "24px", color: "#4B5563" }} />
+						<TouchApp sx={{ fontSize: "16px", color: "#0ea5e9" }} />
 						<Typography 
 							sx={{ 
-								fontSize: "14px !important",
+								fontSize: "13px !important",
 								fontWeight: "600 !important",
-								color: "#1F2937 !important",
+								color: "#374151 !important",
 								fontFamily: '"Noto Sans TC", sans-serif !important',
 							}}
 						>
@@ -123,23 +125,46 @@ const PanSettings = () => {
 					<Typography 
 						sx={{ 
 							fontSize: "12px !important",
-							color: "#374151 !important",
+							color: "#6b7280 !important",
 							fontFamily: '"Noto Sans TC", sans-serif !important',
 							lineHeight: 1.5,
 						}}
 					>
 						<Box component="span" sx={{ display: "block", marginBottom: "4px" }}>
-							• 移動工具：單指拖移即可移動畫布
+							• 單指拖移即可移動畫布
 						</Box>
 						<Box component="span" sx={{ display: "block" }}>
-							• 其他工具下：雙指縮放畫布+移動畫布
+							• 雙指縮放調整畫布比例
 						</Box>
 					</Typography>
 				</Box>
+			</Box>
+
+			{/* 提示區塊 */}
+			<Box sx={{ 
+				padding: "12px",
+				backgroundColor: "#fefce8",
+				borderRadius: "8px",
+				border: "1px solid #fde047"
+			}}>
+				<Typography 
+					sx={{ 
+						fontSize: "12px !important",
+						color: "#a16207 !important",
+						fontFamily: '"Noto Sans TC", sans-serif !important',
+						lineHeight: 1.5,
+						fontWeight: "500 !important",
+					}}
+				>
+					💡 提示：移動工具啟用時，物件將無法選取。如需編輯物件，請切換回選擇工具。
+				</Typography>
 			</Box>
 		</Box>
 	);
 };
 
+PanSettings.propTypes = {
+	canvas: PropTypes.object,
+};
 
 export default PanSettings;

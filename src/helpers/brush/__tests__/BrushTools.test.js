@@ -126,7 +126,7 @@ jest.mock("fabric", () => {
 			Object.assign(this, options);
 		}
 
-		render() {
+		render(ctx) {
 			// 模擬渲染
 		}
 	}

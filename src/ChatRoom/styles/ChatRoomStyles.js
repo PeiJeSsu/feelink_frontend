@@ -12,7 +12,7 @@ export const chatRoomStyles = {
     },
     header: {
         padding: "16px 20px 12px 20px",
-        borderBottom: "1px solid #aeb8d5f5",
+        borderBottom: "1px solid #e5e7eb",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -44,7 +44,7 @@ export const chatRoomStyles = {
     },
     inputArea: {
         padding: "16px",
-        borderTop: "1px solid #00000056",
+        borderTop: "1px solid #e5e7eb",
         backgroundColor: "#ffffff",
         flexShrink: 0, // 確保輸入區域不被壓縮
         minWidth: 0, // 確保可以縮小

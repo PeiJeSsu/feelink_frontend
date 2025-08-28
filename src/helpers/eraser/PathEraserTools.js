@@ -29,7 +29,7 @@ export const setupPathEraser = (canvas, settings) => {
 	// 設置橡皮擦事件
 	const setupEraserEvents = (eraser) => {
 		// 監聽橡皮擦開始事件
-		eraser.on("start", () => {
+		eraser.on("start", (e) => {
 			console.log("開始擦除");
 		});
 

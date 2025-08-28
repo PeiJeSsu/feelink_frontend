@@ -263,7 +263,7 @@ export const buttonStyles = {
 // 分隔線樣式
 export const dividerStyles = {
     flex: 1,
-    backgroundColor: "#aeb8d5f5",
+    backgroundColor: "#e2e8f0",
 };
 
 // 登入模式標題樣式

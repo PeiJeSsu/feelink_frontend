@@ -19,19 +19,19 @@ class CrayonBrush extends fabric.BaseBrush {
         this._drawn = false;
     }
 
-    onMouseDown(pointer) {
+    onMouseDown(pointer, options) {
         this.canvas.contextTop.globalAlpha = this.opacity;
         this._size = this.width / 2 + this._baseWidth;
         this._drawn = false;
         this.set(pointer);
     }
 
-    onMouseMove(pointer) {
+    onMouseMove(pointer, options) {
         this.update(pointer);
         this.draw(this.canvas.contextTop);
     }
 
-    onMouseUp() {
+    onMouseUp(options) {
         if (this._drawn) {
             convertToImg(this.canvas).then((img) => {
                 img.setCoords();

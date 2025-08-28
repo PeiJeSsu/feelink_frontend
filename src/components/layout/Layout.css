@@ -2,7 +2,7 @@
 .chat-container {
 	position: relative;
 	background-color: #ffffff;
-	border-left: 1px solid #aeb8d5f5;
+	border-left: 1px solid #e5e7eb;
 	transition: all 0.05s ease-in-out;
 	overflow: hidden;
 }
@@ -126,7 +126,7 @@ body.react-resizable-cursor-ew {
 /* 深色模式支援 */
 @media (prefers-color-scheme: dark) {
 	.chat-container {
-		border-left: 1px solid #aeb8d5f5;
+		border-left: 1px solid #374151;
 	}
 	
 	.react-resizable-handle-w:hover {

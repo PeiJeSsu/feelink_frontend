@@ -170,7 +170,7 @@ export const sendCanvasAnalysisToBackendStream = async (messageText, canvasImage
     createSSEStream(`${apiConfig.defaults.baseURL}/analysis`, formData, onToken, onComplete, onError);
 };
 
-// AI 繪圖串流 API
+// 🎯 新增：AI 繪圖串流 API
 export const callAIDrawingAPIStream = (messageText, canvasData, removeBackground = true, chatroomId, onToken, onComplete, onError, onImageGenerated) => {
     const requestData = {
         text: messageText,
@@ -199,14 +199,13 @@ export const sendMessage = (text, conversationCount, hasDefaultQuestion, chatroo
     }));
 };
 
-// AI 繪圖 API (非串流版本，保留向後相容)
-export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true, chatroomId, mode = 'drawing') => {
+// 🎯 修改：AI 繪圖 API (非串流版本，保留向後相容)
+export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true, chatroomId) => {
     const requestData = {
         text: messageText,
         imageData: canvasData,
         removeBackground: removeBackground,
-        chatroomId: chatroomId,
-        mode: mode
+        chatroomId: chatroomId
     };
 
     return apiConfig.post(`/generate/simple`, requestData, {
@@ -245,7 +244,7 @@ export const analysisImage = (text, file, chatroomId) => {
     });
 };
 
-// 載入聊天室的歷史訊息
+// 🎯 載入聊天室的歷史訊息
 export const loadChatroomMessages = async (chatroomId) => {
     try {
         console.log('正在載入聊天室訊息:', chatroomId);
@@ -257,7 +256,7 @@ export const loadChatroomMessages = async (chatroomId) => {
     }
 };
 
-// 只載入文字訊息（非畫布資料）
+// 🎯 只載入文字訊息（非畫布資料）
 export const loadChatroomTextMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/text`);
@@ -268,7 +267,7 @@ export const loadChatroomTextMessages = async (chatroomId) => {
     }
 };
 
-// 載入畫布資料
+// 🎯 載入畫布資料
 export const loadChatroomDrawingMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/drawing`);
@@ -279,7 +278,7 @@ export const loadChatroomDrawingMessages = async (chatroomId) => {
     }
 };
 
-// 載入使用者訊息
+// 🎯 載入使用者訊息
 export const loadUserMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/user`);
@@ -290,7 +289,7 @@ export const loadUserMessages = async (chatroomId) => {
     }
 };
 
-// 載入AI訊息
+// 🎯 載入AI訊息
 export const loadAIMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/ai`);

@@ -40,13 +40,6 @@ export function handleAIDrawing(message, setMessage, onAIDrawing) {
 	}
 }
 
-export function handleGenerateObject(message, setMessage, onGenerateObject) {
-	if (onGenerateObject) {
-		onGenerateObject(message);
-		setMessage('');
-	}
-}
-
 export function handleKeyDown(event, message, setMessage, onSendMessage, disabled) {
 	// 檢查是否按下 Enter 鍵但沒有按住 Shift 鍵
 	if (event.key === 'Enter' && !event.shiftKey) {

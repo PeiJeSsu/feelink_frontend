@@ -34,5 +34,3 @@ yarn-error.log*
 .idea
 .instructions.md
 .env
-eslint.config.mjs
-/jest-stare

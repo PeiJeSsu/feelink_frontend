@@ -39,7 +39,7 @@ describe("WebBrush", () => {
 			return {};
 		});
 		global.fabric = global.fabric || {};
-		global.fabric.FabricImage = { fromURL: jest.fn(() => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
+		global.fabric.FabricImage = { fromURL: jest.fn((url) => Promise.resolve({ set: jest.fn(), setCoords: jest.fn() })) };
 		require("../../../../utils/BrushUtils").colorValues.mockReturnValue([1, 2, 3]);
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve({ setCoords: jest.fn() }));
 	});
@@ -99,20 +99,15 @@ describe("WebBrush", () => {
 		brush._points = [{ x: 1, y: 2 }];
 		const img = { setCoords: jest.fn() };
 		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve(img));
-		
-		brush.onMouseUp();
-		
-		// 等待 Promise 解析
-		await new Promise(resolve => setTimeout(resolve, 0));
-		
+		await brush.onMouseUp();
 		expect(mockCanvas.add).toHaveBeenCalledWith(img);
 		expect(mockCanvas.clearContext).toHaveBeenCalledWith(mockCtx);
 	});
 
-	it("onMouseUp 無繪製時不呼叫 convertToImg", () => {
+	it("onMouseUp 無繪製時不呼叫 convertToImg", async () => {
 		const brush = new WebBrush(mockCanvas);
 		brush._count = 0;
-		brush.onMouseUp();
+		await brush.onMouseUp();
 		expect(mockCanvas.add).not.toHaveBeenCalled();
 	});
 

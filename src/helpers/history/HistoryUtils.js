@@ -51,7 +51,7 @@ export const deserializeCanvasState = async (canvas, jsonState) => {
 	try {
 		const state = JSON.parse(jsonState);
 
-		await new Promise((resolve) => {
+		await new Promise((resolve, reject) => {
 			canvas.loadFromJSON(state, () => {
 				if (currentViewport) {
 					canvas.setViewportTransform(currentViewport);

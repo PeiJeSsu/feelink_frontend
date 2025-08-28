@@ -30,11 +30,11 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage, chat
 };
 
 // AI 繪圖函數，增加 chatroomId 參數和去背邏輯 (非串流版本)
-export const sendAIDrawingToBackend = async (messageText, canvasData, chatroomId, mode = 'drawing') => {
+export const sendAIDrawingToBackend = async (messageText, canvasData, chatroomId) => {
     const defaultMessage = "請根據這張圖片生成新的內容";
 
     // 添加 chatroomId 參數到 API 調用
-    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, chatroomId, mode));
+    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, chatroomId));
 };
 
 // 新增：AI 繪圖串流函數
