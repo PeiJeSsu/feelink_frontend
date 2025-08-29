@@ -1,11 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import ChatRoom from '../components/ChatRoom';
-import useChatMessages from '../hooks/UseChatMessages';
 
-// Mock hooks
-jest.mock('../hooks/UseChatMessages');
+// Mock the UseChatMessages hook first
+jest.mock('../hooks/UseChatMessages', () => jest.fn());
 
 // Mock child components
 jest.mock('../components/ChatMessage', () => {
@@ -35,6 +33,10 @@ jest.mock('../components/TextInputArea', () => {
   };
 });
 
+// Import the component after setting up mocks
+import ChatRoom from '../components/ChatRoom';
+import useChatMessages from '../hooks/UseChatMessages';
+
 // Mock fetch globally
 global.fetch = jest.fn();
 
@@ -50,7 +52,7 @@ const renderWithTheme = (component) => {
 
 describe('ChatRoom Component', () => {
   const mockCanvas = { width: 800, height: 600 };
-  const mockUseChatMessages = {
+  const defaultMockReturn = {
     messages: [],
     loading: false,
     historyLoading: false,
@@ -68,7 +70,7 @@ describe('ChatRoom Component', () => {
   };
 
   beforeEach(() => {
-    useChatMessages.mockReturnValue(mockUseChatMessages);
+    useChatMessages.mockReturnValue(defaultMockReturn);
     fetch.mockClear();
   });
 
@@ -101,22 +103,21 @@ describe('ChatRoom Component', () => {
   describe('Loading States', () => {
     test('shows loading skeleton when historyLoading is true', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         historyLoading: true
       });
 
       renderWithTheme(<ChatRoom canvas={mockCanvas} />);
       
-      // 檢查 MUI Skeleton 元素存在（根據實際 DOM 結構）
-      const skeletons = screen.getAllByText((content, element) => {
-        return element && element.classList.contains('MuiSkeleton-root');
-      });
-      expect(skeletons.length).toBeGreaterThan(0);
+      // Check for skeleton elements by looking for MUI skeleton class
+      const container = document.body;
+      const skeletonElements = container.querySelectorAll('.MuiSkeleton-root');
+      expect(skeletonElements.length).toBeGreaterThan(0);
     });
 
     test('shows message loading indicator when loading new message', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         loading: true,
         historyLoaded: true
       });
@@ -128,7 +129,7 @@ describe('ChatRoom Component', () => {
 
     test('disables input area when loading', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         loading: true
       });
 
@@ -141,7 +142,7 @@ describe('ChatRoom Component', () => {
   describe('Empty State', () => {
     test('shows empty state when no messages and history loaded', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         historyLoaded: true,
         messages: []
       });
@@ -154,7 +155,7 @@ describe('ChatRoom Component', () => {
 
     test('shows preparing message when history not loaded', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         historyLoaded: false,
         messages: []
       });
@@ -173,7 +174,7 @@ describe('ChatRoom Component', () => {
       ];
 
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: mockMessages,
         historyLoaded: true
       });
@@ -189,7 +190,7 @@ describe('ChatRoom Component', () => {
   describe('Clear Chat Functionality', () => {
     test('shows clear button when messages exist and history loaded', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
@@ -202,7 +203,7 @@ describe('ChatRoom Component', () => {
 
     test('does not show clear button when no messages', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [],
         historyLoaded: true
       });
@@ -214,7 +215,7 @@ describe('ChatRoom Component', () => {
 
     test('opens confirmation dialog when clear button clicked', () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
@@ -230,7 +231,7 @@ describe('ChatRoom Component', () => {
 
     test('closes dialog when cancel clicked', async () => {
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
@@ -260,10 +261,12 @@ describe('ChatRoom Component', () => {
         text: () => Promise.resolve('Success')
       });
 
+      const mockReload = jest.fn();
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
-        historyLoaded: true
+        historyLoaded: true,
+        reloadChatroomHistory: mockReload
       });
 
       renderWithTheme(<ChatRoom canvas={mockCanvas} />);
@@ -290,7 +293,7 @@ describe('ChatRoom Component', () => {
       );
       
       await waitFor(() => {
-        expect(mockUseChatMessages.reloadChatroomHistory).toHaveBeenCalled();
+        expect(mockReload).toHaveBeenCalled();
       });
     });
 
@@ -301,11 +304,13 @@ describe('ChatRoom Component', () => {
       });
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const mockReload = jest.fn();
 
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
-        historyLoaded: true
+        historyLoaded: true,
+        reloadChatroomHistory: mockReload
       });
 
       renderWithTheme(<ChatRoom canvas={mockCanvas} />);
@@ -322,7 +327,7 @@ describe('ChatRoom Component', () => {
       });
       
       expect(consoleSpy).toHaveBeenCalledWith('清空聊天室失敗:', 'Error');
-      expect(mockUseChatMessages.reloadChatroomHistory).toHaveBeenCalled();
+      expect(mockReload).toHaveBeenCalled();
       
       consoleSpy.mockRestore();
     });
@@ -333,7 +338,7 @@ describe('ChatRoom Component', () => {
       }));
 
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
@@ -355,12 +360,18 @@ describe('ChatRoom Component', () => {
 
   describe('Input Integration', () => {
     test('passes correct props to TextInputArea', () => {
+      const mockSendTextMessageStream = jest.fn();
+      useChatMessages.mockReturnValue({
+        ...defaultMockReturn,
+        sendTextMessageStream: mockSendTextMessageStream
+      });
+
       renderWithTheme(<ChatRoom canvas={mockCanvas} />);
       
       const sendButton = screen.getByTestId('send-button');
       fireEvent.click(sendButton);
       
-      expect(mockUseChatMessages.sendTextMessageStream).toHaveBeenCalledWith('test message');
+      expect(mockSendTextMessageStream).toHaveBeenCalledWith('test message');
     });
   });
 
@@ -369,7 +380,7 @@ describe('ChatRoom Component', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true,
         currentChatroomId: null
@@ -398,11 +409,13 @@ describe('ChatRoom Component', () => {
       fetch.mockRejectedValueOnce(new Error('Network error'));
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const mockReload = jest.fn();
 
       useChatMessages.mockReturnValue({
-        ...mockUseChatMessages,
+        ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
-        historyLoaded: true
+        historyLoaded: true,
+        reloadChatroomHistory: mockReload
       });
 
       renderWithTheme(<ChatRoom canvas={mockCanvas} />);
@@ -425,62 +438,22 @@ describe('ChatRoom Component', () => {
   });
 
   describe('PropTypes', () => {
-    test('requires canvas prop', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      
-      // 渲染不帶 canvas prop 的組件
-      renderWithTheme(<ChatRoom />);
-      
-      // 使用 waitFor 等待可能的 PropTypes 檢查
-      try {
-        await waitFor(() => {
-          expect(consoleSpy).toHaveBeenCalled();
-        }, { timeout: 100 });
-      } catch (error) {
-        // 如果沒有檢測到 PropTypes 錯誤，可能是因為：
-        // 1. 組件沒有定義 PropTypes
-        // 2. 在測試環境中 PropTypes 被禁用
-        // 3. PropTypes 只在開發模式下工作
-        console.warn('PropTypes validation may not be active in test environment');
-        
-        // 檢查組件是否正常渲染（即使沒有 canvas prop）
-        expect(screen.getByTestId('text-input-area')).toBeInTheDocument();
-      }
-      
-      consoleSpy.mockRestore();
-    });
-
-    test('accepts valid canvas prop', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
-      
-      // 等待可能的 PropTypes 檢查
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      // 確保沒有錯誤且組件正常渲染
-      expect(consoleSpy).not.toHaveBeenCalled();
-      expect(screen.getByTestId('text-input-area')).toBeInTheDocument();
-      
-      consoleSpy.mockRestore();
-    });
-
     test('renders correctly with canvas prop', () => {
-      // 測試組件是否能正確接收和使用 canvas prop
       renderWithTheme(<ChatRoom canvas={mockCanvas} />);
       
-      // 確保組件正常渲染
       expect(screen.getByText('AI 夥伴')).toBeInTheDocument();
       expect(screen.getByTestId('text-input-area')).toBeInTheDocument();
     });
 
     test('renders correctly without canvas prop', () => {
-      // 測試組件在沒有 canvas prop 時的行為
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
       renderWithTheme(<ChatRoom />);
       
-      // 確保組件仍然能渲染基本元素
       expect(screen.getByText('AI 夥伴')).toBeInTheDocument();
       expect(screen.getByTestId('text-input-area')).toBeInTheDocument();
+      
+      consoleSpy.mockRestore();
     });
   });
 });

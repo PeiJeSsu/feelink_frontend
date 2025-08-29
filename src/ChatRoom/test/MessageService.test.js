@@ -45,10 +45,22 @@ import {
     loadAIMessages
 } from '../helpers/MessageAPI';
 
+// Mock localStorage
+const mockLocalStorage = {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn()
+};
+Object.defineProperty(window, 'localStorage', {
+    value: mockLocalStorage
+});
+
 describe('MessageService', () => {
     beforeEach(() => {
         // 清除所有 mock 的調用記錄
         jest.clearAllMocks();
+        // 設定預設的 personality
+        mockLocalStorage.getItem.mockReturnValue('default');
     });
 
     describe('sendTextToBackend', () => {
@@ -69,7 +81,8 @@ describe('MessageService', () => {
                 payload.text, 
                 payload.conversationCount, 
                 payload.hasDefaultQuestion, 
-                chatroomId
+                chatroomId,
+                'default'  // 添加 personality 參數
             );
             expect(result).toEqual({
                 success: true,
@@ -91,6 +104,25 @@ describe('MessageService', () => {
                 error: errorMessage
             });
         });
+
+        it('應該使用自定義 personality', async () => {
+            const mockResponse = { content: '測試回應' };
+            sendMessage.mockResolvedValue(mockResponse);
+            mockLocalStorage.getItem.mockReturnValue('friendly');
+
+            const payload = { text: '測試訊息', conversationCount: 1, hasDefaultQuestion: false };
+            const chatroomId = 'chatroom123';
+
+            await sendTextToBackend(payload, chatroomId);
+
+            expect(sendMessage).toHaveBeenCalledWith(
+                payload.text, 
+                payload.conversationCount, 
+                payload.hasDefaultQuestion, 
+                chatroomId,
+                'friendly'
+            );
+        });
     });
 
     describe('sendImageToBackend', () => {
@@ -104,7 +136,12 @@ describe('MessageService', () => {
 
             const result = await sendImageToBackend(messageText, messageImage, chatroomId);
 
-            expect(analysisImage).toHaveBeenCalledWith(messageText, messageImage, chatroomId);
+            expect(analysisImage).toHaveBeenCalledWith(
+                messageText, 
+                messageImage, 
+                chatroomId,
+                'default'  // 添加 personality 參數
+            );
             expect(result).toEqual({
                 success: true,
                 content: mockResponse.content
@@ -135,7 +172,12 @@ describe('MessageService', () => {
 
             const result = await sendCanvasAnalysisToBackend(messageText, canvasImage, chatroomId);
 
-            expect(analysisImage).toHaveBeenCalledWith(messageText, canvasImage, chatroomId);
+            expect(analysisImage).toHaveBeenCalledWith(
+                messageText, 
+                canvasImage, 
+                chatroomId,
+                'default'  // 添加 personality 參數
+            );
             expect(result.success).toBe(true);
         });
 
@@ -148,7 +190,12 @@ describe('MessageService', () => {
 
             await sendCanvasAnalysisToBackend(null, canvasImage, chatroomId);
 
-            expect(analysisImage).toHaveBeenCalledWith('請分析這張圖片', canvasImage, chatroomId);
+            expect(analysisImage).toHaveBeenCalledWith(
+                '請分析這張圖片', 
+                canvasImage, 
+                chatroomId,
+                'default'  // 添加 personality 參數
+            );
         });
     });
 
@@ -163,7 +210,13 @@ describe('MessageService', () => {
 
             const result = await sendAIDrawingToBackend(messageText, canvasData, chatroomId);
 
-            expect(callAIDrawingAPI).toHaveBeenCalledWith(messageText, canvasData, true, chatroomId);
+            expect(callAIDrawingAPI).toHaveBeenCalledWith(
+                messageText, 
+                canvasData, 
+                true, 
+                chatroomId,
+                'drawing'  // 添加預設的 mode 參數
+            );
             expect(result).toEqual({
                 success: true,
                 content: mockResponse.content
@@ -180,7 +233,23 @@ describe('MessageService', () => {
                 '請根據這張圖片生成新的內容', 
                 'canvasData', 
                 true, 
-                'chatroom123'
+                'chatroom123',
+                'drawing'  // 添加預設的 mode 參數
+            );
+        });
+
+        it('應該支援自定義 mode 參數', async () => {
+            const mockResponse = { content: 'AI繪圖結果' };
+            callAIDrawingAPI.mockResolvedValue(mockResponse);
+
+            await sendAIDrawingToBackend('測試', 'canvasData', 'chatroom123', 'custom');
+
+            expect(callAIDrawingAPI).toHaveBeenCalledWith(
+                '測試', 
+                'canvasData', 
+                true, 
+                'chatroom123',
+                'custom'
             );
         });
     });
@@ -277,7 +346,6 @@ describe('MessageService', () => {
                 mockCallbacks.onToken,
                 mockCallbacks.onComplete,
                 mockCallbacks.onError
-
             );
 
             expect(sendImageToBackendStream).toHaveBeenCalledWith(
@@ -453,7 +521,12 @@ describe('MessageService', () => {
 
             await sendCanvasAnalysisToBackend('', 'canvasData', 'chatroom123');
 
-            expect(analysisImage).toHaveBeenCalledWith('請分析這張圖片', 'canvasData', 'chatroom123');
+            expect(analysisImage).toHaveBeenCalledWith(
+                '請分析這張圖片', 
+                'canvasData', 
+                'chatroom123',
+                'default'  // 添加 personality 參數
+            );
         });
 
         it('sendAIDrawingToBackend 應該處理空字串訊息', async () => {
@@ -466,7 +539,41 @@ describe('MessageService', () => {
                 '請根據這張圖片生成新的內容',
                 'canvasData',
                 true,
-                'chatroom123'
+                'chatroom123',
+                'drawing'  // 添加預設的 mode 參數
+            );
+        });
+    });
+
+    describe('getSelectedPersonality', () => {
+        it('應該從 localStorage 獲取 personality', async () => {
+            mockLocalStorage.getItem.mockReturnValue('creative');
+            
+            const payload = { text: '測試', conversationCount: 1, hasDefaultQuestion: false };
+            await sendTextToBackend(payload, 'chatroom123');
+
+            expect(mockLocalStorage.getItem).toHaveBeenCalledWith('selectedPersonality');
+            expect(sendMessage).toHaveBeenCalledWith(
+                '測試', 
+                1, 
+                false, 
+                'chatroom123', 
+                'creative'
+            );
+        });
+
+        it('應該使用預設值當 localStorage 為空時', async () => {
+            mockLocalStorage.getItem.mockReturnValue(null);
+            
+            const payload = { text: '測試', conversationCount: 1, hasDefaultQuestion: false };
+            await sendTextToBackend(payload, 'chatroom123');
+
+            expect(sendMessage).toHaveBeenCalledWith(
+                '測試', 
+                1, 
+                false, 
+                'chatroom123', 
+                'default'
             );
         });
     });

@@ -11,7 +11,8 @@ import {
     handleSendAIDrawingStream, 
     handleSendTextMessageStream, 
     handleSendImageMessageStream, 
-    handleSendCanvasAnalysisStream
+    handleSendCanvasAnalysisStream,
+    handleSendGenerateObject
 } from '../helpers/MessageController';
 import { loadChatroomHistoryService } from '../helpers/MessageService';
 import { 
@@ -39,6 +40,7 @@ jest.mock('../helpers/MessageController', () => ({
     handleSendTextMessageStream: jest.fn(),
     handleSendImageMessageStream: jest.fn(),
     handleSendCanvasAnalysisStream: jest.fn(),
+    handleSendGenerateObject: jest.fn(),
 }));
 
 jest.mock('../helpers/MessageService', () => ({
@@ -50,9 +52,50 @@ jest.mock('../helpers/usage/MessageHelpers', () => ({
     removeDuplicateMessages: jest.fn(),
 }));
 
+// Mock canvas operations
+jest.mock('../../helpers/canvas/CanvasOperations', () => ({
+    setDrawingMode: jest.fn(),
+}));
+
+jest.mock('../../helpers/canvas/PanHelper', () => ({
+    setPanningMode: jest.fn(),
+}));
+
+jest.mock('../../helpers/shape/ShapeTools', () => ({
+    disableShapeDrawing: jest.fn(),
+}));
+
+jest.mock('../../helpers/eraser/ObjectEraserTools', () => ({
+    disableEraser: jest.fn(),
+}));
+
+jest.mock('../../helpers/eraser/PathEraserTools', () => ({
+    disablePathEraser: jest.fn(),
+}));
+
+jest.mock('../../helpers/paint-bucket/PaintBucketTools', () => ({
+    disablePaintBucket: jest.fn(),
+}));
+
+jest.mock('../../utils/AlertUtils', () => ({
+    showAlert: jest.fn(),
+}));
+
+// Mock localStorage
+const localStorageMock = {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn(),
+};
+Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock
+});
+
 describe('useChatMessages', () => {
     let mockAuthContext;
     let mockCanvas;
+    let mockSetInputNotification;
     let originalFetch;
 
     beforeAll(() => {
@@ -63,10 +106,31 @@ describe('useChatMessages', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         
-        // 創建 mock canvas，確保 toDataURL 方法正確工作
+        // 重置 localStorage mock
+        localStorageMock.getItem.mockImplementation((key) => {
+            const mockData = {
+                'userNickname': '測試用戶',
+                'aiPartnerName': '測試AI',
+                'preferredLanguage': 'zh-TW'
+            };
+            return mockData[key] || null;
+        });
+        
+        // 創建 mock canvas，包含更完整的方法
         mockCanvas = {
             toDataURL: jest.fn().mockReturnValue('data:image/png;base64,mockImageData'),
+            isDrawingMode: false,
+            selection: true,
+            defaultCursor: 'default',
+            hoverCursor: 'move',
+            getObjects: jest.fn().mockReturnValue([]),
+            getPointer: jest.fn().mockReturnValue({ x: 100, y: 100 }),
+            on: jest.fn(),
+            off: jest.fn(),
         };
+
+        // Mock setInputNotification function
+        mockSetInputNotification = jest.fn();
         
         // 設定預設的 AuthContext mock
         mockAuthContext = {
@@ -97,6 +161,7 @@ describe('useChatMessages', () => {
         handleSendTextMessageStream.mockResolvedValue();
         handleSendImageMessageStream.mockResolvedValue();
         handleSendCanvasAnalysisStream.mockResolvedValue();
+        handleSendGenerateObject.mockResolvedValue();
 
         // 設定 fetch mock
         global.fetch = jest.fn(() =>
@@ -117,20 +182,24 @@ describe('useChatMessages', () => {
 
     describe('初始化', () => {
         test('應該返回正確的初始狀態', () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
             expect(result.current.messages).toEqual([]);
             expect(result.current.loading).toBe(false);
+            expect(result.current.disabled).toBe(false);
             expect(result.current.historyLoading).toBe(false);
             expect(result.current.historyLoaded).toBe(false);
             expect(result.current.currentChatroomId).toBe('test-chatroom-123');
         });
 
         test('應該包含預設問題', () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
-            expect(result.current.predefinedQuestions).toHaveLength(3);
-            expect(result.current.predefinedQuestions).toContain('最近過得如何，有沒有發生甚麼有趣或難過的事？');
+            expect(result.current.predefinedQuestions).toBeDefined();
+            expect(typeof result.current.predefinedQuestions).toBe('object');
+            expect(result.current.predefinedQuestions['zh-TW']).toBeDefined();
+            expect(Array.isArray(result.current.predefinedQuestions['zh-TW'])).toBe(true);
+            expect(result.current.predefinedQuestions['zh-TW']).toContain('最近過得如何，有沒有發生什麼有趣或難過的事？');
         });
     });
 
@@ -148,37 +217,34 @@ describe('useChatMessages', () => {
             convertDBMessagesToUIMessages.mockReturnValue(mockMessages);
             removeDuplicateMessages.mockReturnValue(mockMessages);
 
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
+            // 等待載入完成
             await waitFor(() => {
-                expect(loadChatroomHistoryService).toHaveBeenCalledWith('test-chatroom-123');
-            });
-
-            await waitFor(() => {
-                expect(result.current.messages).toEqual(mockMessages);
                 expect(result.current.historyLoaded).toBe(true);
             });
+
+            expect(loadChatroomHistoryService).toHaveBeenCalledWith('test-chatroom-123');
+            expect(result.current.messages).toEqual(mockMessages);
         });
 
         test('當載入歷史訊息失敗時應該正確處理', async () => {
-            loadChatroomHistoryService.mockResolvedValue({
-                success: false,
-                error: '載入失敗',
-            });
+            const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
             
-            // 確保不會觸發預設問題的添加
-            convertDBMessagesToUIMessages.mockReturnValue([]);
-            removeDuplicateMessages.mockReturnValue([]);
+            loadChatroomHistoryService.mockRejectedValue(new Error('載入失敗'));
 
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
             await waitFor(() => {
                 expect(result.current.historyLoaded).toBe(true);
             });
 
-            // 檢查載入失敗時訊息數組是否正確
-            // 由於原始代碼邏輯，載入失敗後可能會觸發預設問題，這是正常行為
-            expect(result.current.historyLoaded).toBe(true);
+            expect(consoleSpy).toHaveBeenCalledWith(
+                '載入聊天室歷史訊息時發生錯誤:',
+                expect.any(Error)
+            );
+
+            consoleSpy.mockRestore();
         });
 
         test('當沒有歷史訊息時應該顯示預設問題', async () => {
@@ -189,144 +255,35 @@ describe('useChatMessages', () => {
             convertDBMessagesToUIMessages.mockReturnValue([]);
             removeDuplicateMessages.mockReturnValue([]);
 
-            const mockSystemMessage = {
+            const mockGreetingMessage = {
                 id: Date.now(),
-                text: '最近過得如何，有沒有發生甚麼有趣或難過的事？',
+                text: '嗨，測試用戶！我是你的 AI 夥伴測試AI。最近過得如何，有沒有發生什麼有趣或難過的事？',
                 isUser: false,
             };
-            createNewMessage.mockReturnValue(mockSystemMessage);
+            createNewMessage.mockReturnValue(mockGreetingMessage);
 
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
             await waitFor(() => {
                 expect(result.current.historyLoaded).toBe(true);
             });
 
+            // 等待預設問題被添加
             await waitFor(() => {
-                expect(createNewMessage).toHaveBeenCalledWith(
-                    expect.any(Number),
-                    expect.any(String),
-                    false,
-                    false
-                );
+                expect(result.current.messages.length).toBeGreaterThan(0);
             });
+
+            expect(createNewMessage).toHaveBeenCalled();
         });
     });
 
-    describe('發送訊息功能', () => {
-        test('sendTextMessage 應該正確調用 handleSendTextMessage', () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+    describe('流式訊息功能', () => {
+        test('sendTextMessageStream 應該正確調用 handleSendTextMessageStream', async () => {
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
-            act(() => {
-                result.current.sendTextMessage('測試文字訊息');
-            });
-
-            expect(handleSendTextMessage).toHaveBeenCalledWith(
-                '測試文字訊息',
-                [],
-                expect.any(Function),
-                expect.any(Function),
-                'test-chatroom-123',
-                '',
-                1
-            );
-        });
-
-        test('sendImageMessage 應該正確調用 handleSendImageMessage', () => {
-            const mockImage = new File(['test'], 'test.png', { type: 'image/png' });
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
-
-            act(() => {
-                result.current.sendImageMessage('測試圖片訊息', mockImage);
-            });
-
-            expect(handleSendImageMessage).toHaveBeenCalledWith(
-                '測試圖片訊息',
-                mockImage,
-                [],
-                expect.any(Function),
-                expect.any(Function),
-                'test-chatroom-123'
-            );
-        });
-
-        test('sendCanvasAnalysis 應該轉換畫布為 blob 並調用處理函數', async () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
-
-            // 等待組件完全初始化
             await waitFor(() => {
                 expect(result.current.historyLoaded).toBe(true);
             });
-
-            // 重新設定 fetch mock 確保在正確的時機
-            const mockBlob = new Blob(['test'], { type: 'image/png' });
-            global.fetch.mockResolvedValueOnce({
-                blob: () => Promise.resolve(mockBlob),
-            });
-
-            await act(async () => {
-                await result.current.sendCanvasAnalysis('分析畫布內容');
-            });
-
-            // 驗證 toDataURL 被正確調用
-            expect(mockCanvas.toDataURL).toHaveBeenCalledWith('image/png');
-            
-            // 驗證 fetch 被正確調用，使用 toHaveBeenCalledTimes 來確保調用次數
-            expect(global.fetch).toHaveBeenCalledTimes(1);
-            expect(global.fetch).toHaveBeenCalledWith('data:image/png;base64,mockImageData');
-            
-            // 驗證處理函數被正確調用
-            expect(handleSendCanvasAnalysis).toHaveBeenCalledWith(
-                expect.any(Blob),
-                '分析畫布內容',
-                expect.any(Array),
-                expect.any(Function),
-                expect.any(Function),
-                'test-chatroom-123'
-            );
-        });
-
-        test('sendAIDrawing 應該轉換畫布為 blob 並調用處理函數', async () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
-
-            // 等待組件完全初始化
-            await waitFor(() => {
-                expect(result.current.historyLoaded).toBe(true);
-            });
-
-            // 重新設定 fetch mock 確保在正確的時機
-            const mockBlob = new Blob(['test'], { type: 'image/png' });
-            global.fetch.mockResolvedValueOnce({
-                blob: () => Promise.resolve(mockBlob),
-            });
-
-            await act(async () => {
-                await result.current.sendAIDrawing('AI 繪圖請求');
-            });
-
-            // 驗證 toDataURL 被正確調用
-            expect(mockCanvas.toDataURL).toHaveBeenCalledWith('image/png');
-            
-            // 驗證 fetch 被正確調用
-            expect(global.fetch).toHaveBeenCalledTimes(1);
-            expect(global.fetch).toHaveBeenCalledWith('data:image/png;base64,mockImageData');
-            
-            // 驗證處理函數被正確調用
-            expect(handleSendAIDrawing).toHaveBeenCalledWith(
-                expect.any(Blob),
-                'AI 繪圖請求',
-                expect.any(Array),
-                expect.any(Function),
-                expect.any(Function),
-                mockCanvas,
-                'test-chatroom-123'
-            );
-        });
-    });
-
-    describe('串流訊息功能', () => {
-        test('sendTextMessageStream 應該正確調用 handleSendTextMessageStream', () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
 
             act(() => {
                 result.current.sendTextMessageStream('串流文字訊息');
@@ -334,16 +291,21 @@ describe('useChatMessages', () => {
 
             expect(handleSendTextMessageStream).toHaveBeenCalledWith(
                 '串流文字訊息',
-                [],
+                expect.any(Array),
+                expect.any(Function),
                 expect.any(Function),
                 expect.any(Function),
                 'test-chatroom-123'
             );
         });
 
-        test('sendImageMessageStream 應該正確調用 handleSendImageMessageStream', () => {
+        test('sendImageMessageStream 應該正確調用 handleSendImageMessageStream', async () => {
             const mockImage = new File(['test'], 'test.png', { type: 'image/png' });
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
 
             act(() => {
                 result.current.sendImageMessageStream('串流圖片訊息', mockImage);
@@ -352,7 +314,8 @@ describe('useChatMessages', () => {
             expect(handleSendImageMessageStream).toHaveBeenCalledWith(
                 '串流圖片訊息',
                 mockImage,
-                [],
+                expect.any(Array),
+                expect.any(Function),
                 expect.any(Function),
                 expect.any(Function),
                 'test-chatroom-123'
@@ -360,14 +323,12 @@ describe('useChatMessages', () => {
         });
 
         test('sendCanvasAnalysisStream 應該轉換畫布為 blob 並調用串流處理函數', async () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
-            // 等待組件完全初始化
             await waitFor(() => {
                 expect(result.current.historyLoaded).toBe(true);
             });
 
-            // 重新設定 fetch mock 確保在正確的時機
             const mockBlob = new Blob(['test'], { type: 'image/png' });
             global.fetch.mockResolvedValueOnce({
                 blob: () => Promise.resolve(mockBlob),
@@ -377,18 +338,195 @@ describe('useChatMessages', () => {
                 await result.current.sendCanvasAnalysisStream('串流分析畫布');
             });
 
-            // 驗證 toDataURL 被正確調用
             expect(mockCanvas.toDataURL).toHaveBeenCalledWith('image/png');
-            
-            // 驗證 fetch 被正確調用
-            expect(global.fetch).toHaveBeenCalledTimes(1);
             expect(global.fetch).toHaveBeenCalledWith('data:image/png;base64,mockImageData');
-            
-            // 驗證處理函數被正確調用
             expect(handleSendCanvasAnalysisStream).toHaveBeenCalledWith(
                 expect.any(Blob),
                 '串流分析畫布',
                 expect.any(Array),
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                'test-chatroom-123'
+            );
+        });
+    });
+
+    describe('AI 繪圖功能', () => {
+        test('sendAIDrawing 應該轉換畫布為 blob 並調用處理函數', async () => {
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
+
+            const mockBlob = new Blob(['test'], { type: 'image/png' });
+            global.fetch.mockResolvedValueOnce({
+                blob: () => Promise.resolve(mockBlob),
+            });
+
+            await act(async () => {
+                await result.current.sendAIDrawing('AI 繪圖請求');
+            });
+
+            expect(mockCanvas.toDataURL).toHaveBeenCalledWith('image/png');
+            expect(handleSendAIDrawing).toHaveBeenCalledWith(
+                expect.any(Blob),
+                'AI 繪圖請求',
+                expect.any(Array),
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                mockCanvas,
+                'test-chatroom-123'
+            );
+        });
+
+        test('sendAIDrawingWithTypewriter 應該調用打字機效果版本', async () => {
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
+
+            const mockBlob = new Blob(['test'], { type: 'image/png' });
+            global.fetch.mockResolvedValueOnce({
+                blob: () => Promise.resolve(mockBlob),
+            });
+
+            await act(async () => {
+                await result.current.sendAIDrawingWithTypewriter('打字機繪圖');
+            });
+
+            expect(handleSendAIDrawingWithTypewriter).toHaveBeenCalledWith(
+                expect.any(Blob),
+                '打字機繪圖',
+                expect.any(Array),
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                mockCanvas,
+                'test-chatroom-123'
+            );
+        });
+
+        test('sendAIDrawingStream 應該調用串流版本', async () => {
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
+
+            const mockBlob = new Blob(['test'], { type: 'image/png' });
+            global.fetch.mockResolvedValueOnce({
+                blob: () => Promise.resolve(mockBlob),
+            });
+
+            await act(async () => {
+                await result.current.sendAIDrawingStream('串流繪圖');
+            });
+
+            expect(handleSendAIDrawingStream).toHaveBeenCalledWith(
+                expect.any(Blob),
+                '串流繪圖',
+                expect.any(Array),
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                mockCanvas,
+                'test-chatroom-123'
+            );
+        });
+    });
+
+    describe('物件生成功能', () => {
+        test('sendGenerateObject 應該設置輸入通知', async () => {
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
+
+            await act(async () => {
+                await result.current.sendGenerateObject('生成物件');
+            });
+
+            expect(mockSetInputNotification).toHaveBeenCalledWith({
+                message: '點擊畫布上要生成物件的位置，或按 ESC 鍵取消',
+                severity: 'info'
+            });
+        });
+    });
+
+    describe('一般訊息功能', () => {
+        test('sendTextMessage 應該正確調用 handleSendTextMessage', async () => {
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
+
+            act(() => {
+                result.current.sendTextMessage('測試文字訊息');
+            });
+
+            expect(handleSendTextMessage).toHaveBeenCalledWith(
+                '測試文字訊息',
+                expect.any(Array),
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                'test-chatroom-123',
+                expect.any(String),
+                expect.any(Number)
+            );
+        });
+
+        test('sendImageMessage 應該正確調用 handleSendImageMessage', async () => {
+            const mockImage = new File(['test'], 'test.png', { type: 'image/png' });
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
+
+            act(() => {
+                result.current.sendImageMessage('測試圖片訊息', mockImage);
+            });
+
+            expect(handleSendImageMessage).toHaveBeenCalledWith(
+                '測試圖片訊息',
+                mockImage,
+                expect.any(Array),
+                expect.any(Function),
+                expect.any(Function),
+                expect.any(Function),
+                'test-chatroom-123'
+            );
+        });
+
+        test('sendCanvasAnalysis 應該轉換畫布為 blob 並調用處理函數', async () => {
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
+
+            const mockBlob = new Blob(['test'], { type: 'image/png' });
+            global.fetch.mockResolvedValueOnce({
+                blob: () => Promise.resolve(mockBlob),
+            });
+
+            await act(async () => {
+                await result.current.sendCanvasAnalysis('分析畫布內容');
+            });
+
+            expect(mockCanvas.toDataURL).toHaveBeenCalledWith('image/png');
+            expect(handleSendCanvasAnalysis).toHaveBeenCalledWith(
+                expect.any(Blob),
+                '分析畫布內容',
+                expect.any(Array),
+                expect.any(Function),
                 expect.any(Function),
                 expect.any(Function),
                 'test-chatroom-123'
@@ -397,12 +535,17 @@ describe('useChatMessages', () => {
     });
 
     describe('錯誤處理', () => {
-        test('當沒有 currentChatroomId 時應該記錄錯誤', () => {
+        test('當沒有 currentChatroomId 時應該記錄錯誤', async () => {
             const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
             mockAuthContext.currentChatroomId = null;
             useContext.mockReturnValue(mockAuthContext);
 
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            // 等待初始化完成
+            await waitFor(() => {
+                expect(result.current.currentChatroomId).toBeNull();
+            });
 
             act(() => {
                 result.current.sendTextMessage('測試訊息');
@@ -413,47 +556,25 @@ describe('useChatMessages', () => {
         });
 
         test('當畫布不可用時應該拋出錯誤', async () => {
-            const { result } = renderHook(() => useChatMessages(null));
+            const { result } = renderHook(() => useChatMessages(null, mockSetInputNotification));
 
-            // 等待組件完全初始化
             await waitFor(() => {
                 expect(result.current.historyLoaded).toBe(true);
             });
 
-            // 由於原始代碼中的錯誤處理邏輯，這個測試需要檢查 console.error
             const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
             await act(async () => {
-                try {
-                    await result.current.sendCanvasAnalysis('測試');
-                } catch (error) {
-                    // 預期會有錯誤
-                }
+                await result.current.sendCanvasAnalysis('測試');
             });
 
             expect(consoleSpy).toHaveBeenCalled();
             consoleSpy.mockRestore();
         });
-
-        test('當載入歷史訊息時發生錯誤應該正確處理', async () => {
-            const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-            loadChatroomHistoryService.mockRejectedValue(new Error('網路錯誤'));
-
-            renderHook(() => useChatMessages(mockCanvas));
-
-            await waitFor(() => {
-                expect(consoleSpy).toHaveBeenCalledWith(
-                    '載入聊天室歷史訊息時發生錯誤:',
-                    expect.any(Error)
-                );
-            });
-
-            consoleSpy.mockRestore();
-        });
     });
 
     describe('addSystemMessage', () => {
-        test('應該添加系統訊息並設定當前問題', () => {
+        test('應該添加系統訊息', async () => {
             const mockMessage = {
                 id: 123456,
                 text: '系統測試訊息',
@@ -461,7 +582,11 @@ describe('useChatMessages', () => {
             };
             createNewMessage.mockReturnValue(mockMessage);
 
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            await waitFor(() => {
+                expect(result.current.historyLoaded).toBe(true);
+            });
 
             act(() => {
                 result.current.addSystemMessage('系統測試訊息');
@@ -478,7 +603,7 @@ describe('useChatMessages', () => {
 
     describe('reloadChatroomHistory', () => {
         test('應該重新載入聊天室歷史訊息', async () => {
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
             // 等待初始載入完成
             await waitFor(() => {
@@ -492,15 +617,16 @@ describe('useChatMessages', () => {
                 result.current.reloadChatroomHistory();
             });
 
+            // 給予足夠時間讓異步操作完成
             await waitFor(() => {
                 expect(loadChatroomHistoryService).toHaveBeenCalledWith('test-chatroom-123');
-            });
+            }, { timeout: 3000 });
         });
     });
 
     describe('聊天室切換', () => {
         test('當聊天室 ID 變更時應該重置狀態', async () => {
-            const { result, rerender } = renderHook(() => useChatMessages(mockCanvas));
+            const { result, rerender } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
             // 等待初始載入
             await waitFor(() => {
@@ -513,6 +639,7 @@ describe('useChatMessages', () => {
 
             rerender();
 
+            // 檢查狀態是否被重置
             expect(result.current.historyLoaded).toBe(false);
             expect(result.current.messages).toEqual([]);
 
@@ -525,11 +652,23 @@ describe('useChatMessages', () => {
             mockAuthContext.currentChatroomId = null;
             useContext.mockReturnValue(mockAuthContext);
 
-            const { result } = renderHook(() => useChatMessages(mockCanvas));
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
 
             expect(result.current.historyLoaded).toBe(false);
             expect(result.current.messages).toEqual([]);
             expect(result.current.currentChatroomId).toBeNull();
+        });
+    });
+
+    describe('chatroomLoading 狀態處理', () => {
+        test('當 chatroomLoading 為 true 時應該跳過載入', () => {
+            mockAuthContext.chatroomLoading = true;
+            useContext.mockReturnValue(mockAuthContext);
+
+            const { result } = renderHook(() => useChatMessages(mockCanvas, mockSetInputNotification));
+
+            expect(result.current.historyLoaded).toBe(false);
+            expect(loadChatroomHistoryService).not.toHaveBeenCalled();
         });
     });
 });

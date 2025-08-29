@@ -396,7 +396,8 @@ describe('ChatAPI', () => {
                     text: 'draw cat',
                     imageData: 'canvas-data',
                     removeBackground: true,
-                    chatroomId: 'chatroom123'
+                    chatroomId: 'chatroom123',
+                    mode: 'drawing'
                 },
                 {
                     headers: {

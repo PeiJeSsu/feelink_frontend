@@ -35,6 +35,8 @@ describe('TextInputArea Component', () => {
     const mockOnSendImage = jest.fn();
     const mockOnAnalyzeCanvas = jest.fn();
     const mockOnAIDrawing = jest.fn();
+    const mockOnGenerateObject = jest.fn();
+    const mockOnClearNotification = jest.fn();
 
     // Mock hook return values
     const mockUseTextInput = {
@@ -42,21 +44,12 @@ describe('TextInputArea Component', () => {
         textInputRef: { current: null },
         imageInputRef: { current: null },
         sendText: jest.fn(),
-        sendImage: jest.fn(),
         messageChange: jest.fn(),
         imageChange: jest.fn(),
         handleAnalyzeCanvas: jest.fn(),
         handleAIDrawing: jest.fn(),
+        handleGenerateObject: jest.fn(),
         handleKeyDown: jest.fn(),
-    };
-
-    // Mock styles
-    const mockStyles = {
-        containerStyle: {},
-        inputContainer: {},
-        textFieldStyle: {},
-        sendButtonStyle: {},
-        quickActionButton: {},
     };
 
     beforeEach(() => {
@@ -77,15 +70,17 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
             // Check if main elements are rendered
-            expect(screen.getByPlaceholderText('與 AI 助手對話...')).toBeInTheDocument();
+            expect(screen.getByPlaceholderText('與 AI 夥伴對話...')).toBeInTheDocument();
             expect(screen.getByText('分析畫布')).toBeInTheDocument();
-            expect(screen.getByText('生成圖像')).toBeInTheDocument();
-            // 修正：通過 data-testid 或其他方式查找發送按鈕
+            expect(screen.getByText('畫畫接龍')).toBeInTheDocument();
+            expect(screen.getByText('生成物件')).toBeInTheDocument();
+            // Check for send button by finding the Send icon
             expect(screen.getByTestId('SendIcon')).toBeInTheDocument();
         });
 
@@ -97,6 +92,7 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
@@ -107,7 +103,12 @@ describe('TextInputArea Component', () => {
             expect(fileInput).toHaveStyle({ display: 'none' });
         });
 
-        test('renders with correct icons', () => {
+        test('renders notification area when inputNotification is provided', () => {
+            const notification = {
+                message: 'Test notification',
+                severity: 'info'
+            };
+
             render(
                 <TestWrapper>
                     <TextInputArea 
@@ -115,13 +116,30 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                        inputNotification={notification}
+                        onClearNotification={mockOnClearNotification}
                     />
                 </TestWrapper>
             );
 
-            // Check for icon presence by checking button content
-            expect(screen.getByText('分析畫布')).toBeInTheDocument();
-            expect(screen.getByText('生成圖像')).toBeInTheDocument();
+            expect(screen.getByText('Test notification')).toBeInTheDocument();
+        });
+
+        test('does not render notification area when inputNotification is not provided', () => {
+            render(
+                <TestWrapper>
+                    <TextInputArea 
+                        onSendMessage={mockOnSendMessage}
+                        onSendImage={mockOnSendImage}
+                        onAnalyzeCanvas={mockOnAnalyzeCanvas}
+                        onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                    />
+                </TestWrapper>
+            );
+
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         });
     });
 
@@ -134,6 +152,7 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                         disabled={true}
                     />
                 </TestWrapper>
@@ -144,6 +163,7 @@ describe('TextInputArea Component', () => {
                 mockOnSendImage,
                 mockOnAnalyzeCanvas,
                 mockOnAIDrawing,
+                mockOnGenerateObject,
                 true
             );
         });
@@ -162,6 +182,7 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
@@ -181,11 +202,12 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
-            const textField = screen.getByPlaceholderText('與 AI 助手對話...');
+            const textField = screen.getByPlaceholderText('與 AI 夥伴對話...');
             await user.type(textField, 'Hello');
 
             expect(mockUseTextInput.messageChange).toHaveBeenCalled();
@@ -201,11 +223,12 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
-            const textField = screen.getByPlaceholderText('與 AI 助手對話...');
+            const textField = screen.getByPlaceholderText('與 AI 夥伴對話...');
             await user.type(textField, '{enter}');
 
             expect(mockUseTextInput.handleKeyDown).toHaveBeenCalled();
@@ -221,11 +244,11 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
-            // 修正：通過 SendIcon 的 testid 查找按鈕的父元素
             const sendIcon = screen.getByTestId('SendIcon');
             const sendButton = sendIcon.closest('button');
             await user.click(sendButton);
@@ -243,6 +266,7 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
@@ -263,14 +287,36 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
-            const aiDrawingButton = screen.getByText('生成圖像');
+            const aiDrawingButton = screen.getByText('畫畫接龍');
             await user.click(aiDrawingButton);
 
             expect(mockUseTextInput.handleAIDrawing).toHaveBeenCalled();
+        });
+
+        test('handles generate object button click', async () => {
+            const user = userEvent.setup();
+            
+            render(
+                <TestWrapper>
+                    <TextInputArea 
+                        onSendMessage={mockOnSendMessage}
+                        onSendImage={mockOnSendImage}
+                        onAnalyzeCanvas={mockOnAnalyzeCanvas}
+                        onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                    />
+                </TestWrapper>
+            );
+
+            const generateObjectButton = screen.getByText('生成物件');
+            await user.click(generateObjectButton);
+
+            expect(mockUseTextInput.handleGenerateObject).toHaveBeenCalled();
         });
 
         test('handles file input change', async () => {
@@ -281,6 +327,7 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
@@ -291,6 +338,33 @@ describe('TextInputArea Component', () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
 
             expect(mockUseTextInput.imageChange).toHaveBeenCalled();
+        });
+
+        test('handles notification close button click', async () => {
+            const user = userEvent.setup();
+            const notification = {
+                message: 'Test notification',
+                severity: 'info'
+            };
+
+            render(
+                <TestWrapper>
+                    <TextInputArea 
+                        onSendMessage={mockOnSendMessage}
+                        onSendImage={mockOnSendImage}
+                        onAnalyzeCanvas={mockOnAnalyzeCanvas}
+                        onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                        inputNotification={notification}
+                        onClearNotification={mockOnClearNotification}
+                    />
+                </TestWrapper>
+            );
+
+            const closeButton = screen.getByTestId('CloseIcon').closest('button');
+            await user.click(closeButton);
+
+            expect(mockOnClearNotification).toHaveBeenCalled();
         });
     });
 
@@ -303,16 +377,17 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                         disabled={true}
                     />
                 </TestWrapper>
             );
 
-            expect(screen.getByPlaceholderText('與 AI 助手對話...')).toBeDisabled();
+            expect(screen.getByPlaceholderText('與 AI 夥伴對話...')).toBeDisabled();
             expect(screen.getByText('分析畫布').closest('button')).toBeDisabled();
-            expect(screen.getByText('生成圖像').closest('button')).toBeDisabled();
+            expect(screen.getByText('畫畫接龍').closest('button')).toBeDisabled();
+            expect(screen.getByText('生成物件').closest('button')).toBeDisabled();
             
-            // 修正：通過 SendIcon 查找發送按鈕
             const sendIcon = screen.getByTestId('SendIcon');
             const sendButton = sendIcon.closest('button');
             expect(sendButton).toBeDisabled();
@@ -326,14 +401,16 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                         disabled={false}
                     />
                 </TestWrapper>
             );
 
-            expect(screen.getByPlaceholderText('與 AI 助手對話...')).not.toBeDisabled();
+            expect(screen.getByPlaceholderText('與 AI 夥伴對話...')).not.toBeDisabled();
             expect(screen.getByText('分析畫布').closest('button')).not.toBeDisabled();
-            expect(screen.getByText('生成圖像').closest('button')).not.toBeDisabled();
+            expect(screen.getByText('畫畫接龍').closest('button')).not.toBeDisabled();
+            expect(screen.getByText('生成物件').closest('button')).not.toBeDisabled();
         });
     });
 
@@ -348,11 +425,11 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
-            // 修正：通過 SendIcon 查找發送按鈕
             const sendIcon = screen.getByTestId('SendIcon');
             const sendButton = sendIcon.closest('button');
             expect(sendButton).toBeDisabled();
@@ -368,12 +445,12 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                         disabled={false}
                     />
                 </TestWrapper>
             );
 
-            // 修正：通過 SendIcon 查找發送按鈕
             const sendIcon = screen.getByTestId('SendIcon');
             const sendButton = sendIcon.closest('button');
             expect(sendButton).not.toBeDisabled();
@@ -393,6 +470,7 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
@@ -401,20 +479,57 @@ describe('TextInputArea Component', () => {
         });
     });
 
-    describe('PropTypes Validation', () => {
-        test('requires all callback props', () => {
-            // This test would typically be handled by PropTypes in development
-            // but we can test that the component handles missing props gracefully
-            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-            
-            render(
+    describe('Notification Features', () => {
+        test('renders different notification severities correctly', () => {
+            const { rerender } = render(
                 <TestWrapper>
-                    <TextInputArea />
+                    <TextInputArea 
+                        onSendMessage={mockOnSendMessage}
+                        onSendImage={mockOnSendImage}
+                        onAnalyzeCanvas={mockOnAnalyzeCanvas}
+                        onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                        inputNotification={{ message: 'Error message', severity: 'error' }}
+                        onClearNotification={mockOnClearNotification}
+                    />
                 </TestWrapper>
             );
 
-            // In a real scenario, PropTypes would log warnings for missing required props
-            consoleSpy.mockRestore();
+            expect(screen.getByText('Error message')).toBeInTheDocument();
+
+            rerender(
+                <TestWrapper>
+                    <TextInputArea 
+                        onSendMessage={mockOnSendMessage}
+                        onSendImage={mockOnSendImage}
+                        onAnalyzeCanvas={mockOnAnalyzeCanvas}
+                        onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                        inputNotification={{ message: 'Success message', severity: 'success' }}
+                        onClearNotification={mockOnClearNotification}
+                    />
+                </TestWrapper>
+            );
+
+            expect(screen.getByText('Success message')).toBeInTheDocument();
+        });
+
+        test('defaults to info severity when severity is not provided', () => {
+            render(
+                <TestWrapper>
+                    <TextInputArea 
+                        onSendMessage={mockOnSendMessage}
+                        onSendImage={mockOnSendImage}
+                        onAnalyzeCanvas={mockOnAnalyzeCanvas}
+                        onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                        inputNotification={{ message: 'Default message' }}
+                        onClearNotification={mockOnClearNotification}
+                    />
+                </TestWrapper>
+            );
+
+            expect(screen.getByText('Default message')).toBeInTheDocument();
         });
     });
 
@@ -427,19 +542,20 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
-            // Check if quick action buttons are grouped together
-            const quickActionButtons = screen.getByText('分析畫布').closest('div').parentElement;
-            expect(quickActionButtons).toContainElement(screen.getByText('分析畫布'));
-            expect(quickActionButtons).toContainElement(screen.getByText('生成圖像'));
+            // Check if all quick action buttons are present
+            expect(screen.getByText('分析畫布')).toBeInTheDocument();
+            expect(screen.getByText('畫畫接龍')).toBeInTheDocument();
+            expect(screen.getByText('生成物件')).toBeInTheDocument();
         });
     });
 
     describe('Accessibility', () => {
-        test('has proper ARIA attributes', () => {
+        test('has proper ARIA attributes and roles', () => {
             render(
                 <TestWrapper>
                     <TextInputArea 
@@ -447,11 +563,11 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
-            // 修正：檢查發送按鈕的存在性，而不是通過名稱查找
             const sendIcon = screen.getByTestId('SendIcon');
             const sendButton = sendIcon.closest('button');
             expect(sendButton).toBeInTheDocument();
@@ -469,13 +585,37 @@ describe('TextInputArea Component', () => {
                         onSendImage={mockOnSendImage}
                         onAnalyzeCanvas={mockOnAnalyzeCanvas}
                         onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
                     />
                 </TestWrapper>
             );
 
             // Test tab navigation
             await user.tab();
-            expect(screen.getByPlaceholderText('與 AI 助手對話...')).toHaveFocus();
+            expect(screen.getByPlaceholderText('與 AI 夥伴對話...')).toHaveFocus();
+        });
+    });
+
+    describe('PropTypes Validation', () => {
+        test('handles missing optional props gracefully', () => {
+            const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+            
+            render(
+                <TestWrapper>
+                    <TextInputArea 
+                        onSendMessage={mockOnSendMessage}
+                        onSendImage={mockOnSendImage}
+                        onAnalyzeCanvas={mockOnAnalyzeCanvas}
+                        onAIDrawing={mockOnAIDrawing}
+                        onGenerateObject={mockOnGenerateObject}
+                    />
+                </TestWrapper>
+            );
+
+            // Component should render without crashing even without optional props
+            expect(screen.getByPlaceholderText('與 AI 夥伴對話...')).toBeInTheDocument();
+            
+            consoleSpy.mockRestore();
         });
     });
 });

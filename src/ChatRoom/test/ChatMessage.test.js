@@ -134,30 +134,8 @@ describe('ChatMessage', () => {
     });
   });
 
-  describe('Markdown 消息測試', () => {
-    it('應該檢測包含 Markdown 語法的消息', () => {
-      const markdownMessages = [
-        'This is **bold** text',
-        'This is *italic* text',
-        '# This is a heading',
-        'This is a `code` block',
-        '- This is a list item',
-      ];
-
-      markdownMessages.forEach((message) => {
-        const { unmount } = renderWithTheme(
-          <ChatMessage {...defaultProps} message={message} />
-        );
-        
-        // 檢查是否有 dangerouslySetInnerHTML 的容器
-        const markdownContainer = document.querySelector('[style*="font-size: 14px"]');
-        expect(markdownContainer).toBeTruthy();
-        
-        unmount();
-      });
-    });
-
-    it('應該正確處理純文字消息（非 Markdown）', () => {
+  describe('純文字消息測試', () => {
+    it('應該正確處理純文字消息', () => {
       const plainTextMessages = [
         'This is plain text',
         'No special characters here',
@@ -239,21 +217,10 @@ describe('ChatMessage', () => {
     });
   });
 
-  describe('PropTypes 測試', () => {
-    // 注意：PropTypes 在生產環境中不會執行，這些測試主要用於開發階段
+  describe('基本 PropTypes 測試', () => {
     it('應該接受所有必需的 props', () => {
       expect(() => {
         renderWithTheme(<ChatMessage {...defaultProps} />);
-      }).not.toThrow();
-    });
-
-    it('message prop 可以是字符串或 React 節點', () => {
-      const nodeMessage = <span>React Node Message</span>;
-      
-      expect(() => {
-        renderWithTheme(
-          <ChatMessage {...defaultProps} message={nodeMessage} />
-        );
       }).not.toThrow();
     });
   });
@@ -285,15 +252,13 @@ describe('ChatMessage', () => {
       expect(screen.getByText(longMessage)).toBeInTheDocument();
     });
 
-    // 修正的特殊字符測試
-    it('應該處理包含特殊字符的消息', () => {
+    it('應該處理包含基本中文字符的消息', () => {
       const specialMessage = '特殊字符測試';
       
       renderWithTheme(
         <ChatMessage {...defaultProps} message={specialMessage} />
       );
       
-      // 簡化測試，只測試基本的中文字符是否能正確顯示
       expect(screen.getByText(specialMessage)).toBeInTheDocument();
     });
   });

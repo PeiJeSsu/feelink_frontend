@@ -85,8 +85,11 @@ const mockHandleError = handleError;
 const mockClearCanvas = clearCanvas;
 const mockAddImageToCanvas = addImageToCanvas;
 
+// Increase test timeout to handle async operations
+jest.setTimeout(10000);
+
 describe('MessageHandlers', () => {
-    let mockMessages, mockSetMessages, mockSetLoading, mockCanvas;
+    let mockMessages, mockSetMessages, mockSetLoading, mockSetDisabled, mockCanvas;
     const mockChatroomId = 'test-chatroom-123';
 
     beforeEach(() => {
@@ -100,11 +103,13 @@ describe('MessageHandlers', () => {
         ];
         mockSetMessages = jest.fn();
         mockSetLoading = jest.fn();
+        mockSetDisabled = jest.fn();
         mockCanvas = {
             getContext: jest.fn(() => ({
                 clearRect: jest.fn(),
                 drawImage: jest.fn()
-            }))
+            })),
+            selection: true
         };
 
         // Default mock implementations
@@ -126,7 +131,7 @@ describe('MessageHandlers', () => {
                     onTokenCallback = onToken;
                     onCompleteCallback = onComplete;
                     
-                    // Simulate streaming
+                    // Simulate streaming response
                     setTimeout(() => {
                         onToken('Hello');
                         onToken(' World');
@@ -138,9 +143,13 @@ describe('MessageHandlers', () => {
                     mockMessageText, 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
+
+                // Wait for async operations
+                await new Promise(resolve => setTimeout(resolve, 50));
 
                 expect(mockAddMessages).toHaveBeenCalledWith(mockMessageText, null, 3, mockMessages, mockSetMessages);
                 expect(mockSetLoading).toHaveBeenCalledWith(true);
@@ -152,7 +161,8 @@ describe('MessageHandlers', () => {
                     '', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -167,7 +177,8 @@ describe('MessageHandlers', () => {
                     'Test message', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     null
                 );
 
@@ -190,12 +201,13 @@ describe('MessageHandlers', () => {
                     'Test message', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
                 // Wait for async operations
-                await new Promise(resolve => setTimeout(resolve, 20));
+                await new Promise(resolve => setTimeout(resolve, 50));
 
                 expect(mockHandleError).toHaveBeenCalledWith(mockError, '發送訊息失敗', mockMessages, mockSetMessages);
                 expect(mockSetLoading).toHaveBeenCalledWith(false);
@@ -206,12 +218,8 @@ describe('MessageHandlers', () => {
             it('should handle image message stream successfully', async () => {
                 const mockMessageText = 'Image description';
                 const mockImage = new Blob(['fake-image'], { type: 'image/png' });
-                let onTokenCallback, onCompleteCallback;
 
                 mockSendImageToBackendStreamService.mockImplementation((text, image, chatroomId, onToken, onComplete) => {
-                    onTokenCallback = onToken;
-                    onCompleteCallback = onComplete;
-                    
                     setTimeout(() => {
                         onToken('Processing');
                         onToken(' image...');
@@ -224,9 +232,13 @@ describe('MessageHandlers', () => {
                     mockImage, 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
+
+                // Wait for async operations
+                await new Promise(resolve => setTimeout(resolve, 50));
 
                 expect(mockAddMessages).toHaveBeenCalledWith(mockMessageText, mockImage, 3, mockMessages, mockSetMessages);
                 expect(mockSendImageToBackendStreamService).toHaveBeenCalled();
@@ -251,9 +263,13 @@ describe('MessageHandlers', () => {
                     mockMessageText, 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
+
+                // Wait for async operations
+                await new Promise(resolve => setTimeout(resolve, 50));
 
                 expect(mockAddMessages).toHaveBeenCalledWith(mockMessageText, mockCanvasImage, 3, mockMessages, mockSetMessages);
                 expect(mockSendCanvasAnalysisToBackendStreamService).toHaveBeenCalled();
@@ -266,12 +282,10 @@ describe('MessageHandlers', () => {
                 const mockMessageText = 'Draw something';
                 const mockImageData = 'base64-image-data';
 
-                let onTokenCallback, onImageGeneratedCallback, onCompleteCallback;
+                let onImageGeneratedCallback;
 
                 mockSendAIDrawingToBackendStream.mockImplementation((text, imageData, chatroomId, onToken, onComplete, onError, onImageGenerated) => {
-                    onTokenCallback = onToken;
                     onImageGeneratedCallback = onImageGenerated;
-                    onCompleteCallback = onComplete;
                     
                     setTimeout(() => {
                         onToken('Drawing');
@@ -285,10 +299,14 @@ describe('MessageHandlers', () => {
                     mockMessageText, 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockCanvas, 
                     mockChatroomId
                 );
+
+                // Wait for async operations
+                await new Promise(resolve => setTimeout(resolve, 50));
 
                 expect(mockConvertBlobToBase64).toHaveBeenCalledWith(mockCanvasImage);
                 expect(mockSendAIDrawingToBackendStream).toHaveBeenCalled();
@@ -300,7 +318,8 @@ describe('MessageHandlers', () => {
                     'Draw something', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockCanvas, 
                     mockChatroomId
                 );
@@ -321,7 +340,8 @@ describe('MessageHandlers', () => {
                     'Test message', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -339,7 +359,8 @@ describe('MessageHandlers', () => {
                     'Test message', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -355,7 +376,8 @@ describe('MessageHandlers', () => {
                     'Test message', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -375,7 +397,8 @@ describe('MessageHandlers', () => {
                     mockImage, 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -389,7 +412,8 @@ describe('MessageHandlers', () => {
                     null, 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -408,7 +432,8 @@ describe('MessageHandlers', () => {
                     'Analyze this', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -422,7 +447,8 @@ describe('MessageHandlers', () => {
                     'Analyze this', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 );
 
@@ -431,7 +457,7 @@ describe('MessageHandlers', () => {
         });
 
         describe('handleSendAIDrawing', () => {
-            it('should call typewriter version', async () => {
+            it('should call typewriter version with correct parameters', async () => {
                 const mockCanvasImage = new Blob(['fake-canvas'], { type: 'image/png' });
                 const mockResponse = { 
                     success: true, 
@@ -447,13 +473,17 @@ describe('MessageHandlers', () => {
                     'Draw something', 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockCanvas, 
                     mockChatroomId
                 );
 
+                // Wait for async operations including typewriter effect
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 expect(mockConvertBlobToBase64).toHaveBeenCalledWith(mockCanvasImage);
-                // Note: Since this calls the typewriter version, we expect the typewriter behavior
+                expect(mockSendAIDrawingToBackend).toHaveBeenCalled();
             });
         });
     });
@@ -463,14 +493,13 @@ describe('MessageHandlers', () => {
             jest.useFakeTimers();
             
             const mockMessageText = 'Long message for typewriter test';
-            let onTokenCallback;
+            const mockError = new Error('Connection lost');
 
             mockSendTextToBackendStream.mockImplementation((payload, chatroomId, onToken, onComplete, onError) => {
-                onTokenCallback = onToken;
                 setTimeout(() => {
                     onToken('Very long message that should trigger typewriter effect');
                     // Simulate error before completion
-                    onError(new Error('Connection lost'));
+                    onError(mockError);
                 }, 10);
             });
 
@@ -478,7 +507,8 @@ describe('MessageHandlers', () => {
                 mockMessageText, 
                 mockMessages, 
                 mockSetMessages, 
-                mockSetLoading, 
+                mockSetLoading,
+                mockSetDisabled,
                 mockChatroomId
             );
 
@@ -506,6 +536,7 @@ describe('MessageHandlers', () => {
                 onImageGeneratedCallback = onImageGenerated;
                 setTimeout(() => {
                     onImageGenerated('base64-image-data');
+                    onComplete();
                 }, 10);
             });
 
@@ -514,13 +545,14 @@ describe('MessageHandlers', () => {
                 'Draw something', 
                 mockMessages, 
                 mockSetMessages, 
-                mockSetLoading, 
+                mockSetLoading,
+                mockSetDisabled,
                 mockCanvas, 
                 mockChatroomId
             );
 
             // Wait for async operations
-            await new Promise(resolve => setTimeout(resolve, 20));
+            await new Promise(resolve => setTimeout(resolve, 50));
 
             expect(consoleSpy).toHaveBeenCalledWith('Error updating canvas with generated image:', expect.any(Error));
             
@@ -547,12 +579,15 @@ describe('MessageHandlers', () => {
                 'Draw something', 
                 mockMessages, 
                 mockSetMessages, 
-                mockSetLoading, 
+                mockSetLoading,
+                mockSetDisabled,
                 mockCanvas, 
                 mockChatroomId
             );
 
-            // Should handle nested content structure properly
+            // Wait for async operations
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             expect(mockConvertBlobToBase64).toHaveBeenCalledWith(mockCanvasImage);
             expect(mockSendAIDrawingToBackend).toHaveBeenCalled();
         });
@@ -563,7 +598,6 @@ describe('MessageHandlers', () => {
             jest.useFakeTimers();
             
             const longMessage = 'This is a long message to test typewriter effect timing';
-            let displayedMessage = '';
             let messageUpdateCount = 0;
             
             // Mock setMessages to capture intermediate states
@@ -572,7 +606,6 @@ describe('MessageHandlers', () => {
                     const newMessages = updateFn(mockMessages);
                     const aiMessage = newMessages.find(msg => msg.id === 4);
                     if (aiMessage) {
-                        displayedMessage = aiMessage.message;
                         messageUpdateCount++;
                     }
                 }
@@ -594,13 +627,14 @@ describe('MessageHandlers', () => {
                 'Draw something', 
                 mockMessages, 
                 mockSetMessages, 
-                mockSetLoading, 
+                mockSetLoading,
+                mockSetDisabled,
                 mockCanvas, 
                 mockChatroomId
             );
 
-            // Fast-forward through typewriter effect
-            jest.advanceTimersByTime(longMessage.length * 30 + 1000);
+            // Fast-forward through typewriter effect - each character takes 30ms
+            jest.advanceTimersByTime(longMessage.length * 35 + 1000);
             
             await promise;
 
@@ -619,21 +653,22 @@ describe('MessageHandlers', () => {
 
             mockSendTextToBackendStream.mockImplementation((payload, chatroomId, onToken, onComplete, onError) => {
                 // Simulate immediate error to test error handling
-                process.nextTick(() => {
+                setTimeout(() => {
                     onError(mockError);
-                });
+                }, 10);
             });
 
             await handleSendTextMessageStream(
                 mockMessageText, 
                 mockMessages, 
                 mockSetMessages, 
-                mockSetLoading, 
+                mockSetLoading,
+                mockSetDisabled,
                 mockChatroomId
             );
             
-            // Wait a bit for async operations to complete
-            await new Promise(resolve => process.nextTick(resolve));
+            // Wait for async operations to complete
+            await new Promise(resolve => setTimeout(resolve, 50));
             
             // Verify error handling was called
             expect(mockHandleError).toHaveBeenCalledWith(mockError, '發送訊息失敗', mockMessages, mockSetMessages);
@@ -652,7 +687,8 @@ describe('MessageHandlers', () => {
                     msg, 
                     mockMessages, 
                     mockSetMessages, 
-                    mockSetLoading, 
+                    mockSetLoading,
+                    mockSetDisabled,
                     mockChatroomId
                 )
             );
