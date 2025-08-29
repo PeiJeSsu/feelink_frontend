@@ -13,20 +13,25 @@ import {
     loadAIMessages
 } from "./MessageAPI";
 
-// 添加 chatroomId 參數
+// 獲取選中的個性設置
+const getSelectedPersonality = () => {
+    return localStorage.getItem('selectedPersonality') || 'default';
+};
+
+// 添加 chatroomId 和 personality 參數
 export const sendTextToBackend = async (payload, chatroomId) => {
-    return handleServiceCall(() => sendMessage(payload.text, payload.conversationCount, payload.hasDefaultQuestion, chatroomId));
+    return handleServiceCall(() => sendMessage(payload.text, payload.conversationCount, payload.hasDefaultQuestion, chatroomId, getSelectedPersonality()));
 };
 
-// 添加 chatroomId 參數
+// 添加 chatroomId 和 personality 參數
 export const sendImageToBackend = async (messageText, messageImage, chatroomId) => {
-    return handleServiceCall(() => analysisImage(messageText, messageImage, chatroomId));
+    return handleServiceCall(() => analysisImage(messageText, messageImage, chatroomId, getSelectedPersonality()));
 };
 
-// 添加 chatroomId 參數
+// 添加 chatroomId 和 personality 參數
 export const sendCanvasAnalysisToBackend = async (messageText, canvasImage, chatroomId) => {
     const defaultMessage = "請分析這張圖片";
-    return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage, chatroomId));
+    return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage, chatroomId, getSelectedPersonality()));
 };
 
 // AI 繪圖函數，增加 chatroomId 參數和去背邏輯 (非串流版本)

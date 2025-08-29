@@ -146,6 +146,7 @@ export const sendMessageStream = (text, chatroomId, onToken, onComplete, onError
     const formData = new FormData();
     formData.append('userMessage', text);
     formData.append('chatroomId', chatroomId);
+    formData.append('personality', getSelectedPersonality());
 
     createSSEStream(`${apiConfig.defaults.baseURL}/chat`, formData, onToken, onComplete, onError);
 };
@@ -166,6 +167,7 @@ export const sendCanvasAnalysisToBackendStream = async (messageText, canvasImage
     formData.append('userMessage', messageText || '請分析這張圖片');
     formData.append('file', canvasImage);
     formData.append('chatroomId', chatroomId);
+    formData.append('personality', getSelectedPersonality());
 
     createSSEStream(`${apiConfig.defaults.baseURL}/analysis`, formData, onToken, onComplete, onError);
 };
@@ -299,4 +301,7 @@ export const loadAIMessages = async (chatroomId) => {
         console.error('載入AI訊息失敗:', error);
         throw new Error(error.response?.data?.message || error.message || '載入AI記錄失敗');
     }
+};
+const getSelectedPersonality = () => {
+    return localStorage.getItem('selectedPersonality') || 'default';
 };
