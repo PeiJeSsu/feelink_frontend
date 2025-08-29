@@ -5,6 +5,7 @@ import {handleError} from "./usage/MessageError";
 import {clearCanvas, addImageToCanvas} from "../../helpers/canvas/CanvasOperations";
 
 // 流式訊息處理函數
+// 修復後的串流訊息處理函數
 const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, setDisabled, chatroomId, streamFunction, errorMessage) => {
     console.log('handleStreamMessage called with chatroomId:', chatroomId);
     if (!messageText && !image) return;
@@ -13,21 +14,34 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         return;
     }
 
-    // 確保獲得有效的 ID
     const currentId = getNewId(messages);
     const finalId = addMessages(messageText, image, currentId, messages, setMessages);
     
     setLoading(true);
     if (setDisabled) setDisabled(true);
     
-    // 修復串流回應處理邏輯
     let responseMessageAdded = false;
     let displayedContent = "";
     let pendingQueue = [];
     let typewriterTimer = null;
     let isTypewriting = false;
     let streamCompleted = false;
-    let aiResponseId = finalId; // AI 回應的 ID
+    let aiResponseId = finalId;
+
+    // 確保解鎖的函數
+    const ensureUnlocked = () => {
+        setLoading(false);
+        if (setDisabled) setDisabled(false);
+    };
+
+    // 清理所有資源的函數
+    const cleanup = () => {
+        if (typewriterTimer) {
+            clearTimeout(typewriterTimer);
+            typewriterTimer = null;
+        }
+        isTypewriting = false;
+    };
 
     const typewriterEffect = () => {
         if (pendingQueue.length > 0) {
@@ -48,8 +62,10 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         } else {
             isTypewriting = false;
             typewriterTimer = null;
+            
+            // 修復：當打字機效果完成且串流也完成時，確保解鎖
             if (streamCompleted) {
-                if (setDisabled) setDisabled(false);
+                ensureUnlocked();
             }
         }
     };
@@ -63,16 +79,14 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     const onToken = (token) => {
         console.log('Token received:', token);
         
-        // 收到第一個字符時，創建 AI 回應訊息
         if (!responseMessageAdded) {
             const responseMessage = createNewMessage(aiResponseId, "", false, false);
             setMessages(prevMessages => [...prevMessages, responseMessage]);
-            setLoading(false); // 收到第一個字符時關閉載入狀態
+            setLoading(false);
             responseMessageAdded = true;
             console.log('AI 回應訊息已創建，ID:', aiResponseId);
         }
         
-        // 將 token 加入佇列
         if (token && typeof token === 'string') {
             for (const char of token) {
                 pendingQueue.push(char);
@@ -85,11 +99,7 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         console.log('Stream completed');
         streamCompleted = true;
         
-        // 清理定時器
-        if (typewriterTimer) {
-            clearTimeout(typewriterTimer);
-            typewriterTimer = null;
-        }
+        cleanup();
         
         // 確保所有剩餘內容都顯示出來
         if (pendingQueue.length > 0) {
@@ -108,29 +118,21 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             }
         }
         
-        if (!isTypewriting && setDisabled) {
-            setDisabled(false);
-        }
+        // 修復：無論如何都要解鎖界面
+        ensureUnlocked();
     };
 
     const onError = (error) => {
         console.error('Stream error:', error);
         
-        // 清理定時器
-        if (typewriterTimer) {
-            clearTimeout(typewriterTimer);
-            typewriterTimer = null;
-        }
-        isTypewriting = false;
+        cleanup();
         streamCompleted = true;
         
-        // 如果還沒有加入 AI 回應訊息，在錯誤時加入錯誤訊息
         if (!responseMessageAdded) {
             const errorMessageObj = createNewMessage(aiResponseId, "抱歉，發生了錯誤", false, false);
             setMessages(prevMessages => [...prevMessages, errorMessageObj]);
             responseMessageAdded = true;
         } else if (pendingQueue.length > 0) {
-            // 顯示所有剩餘內容
             displayedContent += pendingQueue.join('');
             setMessages(prevMessages => {
                 return prevMessages.map(msg => {
@@ -142,8 +144,8 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             });
         }
         
-        setLoading(false);
-        if (setDisabled) setDisabled(false);
+        // 修復：錯誤時也要確保解鎖
+        ensureUnlocked();
         handleError(error, errorMessage, messages, setMessages);
     };
     
