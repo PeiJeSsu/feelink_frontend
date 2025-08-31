@@ -6,6 +6,7 @@ import {
     GoogleAuthProvider,
 } from "firebase/auth";
 import { auth } from "../config/firebase";
+import { apiConfig } from "../ChatRoom/config/ApiConfig";
 
 export const useAuthForm = (isRegistering = false) => {
     const [email, setEmail] = useState("");
@@ -43,19 +44,10 @@ export const useAuthForm = (isRegistering = false) => {
                 AINickname: "" // 預設為空，之後可以讓用戶設定
             };
             
-            const response = await fetch('http://localhost:8080/api/users/sync', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userData)
-            });
+            // 使用 apiConfig 進行 API 調用
+            const response = await apiConfig.post('/api/users/sync', userData);
 
-            if (!response.ok) {
-                throw new Error('同步用戶資料失敗');
-            }
-
-            const syncedUser = await response.json();
+            const syncedUser = response.data;
             console.log('用戶資料同步成功:', syncedUser);
         } catch (error) {
             console.error('同步用戶資料到後端失敗:', error);
