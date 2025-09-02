@@ -442,7 +442,6 @@ export const handleSendAIDrawingStream = async (canvasImage, messageText, messag
     return handleAIDrawingStream(messageText, canvasImage, messages, setMessages, setLoading, setDisabled, canvas, chatroomId);
 };
 
-// 修復：帶打字機效果的AI繪圖處理函數
 const handleAIDrawingWithTypewriter = async (messageText, canvasImage, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
     console.log('handleAIDrawingWithTypewriter called with chatroomId:', chatroomId);
     if (!canvasImage) return;
@@ -474,7 +473,7 @@ export const handleSendAIDrawingWithTypewriter = async (canvasImage, messageText
     return handleAIDrawingWithTypewriter(messageText, canvasImage, messages, setMessages, setLoading, setDisabled, canvas, chatroomId);
 };
 
-// 修復：一般文字訊息處理
+// 一般文字訊息處理
 export const handleSendTextMessage = async (messageText, messages, setMessages, setLoading, setDisabled, chatroomId, defaultQuestion = "", conversationCount = 1) => {
     if (!messageText) return;
     if (!chatroomId) {
@@ -501,7 +500,7 @@ export const handleSendTextMessage = async (messageText, messages, setMessages, 
     });
 };
 
-// 修復：圖片訊息處理
+// 圖片訊息處理
 export const handleSendImageMessage = async (messageText, messageImage, messages, setMessages, setLoading, setDisabled, chatroomId) => {
     if (!messageText && !messageImage) return;
     if (!chatroomId) {
@@ -524,7 +523,7 @@ export const handleSendImageMessage = async (messageText, messageImage, messages
     });
 };
 
-// 修復：畫布分析處理
+// 畫布分析處理
 export const handleSendCanvasAnalysis = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, chatroomId) => {
     if (!canvasImage) return;
     if (!chatroomId) {
@@ -547,9 +546,8 @@ export const handleSendCanvasAnalysis = async (canvasImage, messageText, message
     });
 };
 
-// AI 繪圖功能（使用模擬打字機效果版本）
+
 export const handleSendAIDrawing = async (canvasImage, messageText, messages, setMessages, setLoading, setDisabled, canvas, chatroomId) => {
-    // 使用帶打字機效果的版本（非串流 API + 前端打字機模擬）
     return handleSendAIDrawingWithTypewriter(canvasImage, messageText, messages, setMessages, setLoading, setDisabled, canvas, chatroomId);
 };
 
@@ -580,7 +578,7 @@ export const handleSendGenerateObject = async (canvasImage, messageText, message
     });
 };
 
-// 修復：通用訊息處理函數
+// 通用訊息處理函數
 const runMessageTask = async ({messageText, image = null, messages, setMessages, setLoading, setDisabled, chatroomId, generatePayload, sendFunction, onSuccess, onErrorMessage}) => {
     try {
         setLoading(true);

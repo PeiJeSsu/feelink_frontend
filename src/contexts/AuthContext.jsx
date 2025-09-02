@@ -106,7 +106,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 🎯 改善：切換聊天室函數
     const switchChatroom = (chatroomId) => {
         if (chatroomId === currentChatroomId) {
             console.log('已在當前聊天室，無需切換:', chatroomId);
@@ -117,7 +116,6 @@ export const AuthProvider = ({ children }) => {
         setCurrentChatroomId(chatroomId);
     };
 
-    // 🎯 新增：手動重新載入當前聊天室
     const reloadCurrentChatroom = () => {
         if (currentChatroomId) {
             console.log('重新載入當前聊天室:', currentChatroomId);
@@ -150,7 +148,6 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            // 🎯 改善：登出時清理狀態
             console.log('準備登出...');
             setCurrentChatroomId(null);
             setUserChatrooms([]);
@@ -186,7 +183,7 @@ export const AuthProvider = ({ children }) => {
             chatroomLoading,
             createNewChatroom,
             switchChatroom,
-            reloadCurrentChatroom, // 🎯 新增：重新載入當前聊天室
+            reloadCurrentChatroom, 
             logout,
         }),
         [user, initializing, userChatrooms, currentChatroomId, chatroomLoading]

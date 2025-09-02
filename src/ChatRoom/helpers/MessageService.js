@@ -42,7 +42,7 @@ export const sendAIDrawingToBackend = async (messageText, canvasData, chatroomId
     return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, chatroomId, mode));
 };
 
-// 新增：AI 繪圖串流函數
+// AI 繪圖串流函數
 export const sendAIDrawingToBackendStream = async (messageText, canvasData, chatroomId, onToken, onComplete, onError, onImageGenerated) => {
     const defaultMessage = "請根據這張圖片生成新的內容";
     return callAIDrawingAPIStream(messageText || defaultMessage, canvasData, true, chatroomId, onToken, onComplete, onError, onImageGenerated);

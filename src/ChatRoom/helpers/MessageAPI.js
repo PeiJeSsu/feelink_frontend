@@ -141,7 +141,7 @@ const createJsonSSEStream = (url, jsonData, onToken, onComplete, onError, onImag
     });
 };
 
-// 修改：使用 chatroomId 替代 sessionId
+// 使用 chatroomId 替代 sessionId
 export const sendMessageStream = (text, chatroomId, onToken, onComplete, onError) => {
     const formData = new FormData();
     formData.append('userMessage', text);
@@ -151,7 +151,7 @@ export const sendMessageStream = (text, chatroomId, onToken, onComplete, onError
     createSSEStream(`${apiConfig.defaults.baseURL}/chat`, formData, onToken, onComplete, onError);
 };
 
-// 修改：使用 chatroomId 替代 sessionId，支援串流回應
+// 使用 chatroomId 替代 sessionId，支援串流回應
 export const sendImageToBackendStream = async (messageText, messageImage, chatroomId, onToken, onComplete, onError) => {
     const formData = new FormData();
     formData.append('userMessage', messageText);
@@ -224,7 +224,7 @@ export const callAIDrawingAPI = (messageText, canvasData, removeBackground = tru
     });
 };
 
-// 修改：使用 chatroomId 替代 sessionId，改為非串流版本（保留用於向後相容）
+// 使用 chatroomId 替代 sessionId，改為非串流版本（保留用於向後相容）
 export const analysisImage = (text, file, chatroomId) => {
     const formData = new FormData();
     formData.append('userMessage', text);
