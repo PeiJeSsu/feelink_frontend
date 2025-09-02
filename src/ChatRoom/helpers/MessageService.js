@@ -1,53 +1,94 @@
-import {sendMessage, callAIDrawingAPI, sendMessageStream, analysisImage, sendImageToBackendStream, sendCanvasAnalysisToBackendStream} from "./MessageAPI";
+import {
+    sendMessage, 
+    callAIDrawingAPI, 
+    callAIDrawingAPIStream,
+    sendMessageStream, 
+    analysisImage, 
+    sendImageToBackendStream, 
+    sendCanvasAnalysisToBackendStream,
+    loadChatroomMessages,
+    loadChatroomTextMessages,
+    loadChatroomDrawingMessages,
+    loadUserMessages,
+    loadAIMessages
+} from "./MessageAPI";
 
-const getSessionId = () => {
-    const sessionId = localStorage.getItem('currentSessionId');
-    if (!sessionId) {
-        console.error('SessionId 不存在，請先選擇 AI 個性');
-        return null;
-    }
-    return sessionId;
+// 獲取選中的個性設置
+const getSelectedPersonality = () => {
+    return localStorage.getItem('selectedPersonality') || 'default';
 };
 
-// 發送文字訊息到後端
-export const sendTextToBackend = async (payload) => {
-    return handleServiceCall(() => sendMessage(payload.text, payload.conversationCount, payload.hasDefaultQuestion));
+// 添加 chatroomId 和 personality 參數
+export const sendTextToBackend = async (payload, chatroomId) => {
+    return handleServiceCall(() => sendMessage(payload.text, payload.conversationCount, payload.hasDefaultQuestion, chatroomId, getSelectedPersonality()));
 };
 
-// 發送圖片訊息到後端
-export const sendImageToBackend = async (messageText, messageImage) => {
-    return handleServiceCall(() => analysisImage(messageText, messageImage));
+// 添加 chatroomId 和 personality 參數
+export const sendImageToBackend = async (messageText, messageImage, chatroomId) => {
+    return handleServiceCall(() => analysisImage(messageText, messageImage, chatroomId, getSelectedPersonality()));
 };
 
-// 發送畫布分析到後端
-export const sendCanvasAnalysisToBackend = async (messageText, canvasImage) => {
+// 添加 chatroomId 和 personality 參數
+export const sendCanvasAnalysisToBackend = async (messageText, canvasImage, chatroomId) => {
     const defaultMessage = "請分析這張圖片";
-    return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage));
+    return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage, chatroomId, getSelectedPersonality()));
 };
 
-// 修改後的 AI 繪圖函數，增加去背邏輯和模式參數
-export const sendAIDrawingToBackend = async (messageText, canvasData, mode = 'drawing') => {
+// AI 繪圖函數，增加 chatroomId 參數和去背邏輯 (非串流版本)
+export const sendAIDrawingToBackend = async (messageText, canvasData, chatroomId, mode = 'drawing') => {
     const defaultMessage = "請根據這張圖片生成新的內容";
-    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, mode));
+
+    // 添加 chatroomId 參數到 API 調用
+    return handleServiceCall(() => callAIDrawingAPI(messageText || defaultMessage, canvasData, true, chatroomId, mode));
 };
 
-
-export const sendTextToBackendStream = async (payload, onToken, onComplete, onError) => {
-    const sessionId = getSessionId();
-    return sendMessageStream(payload.text, sessionId, onToken, onComplete, onError);
-};
-export const sendImageToBackendStreamService = async (messageText, messageImage, onToken, onComplete, onError) => {
-    const sessionId = getSessionId();
-    return sendImageToBackendStream(messageText, messageImage, sessionId, onToken, onComplete, onError);
+// AI 繪圖串流函數
+export const sendAIDrawingToBackendStream = async (messageText, canvasData, chatroomId, onToken, onComplete, onError, onImageGenerated) => {
+    const defaultMessage = "請根據這張圖片生成新的內容";
+    return callAIDrawingAPIStream(messageText || defaultMessage, canvasData, true, chatroomId, onToken, onComplete, onError, onImageGenerated);
 };
 
-// 畫布分析流式服務
-export const sendCanvasAnalysisToBackendStreamService = async (messageText, canvasImage, onToken, onComplete, onError) => {
-    const sessionId = getSessionId();
-    return sendCanvasAnalysisToBackendStream(messageText, canvasImage, sessionId, onToken, onComplete, onError);
+// 更新流式發送函數，使用 chatroomId
+export const sendTextToBackendStream = async (payload, chatroomId, onToken, onComplete, onError) => {
+    return sendMessageStream(payload.text, chatroomId, onToken, onComplete, onError);
 };
 
-// 通用的錯誤處理和回應格式化函數
+// 更新流式發送函數，使用 chatroomId
+export const sendImageToBackendStreamService = async (messageText, messageImage, chatroomId, onToken, onComplete, onError) => {
+    return sendImageToBackendStream(messageText, messageImage, chatroomId, onToken, onComplete, onError);
+};
+
+// 畫布分析流式服務，使用 chatroomId
+export const sendCanvasAnalysisToBackendStreamService = async (messageText, canvasImage, chatroomId, onToken, onComplete, onError) => {
+    return sendCanvasAnalysisToBackendStream(messageText, canvasImage, chatroomId, onToken, onComplete, onError);
+};
+
+// 載入聊天室歷史訊息的服務
+export const loadChatroomHistoryService = async (chatroomId) => {
+    return handleServiceCall(() => loadChatroomMessages(chatroomId));
+};
+
+// 載入文字訊息服務
+export const loadTextMessagesService = async (chatroomId) => {
+    return handleServiceCall(() => loadChatroomTextMessages(chatroomId));
+};
+
+// 載入畫布資料服務
+export const loadDrawingMessagesService = async (chatroomId) => {
+    return handleServiceCall(() => loadChatroomDrawingMessages(chatroomId));
+};
+
+// 載入使用者訊息服務
+export const loadUserMessagesService = async (chatroomId) => {
+    return handleServiceCall(() => loadUserMessages(chatroomId));
+};
+
+// 載入AI訊息服務
+export const loadAIMessagesService = async (chatroomId) => {
+    return handleServiceCall(() => loadAIMessages(chatroomId));
+};
+
+// 通用的錯誤處理和回應格式化函數（保持不變）
 const handleServiceCall = async (serviceCall) => {
     try {
         const response = await serviceCall();

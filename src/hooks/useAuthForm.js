@@ -6,6 +6,7 @@ import {
     GoogleAuthProvider,
 } from "firebase/auth";
 import { auth } from "../config/firebase";
+import { apiConfig } from "../ChatRoom/config/ApiConfig";
 
 export const useAuthForm = (isRegistering = false) => {
     const [email, setEmail] = useState("");
@@ -27,6 +28,33 @@ export const useAuthForm = (isRegistering = false) => {
         setShowPassword(!showPassword);
     };
 
+    // 同步用戶資料到後端
+    const syncUserToBackend = async (firebaseUser) => {
+        try {
+            // 如果沒有 displayName，就使用 email 的 @ 前面部分作為 nickname
+            let nickname = firebaseUser.displayName || "";
+            if (!nickname && firebaseUser.email) {
+                nickname = firebaseUser.email.split('@')[0];
+            }
+            
+            const userData = {
+                userId: firebaseUser.uid,  // 使用 Firebase UID 作為 userId
+                email: firebaseUser.email,
+                nickname: nickname,
+                AINickname: "" // 預設為空，之後可以讓用戶設定
+            };
+            
+            // 使用 apiConfig 進行 API 調用
+            const response = await apiConfig.post('/api/users/sync', userData);
+
+            const syncedUser = response.data;
+            console.log('用戶資料同步成功:', syncedUser);
+        } catch (error) {
+            console.error('同步用戶資料到後端失敗:', error);
+            // 注意：這裡不拋出錯誤，因為同步失敗不應影響登入流程
+        }
+    };
+
     // 電子郵件登入/註冊
     const handleEmailAuth = async () => {
         if (!email || !password) {
@@ -38,11 +66,17 @@ export const useAuthForm = (isRegistering = false) => {
         setError("");
 
         try {
+            let userCredential;
+            
             if (isRegistering) {
-                await createUserWithEmailAndPassword(auth, email, password);
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
             } else {
-                await signInWithEmailAndPassword(auth, email, password);
+                userCredential = await signInWithEmailAndPassword(auth, email, password);
             }
+            
+            // 同步用戶資料到後端
+            await syncUserToBackend(userCredential.user);
+            
             resetForm();
         } catch (error) {
             console.error("認證錯誤:", error);
@@ -75,7 +109,11 @@ export const useAuthForm = (isRegistering = false) => {
 
         try {
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
+            const userCredential = await signInWithPopup(auth, provider);
+            
+            // 同步用戶資料到後端
+            await syncUserToBackend(userCredential.user);
+            
             resetForm();
         } catch (error) {
             console.error("Google 登入錯誤:", error);
