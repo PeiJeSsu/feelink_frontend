@@ -11,6 +11,11 @@ export const AuthProvider = ({ children }) => {
     const [userChatrooms, setUserChatrooms] = useState([]);
     const [currentChatroomId, setCurrentChatroomId] = useState(null);
     const [chatroomLoading, setChatroomLoading] = useState(false);
+    
+    // 新增：聊天室訊息快取
+    const [chatroomMessagesCache, setChatroomMessagesCache] = useState({});
+    // 新增：追蹤聊天室是否需要重新載入
+    const [chatroomRefreshTrigger, setChatroomRefreshTrigger] = useState(0);
 
     const ensureUserChatroom = async (firebaseUser) => {
         try {
@@ -106,6 +111,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // 修改：切換聊天室（不重新載入資料）
     const switchChatroom = (chatroomId) => {
         if (chatroomId === currentChatroomId) {
             console.log('已在當前聊天室，無需切換:', chatroomId);
@@ -114,14 +120,58 @@ export const AuthProvider = ({ children }) => {
         
         console.log('切換聊天室:', currentChatroomId, '->', chatroomId);
         setCurrentChatroomId(chatroomId);
+        // 移除強制重新載入的邏輯
     };
 
+    // 修改：強制重新載入聊天室（用於refresh或特定情況）
+    const forceReloadChatroom = (chatroomId = currentChatroomId) => {
+        if (!chatroomId) return;
+        
+        console.log('強制重新載入聊天室:', chatroomId);
+        // 清除該聊天室的快取
+        setChatroomMessagesCache(prev => {
+            const newCache = { ...prev };
+            delete newCache[chatroomId];
+            return newCache;
+        });
+        
+        // 觸發重新載入
+        setChatroomRefreshTrigger(prev => prev + 1);
+    };
+
+    // 新增：更新聊天室快取
+    const updateChatroomCache = (chatroomId, messages) => {
+        if (!chatroomId || !messages) return;
+        
+        const existingCache = chatroomMessagesCache[chatroomId];
+        
+        
+        setChatroomMessagesCache(prev => ({
+            ...prev,
+            [chatroomId]: {
+                messages,
+                timestamp: Date.now()
+            }
+        }));
+    };
+
+    // 新增：獲取聊天室快取
+    const getChatroomCache = (chatroomId) => {
+        return chatroomMessagesCache[chatroomId];
+    };
+
+    // 新增：清除特定聊天室快取（用於清空聊天室後）
+    const clearChatroomCache = (chatroomId) => {
+        setChatroomMessagesCache(prev => {
+            const newCache = { ...prev };
+            delete newCache[chatroomId];
+            return newCache;
+        });
+    };
+
+    // 修改：重新載入當前聊天室的別名（保持向後相容）
     const reloadCurrentChatroom = () => {
-        if (currentChatroomId) {
-            console.log('重新載入當前聊天室:', currentChatroomId);
-            // 觸發聊天室內容重新載入，但不改變 currentChatroomId
-            // 這將由 useChatMessages 的 reloadChatroomHistory 函數處理
-        }
+        forceReloadChatroom();
     };
 
     useEffect(() => {
@@ -137,6 +187,8 @@ export const AuthProvider = ({ children }) => {
                 setUserChatrooms([]);
                 setCurrentChatroomId(null);
                 setChatroomLoading(false);
+                // 清空所有快取
+                setChatroomMessagesCache({});
             }
             
             setUser(user);
@@ -152,6 +204,7 @@ export const AuthProvider = ({ children }) => {
             setCurrentChatroomId(null);
             setUserChatrooms([]);
             setChatroomLoading(false);
+            setChatroomMessagesCache({}); // 清空快取
             
             localStorage.removeItem('selectedPersonality');
             localStorage.removeItem('currentSessionId');
@@ -170,9 +223,10 @@ export const AuthProvider = ({ children }) => {
             currentChatroomId,
             userChatrooms: userChatrooms.length,
             initializing,
-            chatroomLoading
+            chatroomLoading,
+            cacheSize: Object.keys(chatroomMessagesCache).length
         });
-    }, [user, currentChatroomId, userChatrooms, initializing, chatroomLoading]);
+    }, [user, currentChatroomId, userChatrooms, initializing, chatroomLoading, chatroomMessagesCache]);
 
     const value = useMemo(
         () => ({
@@ -181,12 +235,17 @@ export const AuthProvider = ({ children }) => {
             userChatrooms,
             currentChatroomId,
             chatroomLoading,
+            chatroomRefreshTrigger,
             createNewChatroom,
             switchChatroom,
+            forceReloadChatroom,
             reloadCurrentChatroom, 
+            updateChatroomCache,
+            getChatroomCache,
+            clearChatroomCache,
             logout,
         }),
-        [user, initializing, userChatrooms, currentChatroomId, chatroomLoading]
+        [user, initializing, userChatrooms, currentChatroomId, chatroomLoading, chatroomRefreshTrigger, chatroomMessagesCache]
     );
 
     return (
