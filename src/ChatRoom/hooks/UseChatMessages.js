@@ -101,7 +101,6 @@ export default function useChatMessages(canvas, setInputNotification) {
         console.log('重置聊天室狀態');
         
         // 只重置 UI 狀態，不要立即清空 messages（這可能觸發快取更新）
-        // setMessages([]); // 暫時註釋掉
         setHistoryLoaded(false);
         setHistoryLoading(false);
         setConversationCount(0);
