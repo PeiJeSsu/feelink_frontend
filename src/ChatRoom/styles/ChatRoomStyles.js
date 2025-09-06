@@ -74,6 +74,19 @@ export const chatRoomStyles = {
             color: "#2563eb",
         },
     },
+    clearButton: {
+        marginLeft: 1,
+        color: "#64748b",
+        width: 32,
+        height: 32,
+        "&:hover": {
+            backgroundColor: "#f1f5f9",
+            color: "#2563eb",
+        },
+        "&:disabled": {
+            color: "#cbd5e1",
+        }
+    },
     titleIcon: {
         color: "#2563eb",
         fontSize: 20,
@@ -91,4 +104,3 @@ export const chatRoomStyles = {
         fontWeight: 600,
     }
 };
-
