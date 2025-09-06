@@ -15,6 +15,7 @@ const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(true);
 	const [chatWidth, setChatWidth] = useState(400);
+	const [chatDisabled, setChatDisabled] = useState(false);
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
 		size: 5,
@@ -185,6 +186,7 @@ const Layout = () => {
 					{/* 聊天室切換按鈕 */}
 					<Button
 						onClick={toggleChat}
+						disabled={chatDisabled}
 						variant={isChatOpen ? "text" : "outlined"}
 						className="chat-toggle"
 						sx={{
@@ -202,6 +204,11 @@ const Layout = () => {
 								backgroundColor: isChatOpen ? "#f1f5f9" : "#f9fafb",
 								color: "#2563eb",
 								border: isChatOpen ? "none" : "1px solid #2563eb",
+							},
+							"&:disabled": { 
+								backgroundColor: "#f3f4f6",
+								color: "#9ca3af",
+								border: "1px solid #d1d5db",
 							},
 						}}
 					>
@@ -329,7 +336,7 @@ const Layout = () => {
 							}
 						}}
 					>
-						<ChatRoom canvas={canvasRef.current} onClose={toggleChat} />
+						<ChatRoom canvas={canvasRef.current} onClose={toggleChat} onDisabledChange={setChatDisabled}/>
 					</ResizableBox>
 				)}
 			</Box>

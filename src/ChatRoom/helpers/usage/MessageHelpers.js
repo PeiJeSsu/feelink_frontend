@@ -89,49 +89,34 @@ export const convertDBMessagesToUIMessages = (dbMessages) => {
         });
 };
 
-// 格式化時間戳記顯示
+// 格式化時間戳記顯示 - 使用上午/下午格式
 export const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     
     try {
         const date = new Date(timestamp);
-        //  檢查日期是否有效
+        // 檢查日期是否有效
         if (isNaN(date.getTime())) return '';
         
         const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const isToday = date.toDateString() === now.toDateString();
         
-        // 如果是今天
-        if (diffDays === 0) {
-            if (diffMins < 1) return '剛剛';
-            if (diffMins < 60) return `${diffMins} 分鐘前`;
-            if (diffHours < 24) return `${diffHours} 小時前`;
-        }
-        
-        // 如果是昨天
-        if (diffDays === 1) {
-            return `昨天 ${date.toLocaleTimeString('zh-TW', { 
-                hour: '2-digit', 
+        // 如果是今天，只顯示時間（上午/下午）
+        if (isToday) {
+            return date.toLocaleTimeString('zh-TW', {
+                hour: '2-digit',
                 minute: '2-digit',
-                hour12: false 
-            })}`;
+                hour12: true
+            });
         }
         
-        // 如果是更早的日期
-        if (diffDays < 7) {
-            return `${diffDays} 天前`;
-        }
-        
-        // 超過一週，顯示完整日期
+        // 如果不是今天，顯示月/日 上午/下午 時:分
         return date.toLocaleString('zh-TW', {
             month: 'numeric',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false
+            hour12: true
         });
     } catch (error) {
         console.error('格式化時間戳記失敗:', error);

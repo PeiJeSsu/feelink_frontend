@@ -52,7 +52,14 @@ const getGreetingWithNickname = (question) => {
 };
 
 export default function useChatMessages(canvas, setInputNotification) {
-    const { currentChatroomId, chatroomLoading } = useContext(AuthContext);
+    const { 
+        currentChatroomId, 
+        chatroomLoading, 
+        chatroomRefreshTrigger,
+        getChatroomCache,
+        updateChatroomCache
+    } = useContext(AuthContext);
+    
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [disabled, setDisabled] = useState(false);
@@ -67,13 +74,17 @@ export default function useChatMessages(canvas, setInputNotification) {
     const lastLoadedChatroomId = useRef(null);
     const isLoadingRef = useRef(false);
     const abortControllerRef = useRef(null);
+    const lastRefreshTrigger = useRef(0);
+    const componentMountedRef = useRef(true); // 追蹤組件掛載狀態
 
     // 添加清理函數到引用中
     const addCleanupFunction = useCallback((cleanupFn) => {
-        cleanupFunctionsRef.current.push(cleanupFn);
+        if (componentMountedRef.current) {
+            cleanupFunctionsRef.current.push(cleanupFn);
+        }
     }, []);
 
-    // 執行所有清理函數
+    // 執行所有清理函數（但不清理快取）
     const executeCleanup = useCallback(() => {
         cleanupFunctionsRef.current.forEach(cleanup => {
             try {
@@ -85,16 +96,16 @@ export default function useChatMessages(canvas, setInputNotification) {
         cleanupFunctionsRef.current = [];
     }, []);
 
-    // 重置聊天室狀態
+    // 重置聊天室狀態（修改版本：不影響快取）
     const resetChatroomState = useCallback(() => {
         console.log('重置聊天室狀態');
-        setMessages([]);
+        
+        // 只重置 UI 狀態，不要立即清空 messages（這可能觸發快取更新）
         setHistoryLoaded(false);
         setHistoryLoading(false);
         setConversationCount(0);
         setCurrentQuestion("");
         questionAdded.current = false;
-        lastLoadedChatroomId.current = null;
         isLoadingRef.current = false;
         
         // 取消正在進行的請求
@@ -106,24 +117,55 @@ export default function useChatMessages(canvas, setInputNotification) {
         executeCleanup();
     }, [executeCleanup]);
 
-    // 載入聊天室歷史訊息
-    const loadChatroomHistory = useCallback(async (chatroomId) => {
+    // 優化版本：從快取或資料庫載入聊天室歷史訊息
+    const loadChatroomHistory = useCallback(async (chatroomId, forceReload = false) => {
+        // 檢查組件是否還掛載
+        if (!componentMountedRef.current) {
+            console.log('組件已卸載，跳過載入');
+            return;
+        }
+
         // 檢查是否需要載入
-        if (!chatroomId || 
-            chatroomLoading || 
-            isLoadingRef.current || 
-            lastLoadedChatroomId.current === chatroomId) {
+        if (!chatroomId || chatroomLoading || isLoadingRef.current) {
             console.log('跳過載入歷史訊息:', { 
                 chatroomId, 
                 chatroomLoading, 
-                isLoading: isLoadingRef.current,
-                lastLoaded: lastLoadedChatroomId.current
+                isLoading: isLoadingRef.current
             });
             return;
         }
 
+        // 優先檢查快取（即使是 lastLoadedChatroomId 不同的情況）
+        if (!forceReload) {
+            const cachedData = getChatroomCache(chatroomId);
+            if (cachedData && cachedData.messages) {
+                console.log('使用快取資料載入聊天室:', chatroomId);
+                const uniqueMessages = removeDuplicateMessages(cachedData.messages);
+                
+                // 檢查組件是否還掛載
+                if (!componentMountedRef.current) return;
+                
+                setMessages(uniqueMessages);
+                setHistoryLoaded(true);
+                setHistoryLoading(false);
+                lastLoadedChatroomId.current = chatroomId;
+                
+                if (uniqueMessages.length > 0) {
+                    questionAdded.current = true;
+                    const userMessageCount = uniqueMessages.filter(msg => msg.isUser).length;
+                    setConversationCount(userMessageCount);
+                } else {
+                    questionAdded.current = false;
+                    setConversationCount(0);
+                }
+                
+                console.log(`從快取載入 ${uniqueMessages.length} 條訊息`);
+                return;
+            }
+        }
+
+        // 沒有快取時才從資料庫載入
         try {
-            console.log('開始載入聊天室歷史訊息:', chatroomId);
             isLoadingRef.current = true;
             lastLoadedChatroomId.current = chatroomId;
             setHistoryLoading(true);
@@ -133,10 +175,11 @@ export default function useChatMessages(canvas, setInputNotification) {
             
             const result = await loadChatroomHistoryService(chatroomId);
             
-            // 檢查請求是否被取消或聊天室是否已經切換
+            // 檢查請求是否被取消、聊天室是否已經切換或組件是否已卸載
             if (abortControllerRef.current?.signal.aborted || 
-                lastLoadedChatroomId.current !== chatroomId) {
-                console.log('載入請求已取消或聊天室已切換');
+                lastLoadedChatroomId.current !== chatroomId ||
+                !componentMountedRef.current) {
+                console.log('載入請求已取消、聊天室已切換或組件已卸載');
                 return;
             }
             
@@ -144,7 +187,13 @@ export default function useChatMessages(canvas, setInputNotification) {
                 const uiMessages = convertDBMessagesToUIMessages(result.content);
                 const uniqueMessages = removeDuplicateMessages(uiMessages);
                 
-                console.log(`成功載入 ${uniqueMessages.length} 條歷史訊息`);
+                console.log(`成功從資料庫載入 ${uniqueMessages.length} 條歷史訊息`);
+                
+                // 更新快取
+                updateChatroomCache(chatroomId, uniqueMessages);
+                
+                // 檢查組件是否還掛載
+                if (!componentMountedRef.current) return;
                 
                 setMessages(uniqueMessages);
                 
@@ -155,32 +204,42 @@ export default function useChatMessages(canvas, setInputNotification) {
                 } else {
                     console.log('沒有歷史訊息');
                     questionAdded.current = false;
+                    setConversationCount(0);
                 }
             } else {
                 console.log('載入歷史訊息失敗或沒有訊息:', result.error);
-                setMessages([]);
-                questionAdded.current = false;
+                if (componentMountedRef.current) {
+                    setMessages([]);
+                    updateChatroomCache(chatroomId, []); // 快取空結果
+                    questionAdded.current = false;
+                    setConversationCount(0);
+                }
             }
             
-            setHistoryLoaded(true);
+            if (componentMountedRef.current) {
+                setHistoryLoaded(true);
+            }
         } catch (error) {
             console.error('載入聊天室歷史訊息時發生錯誤:', error);
-            // 只有在當前聊天室還是目標聊天室時才設置錯誤狀態
-            if (lastLoadedChatroomId.current === chatroomId) {
+            // 只有在當前聊天室還是目標聊天室且組件還掛載時才設置錯誤狀態
+            if (lastLoadedChatroomId.current === chatroomId && componentMountedRef.current) {
                 setMessages([]);
+                updateChatroomCache(chatroomId, []); // 快取空結果
                 questionAdded.current = false;
+                setConversationCount(0);
                 setHistoryLoaded(true);
             }
         } finally {
-            setHistoryLoading(false);
-            isLoadingRef.current = false;
-            abortControllerRef.current = null;
+            if (componentMountedRef.current) {
+                setHistoryLoading(false);
+                isLoadingRef.current = false;
+                abortControllerRef.current = null;
+            }
         }
-    }, [chatroomLoading]);
+    }, [chatroomLoading, getChatroomCache, updateChatroomCache]);
 
-    // 監聽聊天室ID變化 - 簡化邏輯，避免無限循環
+    // 監聽聊天室ID變化 - 修改版本：確保快取持久性
     useEffect(() => {
-        console.log('聊天室ID變更效應觸發:', { currentChatroomId, chatroomLoading });
         
         if (chatroomLoading) {
             console.log('聊天室載入中，跳過處理');
@@ -190,24 +249,94 @@ export default function useChatMessages(canvas, setInputNotification) {
         if (!currentChatroomId) {
             console.log('沒有聊天室ID，重置狀態');
             resetChatroomState();
+            lastLoadedChatroomId.current = null;
             return;
         }
 
-        // 如果是新的聊天室ID，則載入歷史訊息
-        if (currentChatroomId !== lastLoadedChatroomId.current) {
-            console.log('檢測到新的聊天室ID，準備載入歷史訊息:', currentChatroomId);
-            resetChatroomState();
+        // 檢查是否是同一個聊天室
+        const isActuallySameChatroom = currentChatroomId === lastLoadedChatroomId.current;
+        
+        // 如果是同一個聊天室且已經載入過，跳過處理
+        if (isActuallySameChatroom && historyLoaded) {
+            console.log('相同聊天室且已載入，跳過處理');
+            return;
+        }
+        
+        // 優先檢查快取
+        const cachedData = getChatroomCache(currentChatroomId);
+        if (cachedData && cachedData.messages && !isActuallySameChatroom) {
+            
+            // 先清理狀態
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+                abortControllerRef.current = null;
+            }
+            executeCleanup();
+            
+            const uniqueMessages = removeDuplicateMessages(cachedData.messages);
+            setMessages(uniqueMessages);
+            setHistoryLoaded(true);
+            setHistoryLoading(false);
+            lastLoadedChatroomId.current = currentChatroomId;
+            
+            if (uniqueMessages.length > 0) {
+                questionAdded.current = true;
+                const userMessageCount = uniqueMessages.filter(msg => msg.isUser).length;
+                setConversationCount(userMessageCount);
+            } else {
+                questionAdded.current = false;
+                setConversationCount(0);
+            }
+            
+            console.log(`從快取載入 ${uniqueMessages.length} 條訊息`);
+            return;
+        }
+        
+        // 只有在沒有快取或確實是不同聊天室時才從資料庫載入
+        if (!isActuallySameChatroom) {
+            // 先清理狀態
+            setLoading(false);
+            setDisabled(false);
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+                abortControllerRef.current = null;
+            }
+            executeCleanup();
             
             // 延遲執行，避免快速切換導致的問題
             const timeoutId = setTimeout(() => {
-                loadChatroomHistory(currentChatroomId);
+                if (componentMountedRef.current) {
+                    loadChatroomHistory(currentChatroomId, false);
+                }
             }, 100);
             
             return () => {
                 clearTimeout(timeoutId);
             };
+        } else {
+            console.log('聊天室ID未變更，跳過載入');
         }
-    }, [currentChatroomId, chatroomLoading, resetChatroomState, loadChatroomHistory]);
+    }, [currentChatroomId, chatroomLoading, executeCleanup, loadChatroomHistory, getChatroomCache, historyLoaded]);
+
+    // 監聽強制重新整理觸發器
+    useEffect(() => {
+        if (chatroomRefreshTrigger > lastRefreshTrigger.current && 
+            currentChatroomId && 
+            !chatroomLoading &&
+            componentMountedRef.current) {
+            
+            console.log('檢測到強制重新整理觸發器:', chatroomRefreshTrigger);
+            lastRefreshTrigger.current = chatroomRefreshTrigger;
+            
+            // 強制從資料庫重新載入
+            resetChatroomState();
+            setTimeout(() => {
+                if (componentMountedRef.current) {
+                    loadChatroomHistory(currentChatroomId, true); // 強制重新載入
+                }
+            }, 100);
+        }
+    }, [chatroomRefreshTrigger, currentChatroomId, chatroomLoading, resetChatroomState, loadChatroomHistory]);
 
     // 顯示預設問題 - 獨立的效應，避免與載入邏輯混雜
     useEffect(() => {
@@ -216,7 +345,8 @@ export default function useChatMessages(canvas, setInputNotification) {
             !questionAdded.current && 
             !loading && 
             !historyLoading &&
-            currentChatroomId) {
+            currentChatroomId &&
+            componentMountedRef.current) {
             
             console.log('顯示預設問題');
             const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
@@ -229,48 +359,90 @@ export default function useChatMessages(canvas, setInputNotification) {
         }
     }, [historyLoaded, messages.length, questionAdded.current, loading, historyLoading, currentChatroomId]);
 
-    // 組件卸載時清理
+    // 組件卸載時清理（修改版本：不清理快取）
     useEffect(() => {
+        componentMountedRef.current = true;
+        
         return () => {
             console.log('useChatMessages 組件卸載，執行清理');
+            componentMountedRef.current = false;
+            
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
+                abortControllerRef.current = null;
             }
+            
             executeCleanup();
+            
+            // 清理定時器
+            const highestTimeoutId = setTimeout(() => {}, 0);
+            for (let i = 0; i <= highestTimeoutId; i++) {
+                clearTimeout(i);
+            }
+            
         };
     }, [executeCleanup]);
 
-    // 流式訊息發送函數
+    // 更新訊息時同步快取
+    const updateMessagesOnly = useCallback((newMessages) => {
+        if (componentMountedRef.current && newMessages && newMessages.length >= 0) {
+            setMessages(newMessages);
+        }
+    }, []);
+
+    // 僅更新快取的函數
+    const updateCacheOnly = useCallback((newMessages) => {
+        if (componentMountedRef.current && newMessages && newMessages.length >= 0 && currentChatroomId) {
+            // 增加防護：不要用空陣列覆蓋有內容的快取
+            const existingCache = getChatroomCache(currentChatroomId);
+            if (newMessages.length > 0 || !existingCache || existingCache.messages.length === 0) {
+                console.log('更新快取:', currentChatroomId, '訊息數量:', newMessages.length);
+                updateChatroomCache(currentChatroomId, newMessages);
+            } else {
+                console.log('跳過快取更新 - 防止用空陣列覆蓋有效快取');
+            }
+        }
+    }, [currentChatroomId, updateChatroomCache, getChatroomCache]);
+
+    // 同時更新訊息和快取（用於非串流情況）
+    const updateMessagesAndCache = useCallback((newMessages) => {
+        updateMessagesOnly(newMessages);
+        updateCacheOnly(newMessages);
+    }, [updateMessagesOnly, updateCacheOnly]);
+
+    // 發送訊息相關函數
     const sendTextMessageStream = useCallback((messageText, defaultQuestion = "", conversationCount = 1) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         return handleSendTextMessageStream(
             messageText, 
             messages, 
-            setMessages, 
+            updateMessagesOnly, 
             setLoading,
             setDisabled,
-            currentChatroomId
+            currentChatroomId,
+            updateCacheOnly 
         );
-    }, [messages, setMessages, setLoading, setDisabled, currentChatroomId]);
+    }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, currentChatroomId]);
 
     const sendImageMessageStream = useCallback((messageText, messageImage) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         return handleSendImageMessageStream(
             messageText, 
             messageImage, 
             messages, 
-            setMessages, 
+            updateMessagesOnly,  
             setLoading,
             setDisabled,
-            currentChatroomId 
+            currentChatroomId,
+            updateCacheOnly 
         );
-    }, [messages, setMessages, setLoading, setDisabled, currentChatroomId]);
+    }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, currentChatroomId]);
 
     const convertCanvasToBlob = useCallback(async () => {
         if (!canvas) {
@@ -281,8 +453,8 @@ export default function useChatMessages(canvas, setInputNotification) {
     }, [canvas]);
 
     const sendCanvasAnalysisStream = useCallback(async (messageText) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         try {
@@ -291,49 +463,56 @@ export default function useChatMessages(canvas, setInputNotification) {
                 blob, 
                 messageText, 
                 messages, 
-                setMessages, 
+                updateMessagesOnly,  
                 setLoading,
                 setDisabled,
-                currentChatroomId 
+                currentChatroomId,
+                updateCacheOnly  
             );
         } catch (error) {
             console.error(error.message);
         }
-    }, [messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
+    }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
 
-    // AI 繪圖功能（使用模擬打字機效果版本）
     const sendAIDrawing = useCallback(async (messageText) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         try {
             const blob = await convertCanvasToBlob();
-            // 使用帶打字機效果的版本（非串流 API + 前端打字機模擬）
-            await handleSendAIDrawing(blob, messageText, messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId);
+            await handleSendAIDrawing(blob, messageText, messages, updateMessagesAndCache, setLoading, setDisabled, canvas, currentChatroomId);
         } catch (error) {
             console.error(error.message);
         }
-    }, [messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
+    }, [messages, updateMessagesAndCache, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
 
-    // 明確的打字機效果版本
     const sendAIDrawingWithTypewriter = useCallback(async (messageText) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         try {
             const blob = await convertCanvasToBlob();
-            await handleSendAIDrawingWithTypewriter(blob, messageText, messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId);
+            await handleSendAIDrawingWithTypewriter(
+                blob, 
+                messageText, 
+                messages, 
+                updateMessagesOnly,   
+                setLoading, 
+                setDisabled, 
+                canvas, 
+                currentChatroomId,
+                updateCacheOnly       
+            );
         } catch (error) {
             console.error(error.message);
         }
-    }, [messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
+    }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
 
-    // AI 繪圖串流版本（真實 SSE）
     const sendAIDrawingStream = useCallback(async (messageText) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         try {
@@ -342,37 +521,38 @@ export default function useChatMessages(canvas, setInputNotification) {
                 blob, 
                 messageText, 
                 messages, 
-                setMessages, 
+                updateMessagesOnly,  
                 setLoading,
                 setDisabled,
                 canvas, 
-                currentChatroomId
+                currentChatroomId,
+                updateCacheOnly     
             );
         } catch (error) {
             console.error(error.message);
         }
-    }, [messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
+    }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
 
-    // 物件生成功能
     const sendGenerateObject = useCallback(async (messageText) => {
+        if (!componentMountedRef.current) {
+            return;
+        }
+        
         try {
-            // 使用輸入框通知而不是全局 snackbar
             setInputNotification({
                 message: '點擊畫布上要生成物件的位置，或按 ESC 鍵取消',
                 severity: 'info'
             });
             
-            // 設置畫布為選擇位置模式
             setupCanvasForPositionSelection(messageText);
         } catch (error) {
             console.error(error.message);
         }
-    }, [canvas, setInputNotification, messages, setMessages, setLoading, setDisabled, currentChatroomId]);
+    }, [canvas, setInputNotification, messages, updateMessagesAndCache, setLoading, setDisabled, currentChatroomId]);
 
     const setupCanvasForPositionSelection = useCallback((messageText) => {
-        if (!canvas || !currentChatroomId) return;
+        if (!canvas || !currentChatroomId || !componentMountedRef.current) return;
         
-        // 保存目前的畫布狀態，以便稍後恢復
         const originalState = {
             isDrawingMode: canvas.isDrawingMode,
             selection: canvas.selection,
@@ -385,7 +565,6 @@ export default function useChatMessages(canvas, setInputNotification) {
             }))
         };
         
-        // 禁用所有工具和物件選取
         setDrawingMode(canvas, false);
         disableShapeDrawing(canvas);
         disableEraser(canvas);
@@ -393,112 +572,101 @@ export default function useChatMessages(canvas, setInputNotification) {
         disablePaintBucket(canvas);
         setPanningMode(canvas, false);
         
-        // 禁用物件選取
         canvas.selection = false;
         canvas.getObjects().forEach(obj => {
             obj.selectable = false;
             obj.evented = false;
         });
         
-        // 設置游標樣式
         canvas.defaultCursor = 'crosshair';
         canvas.hoverCursor = 'crosshair';
         
-        // 恢復畫布狀態的函數
         const restoreCanvasState = (clearPosition = true) => {
-            // 恢復畫布基本狀態
             canvas.isDrawingMode = originalState.isDrawingMode;
             canvas.selection = originalState.selection;
             canvas.defaultCursor = originalState.defaultCursor;
             canvas.hoverCursor = originalState.hoverCursor;
             
-            // 恢復物件狀態
             originalState.objectStates.forEach(state => {
                 state.obj.selectable = state.selectable;
                 state.obj.evented = state.evented;
             });
             
-            // 只在需要時清除位置標記
             if (clearPosition) {
                 delete canvas._generateObjectPosition;
             }
         };
         
-        // 清理事件監聽器的函數
         const cleanup = (clearPosition = true) => {
             canvas.off('mouse:down', handleCanvasClick);
             window.removeEventListener('keydown', handleKeyDown);
             restoreCanvasState(clearPosition);
-            if (clearPosition) {
-                setInputNotification(null); // 清理時清除通知
+            if (clearPosition && componentMountedRef.current) {
+                setInputNotification(null);
             }
         };
         
-        // ESC 鍵取消選取的處理函數
         const handleKeyDown = (event) => {
-            if (event.key === 'Escape') {
-                cleanup(true); // 清除位置
-                setInputNotification(null); // 清除通知
+            if (event.key === 'Escape' && componentMountedRef.current) {
+                cleanup(true);
+                setInputNotification(null);
                 showAlert('已取消物件生成', 'info', 2000);
             }
         };
         
-        // 添加一次性點擊事件監聽器
         const handleCanvasClick = async (options) => {
-            const pointer = canvas.getPointer(options.e);
+            if (!componentMountedRef.current) return;
             
-            // 儲存點擊位置到畫布
+            const pointer = canvas.getPointer(options.e);
             canvas._generateObjectPosition = { x: pointer.x, y: pointer.y };
             console.log('保存點擊位置:', canvas._generateObjectPosition);
             
-            // 清除通知
             setInputNotification(null);
             
-            // 移除事件監聽器但不清除位置
             canvas.off('mouse:down', handleCanvasClick);
             window.removeEventListener('keydown', handleKeyDown);
-            restoreCanvasState(false); // 不清除位置
+            restoreCanvasState(false);
             
             try {
                 const blob = await convertCanvasToBlob();
-                await handleSendGenerateObject(blob, messageText, messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId);
+                await handleSendGenerateObject(blob, messageText, messages, updateMessagesOnly, setLoading, setDisabled, canvas, currentChatroomId, updateCacheOnly); 
             } catch (error) {
                 console.error(error.message);
-                // 如果出錯，手動清除位置
                 delete canvas._generateObjectPosition;
             }
         };
         
-        // 添加事件監聽器
         canvas.on('mouse:down', handleCanvasClick);
         window.addEventListener('keydown', handleKeyDown);
         
-        // 將清理函數添加到全域清理列表
         addCleanupFunction(() => cleanup(true));
-    }, [canvas, currentChatroomId, convertCanvasToBlob, setInputNotification, messages, setMessages, setLoading, setDisabled, addCleanupFunction]);
+    }, [canvas, currentChatroomId, convertCanvasToBlob, setInputNotification, messages, updateMessagesAndCache, setLoading, setDisabled, addCleanupFunction]);
 
     const addSystemMessage = useCallback((text) => {
-        setMessages((prevMessages) => [
-            ...prevMessages,
+        if (!componentMountedRef.current) return;
+        
+        const newMessages = [
+            ...messages,
             createNewMessage(Date.now(), text, false, false)
-        ]);
-    }, []);
+        ];
+        updateMessagesAndCache(newMessages);
+    }, [messages, updateMessagesAndCache]);
 
-    // 重新載入歷史訊息函數
     const reloadChatroomHistory = useCallback(() => {
-        if (currentChatroomId && !historyLoading && !isLoadingRef.current) {
+        if (currentChatroomId && !historyLoading && !isLoadingRef.current && componentMountedRef.current) {
             console.log('手動重新載入聊天室歷史訊息:', currentChatroomId);
             resetChatroomState();
             setTimeout(() => {
-                loadChatroomHistory(currentChatroomId);
+                if (componentMountedRef.current) {
+                    loadChatroomHistory(currentChatroomId, true);
+                }
             }, 100);
         }
     }, [currentChatroomId, historyLoading, resetChatroomState, loadChatroomHistory]);
 
-    // 一般訊息發送函數（非串流）
     const sendTextMessage = useCallback((messageText) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         const nextCount = conversationCount + 1; 
@@ -506,34 +674,34 @@ export default function useChatMessages(canvas, setInputNotification) {
         handleSendTextMessage(
             messageText, 
             messages, 
-            setMessages, 
+            updateMessagesAndCache,
             setLoading,
             setDisabled,
             currentChatroomId, 
             currentQuestion, 
             nextCount
         );
-    }, [messages, setMessages, setLoading, setDisabled, currentChatroomId, conversationCount, currentQuestion]);
+    }, [messages, updateMessagesAndCache, setLoading, setDisabled, currentChatroomId, conversationCount, currentQuestion]);
 
     const sendImageMessage = useCallback((messageText, messageImage) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         handleSendImageMessage(
             messageText, 
             messageImage, 
             messages, 
-            setMessages, 
+            updateMessagesAndCache,
             setLoading,
             setDisabled,
             currentChatroomId 
         );
-    }, [messages, setMessages, setLoading, setDisabled, currentChatroomId]);
+    }, [messages, updateMessagesAndCache, setLoading, setDisabled, currentChatroomId]);
 
     const sendCanvasAnalysis = useCallback(async (messageText) => {
-        if (!currentChatroomId) {
-            console.error('No current chatroom ID available');
+        if (!currentChatroomId || !componentMountedRef.current) {
+            console.error('No current chatroom ID available or component unmounted');
             return;
         }
         try {
@@ -542,7 +710,7 @@ export default function useChatMessages(canvas, setInputNotification) {
                 blob, 
                 messageText, 
                 messages, 
-                setMessages, 
+                updateMessagesAndCache,
                 setLoading,
                 setDisabled,
                 currentChatroomId 
@@ -550,20 +718,8 @@ export default function useChatMessages(canvas, setInputNotification) {
         } catch (error) {
             console.error(error.message);
         }
-    }, [messages, setMessages, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
+    }, [messages, updateMessagesAndCache, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
 
-    // 調試資訊 - 簡化日誌
-    useEffect(() => {
-        console.log('useChatMessages state:', {
-            currentChatroomId,
-            messagesCount: messages.length,
-            historyLoaded,
-            historyLoading,
-            chatroomLoading,
-            lastLoaded: lastLoadedChatroomId.current,
-            isLoading: isLoadingRef.current
-        });
-    }, [currentChatroomId, messages.length, historyLoaded, historyLoading, chatroomLoading]);
 
     return { 
         messages, 

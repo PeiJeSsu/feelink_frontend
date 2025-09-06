@@ -1,6 +1,6 @@
 import { Box, CircularProgress, Typography, Chip, Skeleton, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button } from "@mui/material";
 import { Assistant as AssistantIcon, DeleteSweep as DeleteSweepIcon } from '@mui/icons-material';
-import { useState } from 'react';
+import { useState, useEffect ,useRef} from 'react';
 import { chatRoomStyles } from "../styles/ChatRoomStyles";
 import useChatMessages from "../hooks/UseChatMessages";
 import ChatMessage from "./ChatMessage";
@@ -8,9 +8,9 @@ import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 import { IconButton } from "@mui/material";
 
-export default function ChatRoom({ canvas }) {
+export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
     const [inputNotification, setInputNotification] = useState(null);
-    
+    const chatAreaRef = useRef(null);
     const { 
         messages, 
         loading,
@@ -34,6 +34,13 @@ export default function ChatRoom({ canvas }) {
     const [openClearDialog, setOpenClearDialog] = useState(false);
     const [clearing, setClearing] = useState(false);
 
+    // 將內部 disabled 狀態通過 callback 傳遞給父組件
+    useEffect(() => {
+        if (onDisabledChange) {
+            onDisabledChange(disabled || loading || historyLoading || clearing);
+        }
+    }, [disabled, loading, historyLoading, clearing, onDisabledChange]);
+
     // 取得 AI 夥伴名稱的函數
     const getAIPartnerName = () => {
         const aiPartnerName = localStorage.getItem('aiPartnerName');
@@ -45,7 +52,19 @@ export default function ChatRoom({ canvas }) {
         
         return currentLanguage === 'zh-TW' ? `AI 夥伴 — ${aiPartnerName}` : `AI Partner ${aiPartnerName}`;
     };
-
+    const scrollToBottom = () => {
+        if (chatAreaRef.current) {
+            chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+        }
+    };
+    useEffect(() => {
+        if (historyLoaded && !historyLoading && messages.length > 0) {
+            // 延遲滾動，確保 DOM 已更新
+            setTimeout(() => {
+                scrollToBottom();
+            }, 1);
+        }
+    }, [historyLoaded, historyLoading, messages.length]);
     // 清空聊天室函數
     const handleClearChatroom = async () => {
         if (!currentChatroomId) {
@@ -136,21 +155,20 @@ export default function ChatRoom({ canvas }) {
                             disabled={clearing || historyLoading}
                             sx={{ 
                                 marginLeft: 1,
-                                '&:hover': { backgroundColor: 'rgba(239, 68, 68, 0.1)' }
+                                '&:hover': { backgroundColor: 'rgba(37, 99, 235, 0.1)' } // 藍色 hover
                             }}
                             title="清空聊天室"
                         >
                             <DeleteSweepIcon 
                                 sx={{ 
                                     fontSize: 18, 
-                                    color: '#ef4444'
+                                    color: '#2563eb' // 改藍色
                                 }} 
                             />
                         </IconButton>
                     )}
                 </Box>
                 
-                {/* 創藝好夥伴標籤，放在右側 */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Chip 
                         label="你的創藝好夥伴" 
@@ -161,7 +179,7 @@ export default function ChatRoom({ canvas }) {
             </Box>
 
             {/* 聊天訊息區域 */}
-            <Box sx={chatRoomStyles.chatArea}>
+            <Box ref={chatAreaRef} sx={chatRoomStyles.chatArea}>
                 {/* 載入歷史訊息時顯示骨架屏 */}
                 {historyLoading && renderHistoryLoadingSkeleton()}
                 
@@ -253,4 +271,6 @@ export default function ChatRoom({ canvas }) {
 
 ChatRoom.propTypes = {
     canvas: PropTypes.object.isRequired,
+    onClose: PropTypes.func,
+    onDisabledChange: PropTypes.func,
 };
