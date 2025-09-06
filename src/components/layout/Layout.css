@@ -3,7 +3,6 @@
 	position: relative;
 	background-color: #ffffff;
 	border-left: 1px solid #aeb8d5f5;
-	transition: all 0.05s ease-in-out;
 	overflow: hidden;
 }
 
@@ -12,6 +11,16 @@
 .chat-container.resizing * {
 	user-select: none;
 	pointer-events: none;
+}
+
+/* 全域拖曳狀態 - 防止拖曳時選取文字 */
+body.resizing,
+body.resizing * {
+	user-select: none !important;
+	-webkit-user-select: none !important;
+	-moz-user-select: none !important;
+	-ms-user-select: none !important;
+	cursor: col-resize !important;
 }
 
 /* 拖動手柄樣式 */
@@ -29,6 +38,16 @@
 	cursor: col-resize;
 	background: transparent;
 	transition: all 0.2s ease;
+	/* 防止文字選取 */
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	/* 防止拖曳時的預設行為 */
+	-webkit-user-drag: none;
+	-khtml-user-drag: none;
+	-moz-user-drag: none;
+	-o-user-drag: none;
 }
 
 /* 拖動手柄 hover 效果 */
