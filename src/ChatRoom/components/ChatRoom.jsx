@@ -7,6 +7,7 @@ import ChatMessage from "./ChatMessage";
 import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 import { IconButton } from "@mui/material";
+import { apiConfig } from "../config/ApiConfig"
 
 export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
     const [inputNotification, setInputNotification] = useState(null);
@@ -75,25 +76,20 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
         try {
             setClearing(true);
             
-            // 調用後端API刪除聊天室所有訊息
-            const response = await fetch(`http://localhost:8080/api/messages/chatroom/${currentChatroomId}`, {
-                method: 'DELETE',
+            // 使用 apiConfig 調用後端API刪除聊天室所有訊息
+            const response = await apiConfig.delete(`/api/messages/chatroom/${currentChatroomId}`, {
                 headers: {
                     'Content-Type': 'application/json',
                 }
             });
 
-            if (response.ok) {
-                console.log('聊天室清空成功');
-                // 重新載入聊天室歷史（應該會是空的）
-                reloadChatroomHistory();
-            } else {
-                console.error('清空聊天室失敗:', await response.text());
-                // 即使後端失敗，也可以嘗試重新載入看看實際狀況
-                reloadChatroomHistory();
-            }
+            console.log('聊天室清空成功');
+            // 重新載入聊天室歷史（應該會是空的）
+            reloadChatroomHistory();
         } catch (error) {
-            console.error('清空聊天室時發生錯誤:', error);
+            console.error('清空聊天室失敗:', error);
+            // 即使後端失敗，也可以嘗試重新載入看看實際狀況
+            reloadChatroomHistory();
         } finally {
             setClearing(false);
             setOpenClearDialog(false);
@@ -153,16 +149,12 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
                             size="small"
                             onClick={() => setOpenClearDialog(true)}
                             disabled={clearing || historyLoading}
-                            sx={{ 
-                                marginLeft: 1,
-                                '&:hover': { backgroundColor: 'rgba(37, 99, 235, 0.1)' } // 藍色 hover
-                            }}
+                            sx={chatRoomStyles.clearButton}
                             title="清空聊天室"
                         >
                             <DeleteSweepIcon 
                                 sx={{ 
-                                    fontSize: 18, 
-                                    color: '#2563eb' // 改藍色
+                                    fontSize: 18
                                 }} 
                             />
                         </IconButton>
@@ -240,11 +232,6 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
                     <DialogContentText id="clear-dialog-description">
                         確定要清空這個聊天室的所有訊息嗎？此操作無法復原。
                     </DialogContentText>
-                    {currentChatroomId && (
-                        <DialogContentText sx={{ marginTop: 1, fontSize: '12px', color: '#6b7280' }}>
-                            聊天室 ID: {currentChatroomId}
-                        </DialogContentText>
-                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button 

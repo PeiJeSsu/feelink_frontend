@@ -5,6 +5,13 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 // Mock the UseChatMessages hook first
 jest.mock('../hooks/UseChatMessages', () => jest.fn());
 
+// Mock the apiConfig
+jest.mock('../config/ApiConfig', () => ({
+  apiConfig: {
+    delete: jest.fn(),
+  },
+}));
+
 // Mock child components
 jest.mock('../components/ChatMessage', () => {
   return function MockChatMessage({ message, isUser, timestamp }) {
@@ -36,9 +43,7 @@ jest.mock('../components/TextInputArea', () => {
 // Import the component after setting up mocks
 import ChatRoom from '../components/ChatRoom';
 import useChatMessages from '../hooks/UseChatMessages';
-
-// Mock fetch globally
-global.fetch = jest.fn();
+import { apiConfig } from '../config/ApiConfig';
 
 const theme = createTheme();
 
@@ -55,12 +60,14 @@ describe('ChatRoom Component', () => {
   const defaultMockReturn = {
     messages: [],
     loading: false,
+    disabled: false,
     historyLoading: false,
     historyLoaded: false,
     sendTextMessage: jest.fn(),
     sendImageMessage: jest.fn(),
     sendCanvasAnalysis: jest.fn(),
     sendAIDrawing: jest.fn(),
+    sendGenerateObject: jest.fn(),
     sendTextMessageStream: jest.fn(),
     sendImageMessageStream: jest.fn(),
     sendCanvasAnalysisStream: jest.fn(),
@@ -71,7 +78,7 @@ describe('ChatRoom Component', () => {
 
   beforeEach(() => {
     useChatMessages.mockReturnValue(defaultMockReturn);
-    fetch.mockClear();
+    apiConfig.delete.mockClear();
   });
 
   afterEach(() => {
@@ -131,6 +138,17 @@ describe('ChatRoom Component', () => {
       useChatMessages.mockReturnValue({
         ...defaultMockReturn,
         loading: true
+      });
+
+      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+      
+      expect(screen.getByTestId('send-button')).toBeDisabled();
+    });
+
+    test('disables input area when disabled from hook', () => {
+      useChatMessages.mockReturnValue({
+        ...defaultMockReturn,
+        disabled: true
       });
 
       renderWithTheme(<ChatRoom canvas={mockCanvas} />);
@@ -256,9 +274,9 @@ describe('ChatRoom Component', () => {
     });
 
     test('calls clear API and reloads history when confirmed', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve('Success')
+      apiConfig.delete.mockResolvedValueOnce({
+        status: 200,
+        data: 'Success'
       });
 
       const mockReload = jest.fn();
@@ -282,10 +300,9 @@ describe('ChatRoom Component', () => {
         fireEvent.click(confirmButton);
       });
       
-      expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/messages/chatroom/test-chatroom-123',
+      expect(apiConfig.delete).toHaveBeenCalledWith(
+        '/api/messages/chatroom/test-chatroom-123',
         {
-          method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
           }
@@ -298,10 +315,8 @@ describe('ChatRoom Component', () => {
     });
 
     test('handles API error gracefully', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        text: () => Promise.resolve('Error')
-      });
+      const apiError = new Error('API Error');
+      apiConfig.delete.mockRejectedValueOnce(apiError);
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const mockReload = jest.fn();
@@ -326,15 +341,15 @@ describe('ChatRoom Component', () => {
         fireEvent.click(confirmButton);
       });
       
-      expect(consoleSpy).toHaveBeenCalledWith('清空聊天室失敗:', 'Error');
+      expect(consoleSpy).toHaveBeenCalledWith('清空聊天室失敗:', apiError);
       expect(mockReload).toHaveBeenCalled();
       
       consoleSpy.mockRestore();
     });
 
     test('shows loading state during clearing', async () => {
-      fetch.mockImplementationOnce(() => new Promise(resolve => {
-        setTimeout(() => resolve({ ok: true, text: () => Promise.resolve('Success') }), 100);
+      apiConfig.delete.mockImplementationOnce(() => new Promise(resolve => {
+        setTimeout(() => resolve({ status: 200, data: 'Success' }), 100);
       }));
 
       useChatMessages.mockReturnValue({
@@ -400,13 +415,14 @@ describe('ChatRoom Component', () => {
       });
       
       expect(consoleSpy).toHaveBeenCalledWith('沒有可用的聊天室ID');
-      expect(fetch).not.toHaveBeenCalled();
+      expect(apiConfig.delete).not.toHaveBeenCalled();
       
       consoleSpy.mockRestore();
     });
 
     test('handles network error during clearing', async () => {
-      fetch.mockRejectedValueOnce(new Error('Network error'));
+      const networkError = new Error('Network error');
+      apiConfig.delete.mockRejectedValueOnce(networkError);
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const mockReload = jest.fn();
@@ -431,9 +447,49 @@ describe('ChatRoom Component', () => {
         fireEvent.click(confirmButton);
       });
       
-      expect(consoleSpy).toHaveBeenCalledWith('清空聊天室時發生錯誤:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('清空聊天室失敗:', networkError);
       
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('onDisabledChange Callback', () => {
+    test('calls onDisabledChange when disabled state changes', () => {
+      const mockOnDisabledChange = jest.fn();
+      
+      useChatMessages.mockReturnValue({
+        ...defaultMockReturn,
+        disabled: true
+      });
+
+      renderWithTheme(
+        <ChatRoom 
+          canvas={mockCanvas} 
+          onDisabledChange={mockOnDisabledChange} 
+        />
+      );
+      
+      expect(mockOnDisabledChange).toHaveBeenCalledWith(true);
+    });
+
+    test('calls onDisabledChange with combined disabled state', () => {
+      const mockOnDisabledChange = jest.fn();
+      
+      useChatMessages.mockReturnValue({
+        ...defaultMockReturn,
+        disabled: false,
+        loading: true,
+        historyLoading: false
+      });
+
+      renderWithTheme(
+        <ChatRoom 
+          canvas={mockCanvas} 
+          onDisabledChange={mockOnDisabledChange} 
+        />
+      );
+      
+      expect(mockOnDisabledChange).toHaveBeenCalledWith(true);
     });
   });
 
