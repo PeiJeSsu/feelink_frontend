@@ -29,7 +29,7 @@
 		"start": "react-scripts start",
 		"build": "react-scripts build",
 		"test": "react-scripts test",
-		"test:coverage": "react-scripts test --coverage --watchAll=false",
+		"test:coverage": "react-scripts test --coverage --watchAll=false --passWithNoTests",
 		"test:coverage:ci": "react-scripts test --coverage --watchAll=false --passWithNoTests; node scripts/fix-lcov-paths.js",
 		"test:file": "react-scripts test --watchAll=false --testPathPattern",
 		"test:report": "react-scripts test --coverage --watchAll=false --testResultsProcessor=jest-stare",

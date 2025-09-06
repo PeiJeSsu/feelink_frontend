@@ -95,10 +95,24 @@ const Layout = () => {
 
 	const handleResizeStart = useCallback(() => {
 		document.body.style.cursor = "col-resize";
+		// 禁用頁面文字選取，防止拖曳時選到文字
+		document.body.style.userSelect = "none";
+		document.body.style.webkitUserSelect = "none";
+		document.body.style.mozUserSelect = "none";
+		document.body.style.msUserSelect = "none";
+		// 添加拖曳狀態類別
+		document.body.classList.add("resizing");
 	}, []);
 
 	const handleResizeStop = useCallback(() => {
 		document.body.style.cursor = "";
+		// 恢復頁面文字選取功能
+		document.body.style.userSelect = "";
+		document.body.style.webkitUserSelect = "";
+		document.body.style.mozUserSelect = "";
+		document.body.style.msUserSelect = "";
+		// 移除拖曳狀態類別
+		document.body.classList.remove("resizing");
 	}, []);
 
 	const handleResize = useCallback((e, { size }) => {
@@ -287,7 +301,7 @@ const Layout = () => {
 						className="chat-container"
 						width={chatWidth}
 						height={Infinity}
-						minConstraints={[400, Infinity]}
+						minConstraints={[380, Infinity]}
 						maxConstraints={[550, Infinity]}
 						axis="x"
 						resizeHandles={["w"]}
@@ -300,6 +314,19 @@ const Layout = () => {
 						}}
 						draggableOpts={{
 							enableUserSelectHack: false,
+							// 防止拖曳時的預設行為
+							onStart: (e) => {
+								e.preventDefault();
+								return true;
+							},
+							onDrag: (e) => {
+								e.preventDefault();
+								return true;
+							},
+							onStop: (e) => {
+								e.preventDefault();
+								return true;
+							}
 						}}
 					>
 						<ChatRoom canvas={canvasRef.current} onClose={toggleChat} />
