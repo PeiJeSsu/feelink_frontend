@@ -166,7 +166,6 @@ export default function useChatMessages(canvas, setInputNotification) {
 
         // 沒有快取時才從資料庫載入
         try {
-            console.log('從資料庫載入聊天室歷史訊息:', chatroomId);
             isLoadingRef.current = true;
             lastLoadedChatroomId.current = chatroomId;
             setHistoryLoading(true);
@@ -241,11 +240,6 @@ export default function useChatMessages(canvas, setInputNotification) {
 
     // 監聽聊天室ID變化 - 修改版本：確保快取持久性
     useEffect(() => {
-        console.log('聊天室ID變更效應觸發:', { 
-            currentChatroomId, 
-            chatroomLoading,
-            lastLoaded: lastLoadedChatroomId.current
-        });
         
         if (chatroomLoading) {
             console.log('聊天室載入中，跳過處理');
@@ -271,7 +265,6 @@ export default function useChatMessages(canvas, setInputNotification) {
         // 優先檢查快取
         const cachedData = getChatroomCache(currentChatroomId);
         if (cachedData && cachedData.messages && !isActuallySameChatroom) {
-            console.log('使用快取資料載入聊天室:', currentChatroomId);
             
             // 先清理狀態
             if (abortControllerRef.current) {
@@ -301,8 +294,6 @@ export default function useChatMessages(canvas, setInputNotification) {
         
         // 只有在沒有快取或確實是不同聊天室時才從資料庫載入
         if (!isActuallySameChatroom) {
-            console.log('檢測到聊天室ID變化或無快取，準備載入:', currentChatroomId);
-            
             // 先清理狀態
             setLoading(false);
             setDisabled(false);
@@ -729,20 +720,6 @@ export default function useChatMessages(canvas, setInputNotification) {
         }
     }, [messages, updateMessagesAndCache, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
 
-    // 調試資訊 - 簡化日誌
-    useEffect(() => {
-        console.log('useChatMessages state:', {
-            currentChatroomId,
-            messagesCount: messages.length,
-            historyLoaded,
-            historyLoading,
-            chatroomLoading,
-            lastLoaded: lastLoadedChatroomId.current,
-            isLoading: isLoadingRef.current,
-            refreshTrigger: chatroomRefreshTrigger,
-            componentMounted: componentMountedRef.current
-        });
-    }, [currentChatroomId, messages.length, historyLoaded, historyLoading, chatroomLoading, chatroomRefreshTrigger]);
 
     return { 
         messages, 

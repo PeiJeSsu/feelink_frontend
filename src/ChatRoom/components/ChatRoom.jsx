@@ -179,7 +179,7 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
             </Box>
 
             {/* 聊天訊息區域 */}
-            <Box ref={chatAreaRef} sx={ chatRoomStyles.chatArea}>
+            <Box ref={chatAreaRef} sx={chatRoomStyles.chatArea}>
                 {/* 載入歷史訊息時顯示骨架屏 */}
                 {historyLoading && renderHistoryLoadingSkeleton()}
                 

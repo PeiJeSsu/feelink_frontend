@@ -250,7 +250,6 @@ export const analysisImage = (text, file, chatroomId) => {
 // 載入聊天室的歷史訊息
 export const loadChatroomMessages = async (chatroomId) => {
     try {
-        console.log('正在載入聊天室訊息:', chatroomId);
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}`);
         return response.data;
     } catch (error) {

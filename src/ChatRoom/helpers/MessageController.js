@@ -114,14 +114,14 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
                         return msg;
                     });
                     // 串流完成時更新快取
-                    if (updateCache) updateCache(updatedMessages);  // 修改這行
+                    if (updateCache) updateCache(updatedMessages);  
                     return updatedMessages;
                 });
             }
         } else {
             // 即使沒有待處理內容，也要觸發快取更新
             setMessages(prevMessages => {
-                if (updateCache) updateCache(prevMessages);  // 修改這行
+                if (updateCache) updateCache(prevMessages);  
                 return prevMessages;
             });
         }
