@@ -144,8 +144,6 @@ export const AuthProvider = ({ children }) => {
         if (!chatroomId || !messages) return;
         
         const existingCache = chatroomMessagesCache[chatroomId];
-        
-        
         setChatroomMessagesCache(prev => ({
             ...prev,
             [chatroomId]: {
