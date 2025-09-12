@@ -75,7 +75,7 @@ export default function useChatMessages(canvas, setInputNotification) {
     const isLoadingRef = useRef(false);
     const abortControllerRef = useRef(null);
     const lastRefreshTrigger = useRef(0);
-    const componentMountedRef = useRef(true); // 追蹤組件掛載狀態
+    const componentMountedRef = useRef(true); 
 
     // 添加清理函數到引用中
     const addCleanupFunction = useCallback((cleanupFn) => {
@@ -84,7 +84,7 @@ export default function useChatMessages(canvas, setInputNotification) {
         }
     }, []);
 
-    // 執行所有清理函數（但不清理快取）
+    // 執行所有清理函數
     const executeCleanup = useCallback(() => {
         cleanupFunctionsRef.current.forEach(cleanup => {
             try {
@@ -96,11 +96,10 @@ export default function useChatMessages(canvas, setInputNotification) {
         cleanupFunctionsRef.current = [];
     }, []);
 
-    // 重置聊天室狀態（修改版本：不影響快取）
+    // 重置聊天室狀態
     const resetChatroomState = useCallback(() => {
         console.log('重置聊天室狀態');
         
-        // 只重置 UI 狀態，不要立即清空 messages（這可能觸發快取更新）
         setHistoryLoaded(false);
         setHistoryLoading(false);
         setConversationCount(0);
@@ -117,7 +116,6 @@ export default function useChatMessages(canvas, setInputNotification) {
         executeCleanup();
     }, [executeCleanup]);
 
-    // 優化版本：從快取或資料庫載入聊天室歷史訊息
     const loadChatroomHistory = useCallback(async (chatroomId, forceReload = false) => {
         // 檢查組件是否還掛載
         if (!componentMountedRef.current) {
@@ -135,7 +133,7 @@ export default function useChatMessages(canvas, setInputNotification) {
             return;
         }
 
-        // 優先檢查快取（即使是 lastLoadedChatroomId 不同的情況）
+        // 優先檢查快取
         if (!forceReload) {
             const cachedData = getChatroomCache(chatroomId);
             if (cachedData && cachedData.messages) {
@@ -210,7 +208,7 @@ export default function useChatMessages(canvas, setInputNotification) {
                 console.log('載入歷史訊息失敗或沒有訊息:', result.error);
                 if (componentMountedRef.current) {
                     setMessages([]);
-                    updateChatroomCache(chatroomId, []); // 快取空結果
+                    updateChatroomCache(chatroomId, []); 
                     questionAdded.current = false;
                     setConversationCount(0);
                 }
@@ -224,7 +222,7 @@ export default function useChatMessages(canvas, setInputNotification) {
             // 只有在當前聊天室還是目標聊天室且組件還掛載時才設置錯誤狀態
             if (lastLoadedChatroomId.current === chatroomId && componentMountedRef.current) {
                 setMessages([]);
-                updateChatroomCache(chatroomId, []); // 快取空結果
+                updateChatroomCache(chatroomId, []); 
                 questionAdded.current = false;
                 setConversationCount(0);
                 setHistoryLoaded(true);
@@ -238,7 +236,7 @@ export default function useChatMessages(canvas, setInputNotification) {
         }
     }, [chatroomLoading, getChatroomCache, updateChatroomCache]);
 
-    // 監聽聊天室ID變化 - 修改版本：確保快取持久性
+    // 監聽聊天室ID變化 
     useEffect(() => {
         
         if (chatroomLoading) {
@@ -255,8 +253,7 @@ export default function useChatMessages(canvas, setInputNotification) {
 
         // 檢查是否是同一個聊天室
         const isActuallySameChatroom = currentChatroomId === lastLoadedChatroomId.current;
-        
-        // 如果是同一個聊天室且已經載入過，跳過處理
+
         if (isActuallySameChatroom && historyLoaded) {
             console.log('相同聊天室且已載入，跳過處理');
             return;
@@ -338,7 +335,7 @@ export default function useChatMessages(canvas, setInputNotification) {
         }
     }, [chatroomRefreshTrigger, currentChatroomId, chatroomLoading, resetChatroomState, loadChatroomHistory]);
 
-    // 組件卸載時清理（修改版本：不清理快取）
+    // 組件卸載時清理
     useEffect(() => {
         componentMountedRef.current = true;
         
@@ -372,7 +369,6 @@ export default function useChatMessages(canvas, setInputNotification) {
     // 僅更新快取的函數
     const updateCacheOnly = useCallback((newMessages) => {
         if (componentMountedRef.current && newMessages && newMessages.length >= 0 && currentChatroomId) {
-            // 增加防護：不要用空陣列覆蓋有內容的快取
             const existingCache = getChatroomCache(currentChatroomId);
             if (newMessages.length > 0 || !existingCache || existingCache.messages.length === 0) {
                 console.log('更新快取:', currentChatroomId, '訊息數量:', newMessages.length);
@@ -383,7 +379,7 @@ export default function useChatMessages(canvas, setInputNotification) {
         }
     }, [currentChatroomId, updateChatroomCache, getChatroomCache]);
 
-    // 同時更新訊息和快取（用於非串流情況）
+    // 同時更新訊息和快取
     const updateMessagesAndCache = useCallback((newMessages) => {
         updateMessagesOnly(newMessages);
         updateCacheOnly(newMessages);
@@ -631,7 +627,6 @@ export default function useChatMessages(canvas, setInputNotification) {
         updateMessagesAndCache(newMessages);
     }, [messages, updateMessagesAndCache]);
 
-    // 顯示預設問題 - 獨立的效應，避免與載入邏輯混雜
     useEffect(() => {
         if (historyLoaded && 
             messages.length === 0 && 

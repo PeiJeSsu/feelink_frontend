@@ -82,26 +82,22 @@ export const convertDBMessagesToUIMessages = (dbMessages) => {
         .map((dbMessage, index) => convertDBMessageToUIMessage(dbMessage, index))
         .filter(message => message !== null) // 過濾掉無效的訊息
         .sort((a, b) => {
-            // 依照時間戳記排序（舊到新）
             const timeA = a.originalTimestamp ? new Date(a.originalTimestamp).getTime() : 0;
             const timeB = b.originalTimestamp ? new Date(b.originalTimestamp).getTime() : 0;
             return timeA - timeB;
         });
 };
 
-// 格式化時間戳記顯示 - 使用上午/下午格式
 export const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     
     try {
         const date = new Date(timestamp);
-        // 檢查日期是否有效
         if (isNaN(date.getTime())) return '';
         
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
         
-        // 如果是今天，只顯示時間（上午/下午）
         if (isToday) {
             return date.toLocaleTimeString('zh-TW', {
                 hour: '2-digit',
@@ -110,7 +106,6 @@ export const formatTimestamp = (timestamp) => {
             });
         }
         
-        // 如果不是今天，顯示月/日 上午/下午 時:分
         return date.toLocaleString('zh-TW', {
             month: 'numeric',
             day: 'numeric',
@@ -124,7 +119,7 @@ export const formatTimestamp = (timestamp) => {
     }
 };
 
-// 將 Blob 轉換為 Base64（保持原有功能）
+// 將 Blob 轉換為 Base64
 export const convertBlobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -144,7 +139,6 @@ export const validateMessageData = (message) => {
     return !!(hasValidId && hasContent);
 };
 
-// 清理重複的訊息（基於 ID 和時間戳記）
 export const removeDuplicateMessages = (messages) => {
     if (!Array.isArray(messages)) return [];
     
@@ -160,7 +154,6 @@ export const removeDuplicateMessages = (messages) => {
     });
     
     return validMessages.filter(message => {
-        // 使用 ID + 內容 + 時間戳作為唯一鍵
         const contentKey = typeof message.message === 'string' ? 
             message.message.substring(0, 50) : String(message.message);
         const key = `${message.id}_${contentKey}_${message.originalTimestamp || ''}`;
@@ -175,7 +168,7 @@ export const removeDuplicateMessages = (messages) => {
     });
 };
 
-// 修復訊息 ID 的工具函數
+
 export const ensureValidMessageIds = (messages) => {
     if (!Array.isArray(messages)) return [];
     

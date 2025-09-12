@@ -141,7 +141,6 @@ const createJsonSSEStream = (url, jsonData, onToken, onComplete, onError, onImag
     });
 };
 
-// 使用 chatroomId 替代 sessionId
 export const sendMessageStream = (text, chatroomId, onToken, onComplete, onError) => {
     const formData = new FormData();
     formData.append('userMessage', text);
@@ -151,7 +150,6 @@ export const sendMessageStream = (text, chatroomId, onToken, onComplete, onError
     createSSEStream(`${apiConfig.defaults.baseURL}/chat`, formData, onToken, onComplete, onError);
 };
 
-// 使用 chatroomId 替代 sessionId，支援串流回應
 export const sendImageToBackendStream = async (messageText, messageImage, chatroomId, onToken, onComplete, onError) => {
     const formData = new FormData();
     formData.append('userMessage', messageText);
@@ -161,7 +159,6 @@ export const sendImageToBackendStream = async (messageText, messageImage, chatro
     createSSEStream(`${apiConfig.defaults.baseURL}/analysis`, formData, onToken, onComplete, onError);
 };
 
-// 修改：使用 chatroomId 替代 sessionId，支援串流回應
 export const sendCanvasAnalysisToBackendStream = async (messageText, canvasImage, chatroomId, onToken, onComplete, onError) => {
     const formData = new FormData();
     formData.append('userMessage', messageText || '請分析這張圖片');
@@ -184,7 +181,6 @@ export const callAIDrawingAPIStream = (messageText, canvasData, removeBackground
     createJsonSSEStream(`${apiConfig.defaults.baseURL}/generate`, requestData, onToken, onComplete, onError, onImageGenerated);
 };
 
-// 修改：使用 chatroomId 替代 sessionId，並添加對話計數參數
 export const sendMessage = (text, conversationCount, hasDefaultQuestion, chatroomId) => {
     const formData = new FormData();
     formData.append('userMessage', text);
@@ -201,7 +197,7 @@ export const sendMessage = (text, conversationCount, hasDefaultQuestion, chatroo
     }));
 };
 
-// AI 繪圖 API (非串流版本，保留向後相容)
+// AI 繪圖 API
 export const callAIDrawingAPI = (messageText, canvasData, removeBackground = true, chatroomId, mode = 'drawing') => {
     const requestData = {
         text: messageText,
@@ -224,7 +220,6 @@ export const callAIDrawingAPI = (messageText, canvasData, removeBackground = tru
     });
 };
 
-// 使用 chatroomId 替代 sessionId，改為非串流版本（保留用於向後相容）
 export const analysisImage = (text, file, chatroomId) => {
     const formData = new FormData();
     formData.append('userMessage', text);
@@ -258,7 +253,7 @@ export const loadChatroomMessages = async (chatroomId) => {
     }
 };
 
-// 只載入文字訊息（非畫布資料）
+// 只載入文字訊息
 export const loadChatroomTextMessages = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/text`);

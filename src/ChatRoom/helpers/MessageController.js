@@ -4,8 +4,6 @@ import {convertBlobToBase64} from './usage/MessageHelpers'
 import {handleError} from "./usage/MessageError";
 import {clearCanvas, addImageToCanvas} from "../../helpers/canvas/CanvasOperations";
 
-// 流式訊息處理函數
-// 修復後的串流訊息處理函數
 const handleStreamMessage = async (messageText, image, messages, setMessages, setLoading, setDisabled, chatroomId, updateCache, streamFunction, errorMessage) => {
     if (!messageText && !image) return;
     if (!chatroomId) {
@@ -27,7 +25,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
     let streamCompleted = false;
     let aiResponseId = finalId;
 
-    // 確保解鎖的函數
     const ensureUnlocked = () => {
         setLoading(false);
         if (setDisabled) setDisabled(false);
@@ -62,7 +59,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             isTypewriting = false;
             typewriterTimer = null;
             
-            // 修復：當打字機效果完成且串流也完成時，確保解鎖
             if (streamCompleted) {
                 ensureUnlocked();
             }
@@ -151,7 +147,6 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             });
         }
         
-        // 修復：錯誤時也要確保解鎖
         ensureUnlocked();
         handleError(error, errorMessage, messages, setMessages);
     };
@@ -343,14 +338,13 @@ const runMessageTaskWithTypewriter = async ({messageText, image = null, messages
 };
 
 // 帶打字機效果的繪圖結果處理器
-// 帶打字機效果的繪圖結果處理器
 const processDrawingResultWithTypewriter = async (result, currentId, messages, setMessages, canvas, setLoading, setDisabled, updateCache) => {
     let actualResult = result;
     if (result.success && result.content) {
         actualResult = result.content;
     }
 
-    // 處理文字回應 - 使用打字機效果
+    // 處理文字回應 
     if (actualResult.message) {
         const textResponseMessage = createNewMessage(currentId, "", false, false);
         setMessages(prevMessages => [...prevMessages, textResponseMessage]);
@@ -379,14 +373,13 @@ const processDrawingResultWithTypewriter = async (result, currentId, messages, s
     // 處理圖片 - 更新畫布並添加到聊天室
     if (actualResult.imageData && canvas) {
         try {
-            await new Promise(resolve => setTimeout(resolve, 500)); // 等待文字顯示完成
+            await new Promise(resolve => setTimeout(resolve, 500)); 
             
             // 更新畫布
             clearCanvas(canvas);
             const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
             addImageToCanvas(canvas, imageDataUrl, { mode: 'fillViewport' });
 
-            // 添加圖片訊息到聊天室（base64 直接放在 message 字段）
             const imageMessage = createNewMessage(currentId, imageDataUrl, false, true);
             setMessages(prevMessages => [...prevMessages, imageMessage]);
             
