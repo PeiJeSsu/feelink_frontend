@@ -304,3 +304,43 @@ export const loadAIMessages = async (chatroomId) => {
 const getSelectedPersonality = () => {
     return localStorage.getItem('selectedPersonality') || 'default';
 };
+
+export const getUserChatrooms = async (userId) => {
+    try {
+        const response = await apiConfig.get(`/api/chatrooms/user/${userId}`);
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || '獲取聊天室列表失敗');
+    }
+};
+
+export const createChatroom = async (userId, title) => {
+    try {
+        const response = await apiConfig.post('/api/chatrooms', {
+            userId: userId,
+            title: title
+        });
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || '創建聊天室失敗');
+    }
+};
+
+export const updateChatroomTitle = async (chatroomId, title) => {
+    try {
+        const response = await apiConfig.put(`/api/chatrooms/${chatroomId}`, {
+            title: title
+        });
+        return response.data;
+    } catch (error) {
+        throw new Error(error.response?.data?.message || '更新聊天室標題失敗');
+    }
+};
+
+export const deleteChatroom = async (chatroomId) => {
+    try {
+        await apiConfig.delete(`/api/chatrooms/${chatroomId}`);
+    } catch (error) {
+        throw new Error(error.response?.data?.message || '刪除聊天室失敗');
+    }
+};

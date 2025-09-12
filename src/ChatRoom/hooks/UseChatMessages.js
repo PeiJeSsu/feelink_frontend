@@ -316,7 +316,7 @@ export default function useChatMessages(canvas, setInputNotification) {
         } else {
             console.log('聊天室ID未變更，跳過載入');
         }
-    }, [currentChatroomId, chatroomLoading, executeCleanup, loadChatroomHistory, getChatroomCache, historyLoaded]);
+    }, [currentChatroomId, chatroomLoading, executeCleanup, loadChatroomHistory, getChatroomCache, historyLoaded, resetChatroomState]);
 
     // 監聽強制重新整理觸發器
     useEffect(() => {
@@ -337,27 +337,6 @@ export default function useChatMessages(canvas, setInputNotification) {
             }, 100);
         }
     }, [chatroomRefreshTrigger, currentChatroomId, chatroomLoading, resetChatroomState, loadChatroomHistory]);
-
-    // 顯示預設問題 - 獨立的效應，避免與載入邏輯混雜
-    useEffect(() => {
-        if (historyLoaded && 
-            messages.length === 0 && 
-            !questionAdded.current && 
-            !loading && 
-            !historyLoading &&
-            currentChatroomId &&
-            componentMountedRef.current) {
-            
-            console.log('顯示預設問題');
-            const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
-            const questions = predefinedQuestions[currentLanguage] || predefinedQuestions['zh-TW'];
-            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
-            const greetingMessage = getGreetingWithNickname(randomQuestion);
-            
-            addSystemMessage(greetingMessage);
-            questionAdded.current = true;
-        }
-    }, [historyLoaded, messages.length, questionAdded.current, loading, historyLoading, currentChatroomId]);
 
     // 組件卸載時清理（修改版本：不清理快取）
     useEffect(() => {
@@ -472,7 +451,7 @@ export default function useChatMessages(canvas, setInputNotification) {
         } catch (error) {
             console.error(error.message);
         }
-    }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
+    }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, currentChatroomId, convertCanvasToBlob]);
 
     const sendAIDrawing = useCallback(async (messageText) => {
         if (!currentChatroomId || !componentMountedRef.current) {
@@ -532,23 +511,6 @@ export default function useChatMessages(canvas, setInputNotification) {
             console.error(error.message);
         }
     }, [messages, updateMessagesOnly, updateCacheOnly, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
-
-    const sendGenerateObject = useCallback(async (messageText) => {
-        if (!componentMountedRef.current) {
-            return;
-        }
-        
-        try {
-            setInputNotification({
-                message: '點擊畫布上要生成物件的位置，或按 ESC 鍵取消',
-                severity: 'info'
-            });
-            
-            setupCanvasForPositionSelection(messageText);
-        } catch (error) {
-            console.error(error.message);
-        }
-    }, [canvas, setInputNotification, messages, updateMessagesAndCache, setLoading, setDisabled, currentChatroomId]);
 
     const setupCanvasForPositionSelection = useCallback((messageText) => {
         if (!canvas || !currentChatroomId || !componentMountedRef.current) return;
@@ -640,7 +602,24 @@ export default function useChatMessages(canvas, setInputNotification) {
         window.addEventListener('keydown', handleKeyDown);
         
         addCleanupFunction(() => cleanup(true));
-    }, [canvas, currentChatroomId, convertCanvasToBlob, setInputNotification, messages, updateMessagesAndCache, setLoading, setDisabled, addCleanupFunction]);
+    }, [canvas, currentChatroomId, convertCanvasToBlob, setInputNotification, messages, setLoading, setDisabled, addCleanupFunction, updateMessagesOnly, updateCacheOnly]);
+    
+    const sendGenerateObject = useCallback(async (messageText) => {
+        if (!componentMountedRef.current) {
+            return;
+        }
+        
+        try {
+            setInputNotification({
+                message: '點擊畫布上要生成物件的位置，或按 ESC 鍵取消',
+                severity: 'info'
+            });
+            
+            setupCanvasForPositionSelection(messageText);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }, [setInputNotification, setupCanvasForPositionSelection]);
 
     const addSystemMessage = useCallback((text) => {
         if (!componentMountedRef.current) return;
@@ -651,6 +630,27 @@ export default function useChatMessages(canvas, setInputNotification) {
         ];
         updateMessagesAndCache(newMessages);
     }, [messages, updateMessagesAndCache]);
+
+    // 顯示預設問題 - 獨立的效應，避免與載入邏輯混雜
+    useEffect(() => {
+        if (historyLoaded && 
+            messages.length === 0 && 
+            !questionAdded.current && 
+            !loading && 
+            !historyLoading &&
+            currentChatroomId &&
+            componentMountedRef.current) {
+            
+            console.log('顯示預設問題');
+            const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
+            const questions = predefinedQuestions[currentLanguage] || predefinedQuestions['zh-TW'];
+            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+            const greetingMessage = getGreetingWithNickname(randomQuestion);
+            
+            addSystemMessage(greetingMessage);
+            questionAdded.current = true;
+        }
+    }, [historyLoaded, messages.length, loading, historyLoading, currentChatroomId, addSystemMessage]);
 
     const reloadChatroomHistory = useCallback(() => {
         if (currentChatroomId && !historyLoading && !isLoadingRef.current && componentMountedRef.current) {
@@ -718,7 +718,7 @@ export default function useChatMessages(canvas, setInputNotification) {
         } catch (error) {
             console.error(error.message);
         }
-    }, [messages, updateMessagesAndCache, setLoading, setDisabled, canvas, currentChatroomId, convertCanvasToBlob]);
+    }, [messages, updateMessagesAndCache, setLoading, setDisabled, currentChatroomId, convertCanvasToBlob]);
 
 
     return { 

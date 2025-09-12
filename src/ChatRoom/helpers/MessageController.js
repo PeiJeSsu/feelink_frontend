@@ -343,6 +343,7 @@ const runMessageTaskWithTypewriter = async ({messageText, image = null, messages
 };
 
 // 帶打字機效果的繪圖結果處理器
+// 帶打字機效果的繪圖結果處理器
 const processDrawingResultWithTypewriter = async (result, currentId, messages, setMessages, canvas, setLoading, setDisabled, updateCache) => {
     let actualResult = result;
     if (result.success && result.content) {
@@ -354,50 +355,49 @@ const processDrawingResultWithTypewriter = async (result, currentId, messages, s
         const textResponseMessage = createNewMessage(currentId, "", false, false);
         setMessages(prevMessages => [...prevMessages, textResponseMessage]);
         
-        
         let displayedContent = "";
         setLoading(false);
+        
+        // 文字打字機效果
         for (let i = 0; i < actualResult.message.length; i++) {
             displayedContent += actualResult.message[i];
+            const currentContent = displayedContent;
+            const messageId = currentId;
             setMessages(prevMessages => {
                 return prevMessages.map(msg => {
-                    if (msg.id === currentId) {
-                        return {...msg, message: displayedContent};
+                    if (msg.id === messageId) {
+                        return {...msg, message: currentContent};
                     }
                     return msg;
                 });
             });
-            await new Promise(resolve => setTimeout(resolve, 30)); // 30ms 延遲
+            await new Promise(resolve => setTimeout(resolve, 30));
         }
         currentId++;
     }
 
-    // 處理圖片 - 直接更新畫布
+    // 處理圖片 - 更新畫布並添加到聊天室
     if (actualResult.imageData && canvas) {
         try {
             await new Promise(resolve => setTimeout(resolve, 500)); // 等待文字顯示完成
             
+            // 更新畫布
             clearCanvas(canvas);
             const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
             addImageToCanvas(canvas, imageDataUrl, { mode: 'fillViewport' });
 
-            // 更新訊息以包含圖片數據（供歷史記錄使用）
-            setMessages(prevMessages => {
-                return prevMessages.map(msg => {
-                    if (msg.id === currentId - 1) {
-                        return {
-                            ...msg,
-                            imageData: actualResult.imageData,
-                            hasImage: true
-                        };
-                    }
-                    return msg;
-                });
-            });
+            // 添加圖片訊息到聊天室（base64 直接放在 message 字段）
+            const imageMessage = createNewMessage(currentId, imageDataUrl, false, true);
+            setMessages(prevMessages => [...prevMessages, imageMessage]);
+            
+            console.log('AI 生成的圖片已添加到聊天室');
+            currentId++;
+
         } catch (error) {
             console.error('Error adding image to canvas:', error);
         }
     }
+    
     if (setDisabled) setDisabled(false);
 
     if (updateCache) {
@@ -641,67 +641,6 @@ const prepareMessageAndPayload = async (messageText, image, messages, setMessage
     return { finalId, payload };
 };
 
-const handleResult = (result, onSuccess) => {
-    if (result.success) {
-        onSuccess(result);
-    } else {
-        throw new Error(result.error);
-    }
-};
-
-const processDrawingResult = async (result, currentId, messages, setMessages, canvas, setLoading, setDisabled) => {
-    let actualResult = result;
-    if (result.success && result.content) {
-        actualResult = result.content;
-    }
-    if (actualResult.message) {
-        const textResponseMessage = createNewMessage(currentId, "", false, false);
-        setMessages(prevMessages => [...prevMessages, textResponseMessage]);
-        setLoading(false);
-        let displayedContent = "";
-        for (let i = 0; i < actualResult.message.length; i++) {
-            displayedContent += actualResult.message[i];
-            setMessages(prevMessages => {
-                return prevMessages.map(msg => {
-                    if (msg.id === currentId) {
-                        return {...msg, message: displayedContent};
-                    }
-                    return msg;
-                });
-            });
-            await new Promise(resolve => setTimeout(resolve, 30));
-        }
-        currentId++;
-    }
-
-    if (actualResult.imageData && canvas) {
-        try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            clearCanvas(canvas);
-            const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
-            addImageToCanvas(canvas, imageDataUrl, { mode: 'fillViewport' });
-
-            setMessages(prevMessages => {
-                return prevMessages.map(msg => {
-                    if (msg.id === currentId - 1) {
-                        return {
-                            ...msg,
-                            imageData: actualResult.imageData,
-                            hasImage: true
-                        };
-                    }
-                    return msg;
-                });
-            });
-        } catch (error) {
-            console.error('Error adding image to canvas:', error);
-        }
-    }
-    if (setDisabled) setDisabled(false);
-    return currentId;
-};
-
 const processGenerateObjectResult = async (result, currentId, messages, setMessages, canvas, setLoading, setDisabled, updateCache) => {
     let actualResult = result;
     if (result.success && result.content) {
@@ -709,16 +648,21 @@ const processGenerateObjectResult = async (result, currentId, messages, setMessa
         console.log('Found nested content:', actualResult); 
     }
     setLoading(false);
+    
+    // 處理文字回應
     if (actualResult.message) {
         const textResponseMessage = createNewMessage(currentId, "", false, false);
         setMessages(prevMessages => [...prevMessages, textResponseMessage]);
+        
         let displayedContent = "";
         for (let i = 0; i < actualResult.message.length; i++) {
             displayedContent += actualResult.message[i];
+            const currentContent = displayedContent;
+            const messageId = currentId;
             setMessages(prevMessages => {
                 return prevMessages.map(msg => {
-                    if (msg.id === currentId) {
-                        return {...msg, message: displayedContent};
+                    if (msg.id === messageId) {
+                        return {...msg, message: currentContent};
                     }
                     return msg;
                 });
@@ -731,22 +675,35 @@ const processGenerateObjectResult = async (result, currentId, messages, setMessa
     if (actualResult.imageData && canvas) {
         try {
             const imageDataUrl = `data:image/png;base64,${actualResult.imageData}`;
+            
             // 取得儲存的點擊位置
             const targetPosition = canvas._generateObjectPosition || null;
             console.log('讀取到的點擊位置:', targetPosition);
+            
+            // 更新畫布
             addImageToCanvas(canvas, imageDataUrl, { 
                 mode: 'originalSize', 
                 targetPosition: targetPosition,
                 maxSize: 200 
             });
+            
+            // 添加圖片訊息到聊天室（base64 直接放在 message 字段）
+            const imageMessage = createNewMessage(currentId, imageDataUrl, false, true);
+            setMessages(prevMessages => [...prevMessages, imageMessage]);
+            console.log('生成的物件圖片已添加到聊天室');
+            
             // 清除儲存的位置
             delete canvas._generateObjectPosition;
+            
             // 恢復畫布交互功能
             canvas.selection = true;
             canvas.getObjects().forEach(obj => {
                 obj.selectable = true;
                 obj.evented = true;
             });
+            
+            currentId++;
+            
         } catch (error) {
             console.error('Error adding generated object to canvas:', error); 
         }
@@ -757,14 +714,15 @@ const processGenerateObjectResult = async (result, currentId, messages, setMessa
             actualResult: actualResult
         });
     }
+    
     if (setDisabled) setDisabled(false);
     
     if (updateCache) {
-            setMessages(prevMessages => {
-                updateCache(prevMessages);
-                return prevMessages;
-            });
-        }
+        setMessages(prevMessages => {
+            updateCache(prevMessages);
+            return prevMessages;
+        });
+    }
 
     return currentId;
 };

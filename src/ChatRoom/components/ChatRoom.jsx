@@ -18,10 +18,6 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
         disabled,
         historyLoading,
         historyLoaded,
-        sendTextMessage, 
-        sendImageMessage, 
-        sendCanvasAnalysis, 
-        sendAIDrawing,
         sendGenerateObject,
         sendTextMessageStream,
         sendImageMessageStream,
@@ -77,7 +73,7 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
             setClearing(true);
             
             // 使用 apiConfig 調用後端API刪除聊天室所有訊息
-            const response = await apiConfig.delete(`/api/messages/chatroom/${currentChatroomId}`, {
+            await apiConfig.delete(`/api/messages/chatroom/${currentChatroomId}`, {
                 headers: {
                     'Content-Type': 'application/json',
                 }
