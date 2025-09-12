@@ -55,7 +55,6 @@ export default function ChatMessage({ message, isUser, isImage, timestamp }) {
         );
     };
 
-    // 取得頭像內容
     const getAvatarContent = () => {
         if (isUser) return null;
         return "🤖";

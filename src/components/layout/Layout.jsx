@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Box, TextField, Typography, Button } from "@mui/material";
-import { Help } from "@mui/icons-material";
+import { useState, useCallback, useRef, useEffect, useContext } from "react";
+import { Box, TextField, Typography, Button, Select, MenuItem, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItem, ListItemText } from "@mui/material";
+import { Help, Add as AddIcon, Settings as SettingsIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { ResizableBox } from "react-resizable";
 import LeftToolbar from "../toolbar/left-toolbar/LeftToolbar";
 import TopToolbar from "../toolbar/top-toolbar/TopToolbar";
@@ -8,6 +8,8 @@ import Canvas from "../canvas/Canvas";
 import ChatRoom from "../../ChatRoom/components/ChatRoom";
 import UserProfileMenu from "../auth/UserProfileMenu";
 import AppTour from "./AppTour";
+import { AuthContext } from "../../contexts/AuthContext";
+import { showAlert } from "../../utils/AlertUtils";
 import { layoutStyles } from "../../styles/layoutStyles";
 import "./Layout.css";
 
@@ -54,6 +56,23 @@ const Layout = () => {
 	
 	// 導覽相關狀態
 	const [runTour, setRunTour] = useState(false);
+
+	// AuthContext 中的聊天室管理功能
+	const { 
+		userChatrooms,
+		currentChatroomId,
+		createNewChatroom,
+		deleteChatroom: deleteChatroomFunc,
+		updateChatroomTitle: updateChatroomTitleFunc,
+		switchChatroom
+	} = useContext(AuthContext);
+
+	// 聊天室管理相關狀態
+	const [openManageDialog, setOpenManageDialog] = useState(false);
+	const [editingRoom, setEditingRoom] = useState(null);
+	const [newTitle, setNewTitle] = useState('');
+	const [openCreateDialog, setOpenCreateDialog] = useState(false);
+	const [createTitle, setCreateTitle] = useState('');
 
 	const canvasRef = useRef(null);
 
@@ -121,6 +140,63 @@ const Layout = () => {
 		setChatWidth(size.width);
 	}, []);
 
+	// 聊天室管理函數
+	const handleCreateChatroom = async () => {
+		if (!createTitle.trim()) {
+			showAlert('請輸入聊天室標題', 'warning');
+			return;
+		}
+
+		try {
+			await createNewChatroom(createTitle);
+			setCreateTitle('');
+			setOpenCreateDialog(false);
+			showAlert('聊天室創建成功', 'success');
+		} catch (error) {
+			showAlert('創建聊天室失敗', 'error');
+		}
+	};
+
+	const handleDeleteChatroom = async (chatroomId) => {
+		if (userChatrooms.length <= 1) {
+			showAlert('至少需要保留一個聊天室', 'warning');
+			return;
+		}
+
+		try {
+			await deleteChatroomFunc(chatroomId);
+			showAlert('聊天室已刪除', 'success');
+		} catch (error) {
+			showAlert('刪除聊天室失敗', 'error');
+		}
+	};
+
+	const handleUpdateTitle = async () => {
+		if (!editingRoom || !newTitle.trim()) {
+			showAlert('請輸入有效的標題', 'warning');
+			return;
+		}
+
+		try {
+			await updateChatroomTitleFunc(editingRoom.chatroomId, newTitle);
+			setEditingRoom(null);
+			setNewTitle('');
+			showAlert('標題已更新', 'success');
+		} catch (error) {
+			showAlert('更新標題失敗', 'error');
+		}
+	};
+
+	const startEditing = (room) => {
+		setEditingRoom(room);
+		setNewTitle(room.title);
+	};
+
+	const cancelEditing = () => {
+		setEditingRoom(null);
+		setNewTitle('');
+	};
+
 	return (
 		<Box sx={layoutStyles.layoutContainer}>
 			{/* 現代化頂部導航欄 */}
@@ -148,37 +224,86 @@ const Layout = () => {
 					/>
 				</Box>
 
-				{/* 中央：畫布名稱 */}
-				<Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
-					<TextField
-						variant="outlined"
+				{/* 中央：聊天室管理 */}
+				<Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", gap: 1 }}>
+					{/* 聊天室選擇下拉選單 */}
+					<Select
+						value={currentChatroomId || ''}
+						onChange={(e) => switchChatroom(e.target.value)}
 						size="small"
-						placeholder="未命名畫布"
-						className="canvas-title"
-						sx={{
-							"& .MuiOutlinedInput-root": {
-								fontSize: "16px",
+						sx={{ 
+							minWidth: 200,
+							'& .MuiSelect-select': {
+								fontSize: '16px',
 								fontWeight: 500,
-								textAlign: "center",
-								borderRadius: "8px",
-								backgroundColor: "transparent",
-								"& fieldset": {
-									border: "none",
-								},
-								"&:hover fieldset": {
-									border: "1px solid #cbd5e1",
-								},
-								"&.Mui-focused fieldset": {
-									border: "1px solid #2563eb",
-								},
-								"& input": {
-									textAlign: "center",
-									color: "#1e293b",
-									fontFamily: '"Inter", "Noto Sans TC", sans-serif',
-								},
+								padding: '8px 12px',
+								fontFamily: '"Inter", "Noto Sans TC", sans-serif',
 							},
+							'& .MuiOutlinedInput-root': {
+								borderRadius: '8px',
+								'& fieldset': {
+									borderColor: '#d1d5db',
+								},
+								'&:hover fieldset': {
+									borderColor: '#2563eb',
+								},
+								'&.Mui-focused fieldset': {
+									borderColor: '#2563eb',
+								},
+							}
 						}}
-					/>
+						displayEmpty
+					>
+						{userChatrooms?.map(room => (
+							<MenuItem key={room.chatroomId} value={room.chatroomId}>
+								{room.title}
+							</MenuItem>
+						))}
+					</Select>
+					
+					{/* 新增聊天室按鈕 */}
+					<IconButton
+						size="small"
+						onClick={() => setOpenCreateDialog(true)}
+						title="新增聊天室"
+						sx={{ 
+							color: "#64748b",
+							backgroundColor: "#f8fafc",
+							border: "1px solid #d1d5db",
+							borderRadius: "8px",
+							width: "36px",
+							height: "36px",
+							"&:hover": {
+								backgroundColor: "#f1f5f9",
+								color: "#2563eb",
+								borderColor: "#2563eb",
+							}
+						}}
+					>
+						<AddIcon sx={{ fontSize: 18 }} />
+					</IconButton>
+					
+					{/* 管理聊天室按鈕 */}
+					<IconButton
+						size="small"
+						onClick={() => setOpenManageDialog(true)}
+						title="管理聊天室"
+						sx={{ 
+							color: "#64748b",
+							backgroundColor: "#f8fafc",
+							border: "1px solid #d1d5db",
+							borderRadius: "8px",
+							width: "36px",
+							height: "36px",
+							"&:hover": {
+								backgroundColor: "#f1f5f9",
+								color: "#2563eb",
+								borderColor: "#2563eb",
+							}
+						}}
+					>
+						<SettingsIcon sx={{ fontSize: 18 }} />
+					</IconButton>
 				</Box>
 
 				{/* 右側：使用者功能 */}
@@ -199,7 +324,7 @@ const Layout = () => {
 							borderRadius: "8px",
 							textTransform: "none",
 							fontFamily: '"Inter", "Noto Sans TC", sans-serif',
-							height: "36px", // 明確設定高度
+							height: "36px",
 							"&:hover": {
 								backgroundColor: isChatOpen ? "#f1f5f9" : "#f9fafb",
 								color: "#2563eb",
@@ -231,7 +356,7 @@ const Layout = () => {
 							textTransform: "none",
 							fontFamily: '"Inter", "Noto Sans TC", sans-serif',
 							minWidth: "auto",
-							height: "36px", // 明確設定高度與聊天室按鈕一致
+							height: "36px",
 							"&:hover": {
 								backgroundColor: "#1d4ed8",
 							},
@@ -276,7 +401,7 @@ const Layout = () => {
 					background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
 					padding: "20px",
 					paddingBottom: "20px",
-					minWidth: 0, // 確保可以縮小
+					minWidth: 0,
 					transition: "all 0.3s ease-in-out",
 				}}>
 					<Box sx={{
@@ -302,7 +427,7 @@ const Layout = () => {
 					</Box>
 				</Box>
 
-				{/* 聊天面板 - 修正佈局 */}
+				{/* 聊天面板 */}
 				{isChatOpen && (
 					<ResizableBox
 						className="chat-container"
@@ -340,6 +465,120 @@ const Layout = () => {
 					</ResizableBox>
 				)}
 			</Box>
+			
+			{/* 創建聊天室對話框 */}
+			<Dialog
+				open={openCreateDialog}
+				onClose={() => setOpenCreateDialog(false)}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle>創建新聊天室</DialogTitle>
+				<DialogContent>
+					<TextField
+						autoFocus
+						margin="dense"
+						label="聊天室標題"
+						fullWidth
+						variant="outlined"
+						value={createTitle}
+						onChange={(e) => setCreateTitle(e.target.value)}
+						onKeyPress={(e) => {
+							if (e.key === 'Enter') {
+								handleCreateChatroom();
+							}
+						}}
+					/>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setOpenCreateDialog(false)} color="inherit">
+						取消
+					</Button>
+					<Button 
+						onClick={handleCreateChatroom} 
+						variant="contained"
+						startIcon={<AddIcon />}
+					>
+						創建
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* 管理聊天室對話框 */}
+			<Dialog
+				open={openManageDialog}
+				onClose={() => setOpenManageDialog(false)}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle>管理聊天室</DialogTitle>
+				<DialogContent>
+					<List>
+						{userChatrooms?.map(room => (
+							<ListItem key={room.chatroomId} divider>
+								{editingRoom?.chatroomId === room.chatroomId ? (
+									// 編輯模式
+									<Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+										<TextField
+											value={newTitle}
+											onChange={(e) => setNewTitle(e.target.value)}
+											size="small"
+											sx={{ flexGrow: 1, marginRight: 1 }}
+											onKeyPress={(e) => {
+												if (e.key === 'Enter') {
+													handleUpdateTitle();
+												}
+											}}
+										/>
+										<IconButton 
+											onClick={handleUpdateTitle}
+											size="small"
+											color="primary"
+										>
+											✓
+										</IconButton>
+										<IconButton 
+											onClick={cancelEditing}
+											size="small"
+										>
+											✗
+										</IconButton>
+									</Box>
+								) : (
+									// 顯示模式
+									<>
+										<ListItemText 
+											primary={room.title}
+											secondary={room.chatroomId === currentChatroomId ? '當前聊天室' : ''}
+										/>
+										<IconButton 
+											onClick={() => startEditing(room)}
+											size="small"
+											title="編輯標題"
+										>
+											<EditIcon />
+										</IconButton>
+										<IconButton 
+											onClick={() => handleDeleteChatroom(room.chatroomId)}
+											size="small"
+											disabled={userChatrooms.length === 1}
+											title={userChatrooms.length === 1 ? "至少需要保留一個聊天室" : "刪除聊天室"}
+											color="error"
+										>
+											<DeleteIcon />
+										</IconButton>
+									</>
+								)}
+							</ListItem>
+						))}
+					</List>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setOpenManageDialog(false)}>
+						關閉
+					</Button>
+				</DialogActions>
+			</Dialog>
 			
 			{/* 導覽組件 */}
 			<AppTour runTour={runTour} setRunTour={setRunTour} />

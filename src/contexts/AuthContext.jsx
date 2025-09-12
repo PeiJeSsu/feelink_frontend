@@ -1,8 +1,8 @@
-import { createContext, useEffect, useState, useMemo } from "react";
+import { createContext, useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../config/firebase";
-import { apiConfig } from "../ChatRoom/config/ApiConfig";
-
+import {createChatroom, deleteChatroom as deleteChatroomAPI, updateChatroomTitle as updateChatroomTitleAPI , getUserChatrooms} from "../ChatRoom/helpers/MessageAPI";
+ 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -11,64 +11,32 @@ export const AuthProvider = ({ children }) => {
     const [userChatrooms, setUserChatrooms] = useState([]);
     const [currentChatroomId, setCurrentChatroomId] = useState(null);
     const [chatroomLoading, setChatroomLoading] = useState(false);
-    
-    // 新增：聊天室訊息快取
     const [chatroomMessagesCache, setChatroomMessagesCache] = useState({});
-    // 新增：追蹤聊天室是否需要重新載入
     const [chatroomRefreshTrigger, setChatroomRefreshTrigger] = useState(0);
 
     const ensureUserChatroom = async (firebaseUser) => {
         try {
             setChatroomLoading(true);
-
-            // 使用 apiConfig 進行 API 調用
-            const checkResponse = await apiConfig.get(`/api/chatrooms/user/${firebaseUser.uid}`);
-
-            if (checkResponse.data && checkResponse.data.length > 0) {
-                console.log('使用者已有聊天室');
-                setUserChatrooms(checkResponse.data);
-                
-                const firstChatroomId = checkResponse.data[0].chatroomId;
-                console.log('設置當前聊天室 ID');
-                setCurrentChatroomId(firstChatroomId);
+            
+            const chatrooms = await getUserChatrooms(firebaseUser.uid);
+            
+            if (chatrooms && chatrooms.length > 0) {
+                setUserChatrooms(chatrooms);
+                setCurrentChatroomId(chatrooms[0].chatroomId);
                 return;
             }
 
-            // 2. 如果沒有聊天室，創建新的
-            console.log('用戶沒有聊天室，正在創建新的...');
-            const createData = {
-                userId: firebaseUser.uid,
-                title: `${firebaseUser.displayName || firebaseUser.email.split('@')[0]} 的聊天室`
-            };
-
-            const createResponse = await apiConfig.post('/api/chatrooms', createData);
-
-            const newChatroom = createResponse.data;
-            setUserChatrooms([newChatroom]);
+            // 沒有聊天室時創建新的
+            const newChatroom = await createChatroom(
+                firebaseUser.uid,
+                `${firebaseUser.displayName || firebaseUser.email.split('@')[0]} 的聊天室`
+            );
             
-            const newChatroomId = newChatroom.chatroomId;
-            setCurrentChatroomId(newChatroomId);
-
+            setUserChatrooms([newChatroom]);
+            setCurrentChatroomId(newChatroom.chatroomId);
+            
         } catch (error) {
-            console.error('處理用戶聊天室時發生錯誤:', error);
-            // 如果是 404 錯誤（用戶沒有聊天室），則創建新的
-            if (error.response?.status === 404) {
-                try {
-                    const createData = {
-                        userId: firebaseUser.uid,
-                        title: `${firebaseUser.displayName || firebaseUser.email.split('@')[0]} 的聊天室`
-                    };
-
-                    const createResponse = await apiConfig.post('/api/chatrooms', createData);
-                    const newChatroom = createResponse.data;
-                    setUserChatrooms([newChatroom]);
-                    
-                    const newChatroomId = newChatroom.chatroomId;
-                    setCurrentChatroomId(newChatroomId);
-                } catch (createError) {
-                    console.error('創建聊天室失敗:', createError);
-                }
-            }
+            console.error('處理使用者聊天室時發生錯誤:', error);
         } finally {
             setChatroomLoading(false);
         }
@@ -76,37 +44,65 @@ export const AuthProvider = ({ children }) => {
 
     // 創建新聊天室
     const createNewChatroom = async (title) => {
-        if (!user) {
-            console.error('用戶未登入，無法創建聊天室');
-            return null;
-        }
-
+        if (!user) return null;
         try {
             setChatroomLoading(true);
-            const createData = {
-                userId: user.uid,
-                title: title || `新聊天室 ${new Date().toLocaleString()}`
-            };
-
-            const response = await apiConfig.post('/api/chatrooms', createData);
-
-            const newChatroom = response.data;
+            const newChatroom = await createChatroom(
+                user.uid,
+                title || `新聊天室 ${new Date().toLocaleString()}`
+            );
             setUserChatrooms(prev => [...prev, newChatroom]);
-            
-            const newChatroomId = newChatroom.chatroomId;
-            console.log('創建並設置新聊天室 ID');
-            setCurrentChatroomId(newChatroomId);
-            
+            setCurrentChatroomId(newChatroom.chatroomId);
             return newChatroom;
         } catch (error) {
-            console.error('創建聊天室時發生錯誤:', error);
+            console.error('創建聊天室失敗:', error);
             return null;
         } finally {
             setChatroomLoading(false);
         }
     };
 
-    // 修改：切換聊天室（不重新載入資料）
+    const handleDeleteChatroom = async (chatroomId) => {
+        try {
+            setChatroomLoading(true);
+            // 使用重命名後的 API 函數
+            await deleteChatroomAPI(chatroomId);
+            setUserChatrooms(prev => prev.filter(room => room.chatroomId !== chatroomId));
+            clearChatroomCache(chatroomId);
+            
+            if (chatroomId === currentChatroomId) {
+                const remaining = userChatrooms.filter(room => room.chatroomId !== chatroomId);
+                if (remaining.length > 0) {
+                    setCurrentChatroomId(remaining[0].chatroomId);
+                } else {
+                    await createNewChatroom();
+                }
+            }
+        } catch (error) {
+            console.error('刪除聊天室失敗:', error);
+            throw error;
+        } finally {
+            setChatroomLoading(false);
+        }
+    };
+
+    const handleUpdateChatroomTitle = async (chatroomId, newTitle) => {
+        try {
+            // 使用重命名後的 API 函數
+            await updateChatroomTitleAPI(chatroomId, newTitle);
+            setUserChatrooms(prev => 
+                prev.map(room => 
+                    room.chatroomId === chatroomId 
+                        ? { ...room, title: newTitle }
+                        : room
+                )
+            );
+        } catch (error) {
+            console.error('更新聊天室標題失敗:', error);
+            throw error;
+        }
+    };
+
     const switchChatroom = (chatroomId) => {
         if (chatroomId === currentChatroomId) {
             console.log('已在當前聊天室，無需切換:', chatroomId);
@@ -117,7 +113,6 @@ export const AuthProvider = ({ children }) => {
         // 移除強制重新載入的邏輯
     };
 
-    // 修改：強制重新載入聊天室（用於refresh或特定情況）
     const forceReloadChatroom = (chatroomId = currentChatroomId) => {
         if (!chatroomId) return;
         
@@ -132,11 +127,8 @@ export const AuthProvider = ({ children }) => {
         setChatroomRefreshTrigger(prev => prev + 1);
     };
 
-    // 新增：更新聊天室快取
     const updateChatroomCache = (chatroomId, messages) => {
         if (!chatroomId || !messages) return;
-        
-        const existingCache = chatroomMessagesCache[chatroomId];
         setChatroomMessagesCache(prev => ({
             ...prev,
             [chatroomId]: {
@@ -146,12 +138,10 @@ export const AuthProvider = ({ children }) => {
         }));
     };
 
-    // 新增：獲取聊天室快取
     const getChatroomCache = (chatroomId) => {
         return chatroomMessagesCache[chatroomId];
     };
 
-    // 新增：清除特定聊天室快取（用於清空聊天室後）
     const clearChatroomCache = (chatroomId) => {
         setChatroomMessagesCache(prev => {
             const newCache = { ...prev };
@@ -160,7 +150,6 @@ export const AuthProvider = ({ children }) => {
         });
     };
 
-    // 修改：重新載入當前聊天室的別名（保持向後相容）
     const reloadCurrentChatroom = () => {
         forceReloadChatroom();
     };
@@ -178,7 +167,6 @@ export const AuthProvider = ({ children }) => {
                 setUserChatrooms([]);
                 setCurrentChatroomId(null);
                 setChatroomLoading(false);
-                // 清空所有快取
                 setChatroomMessagesCache({});
             }
             
@@ -195,7 +183,7 @@ export const AuthProvider = ({ children }) => {
             setCurrentChatroomId(null);
             setUserChatrooms([]);
             setChatroomLoading(false);
-            setChatroomMessagesCache({}); // 清空快取
+            setChatroomMessagesCache({}); 
             
             localStorage.removeItem('selectedPersonality');
             localStorage.removeItem('currentSessionId');
@@ -208,25 +196,24 @@ export const AuthProvider = ({ children }) => {
     };
 
 
-    const value = useMemo(
-        () => ({
-            user,
-            initializing,
-            userChatrooms,
-            currentChatroomId,
-            chatroomLoading,
-            chatroomRefreshTrigger,
-            createNewChatroom,
-            switchChatroom,
-            forceReloadChatroom,
-            reloadCurrentChatroom, 
-            updateChatroomCache,
-            getChatroomCache,
-            clearChatroomCache,
-            logout,
-        }),
-        [user, initializing, userChatrooms, currentChatroomId, chatroomLoading, chatroomRefreshTrigger, chatroomMessagesCache]
-    );
+    const value = {
+        user,
+        initializing,
+        userChatrooms,
+        currentChatroomId,
+        chatroomLoading,
+        chatroomRefreshTrigger,
+        createNewChatroom,
+        deleteChatroom: handleDeleteChatroom, 
+        updateChatroomTitle: handleUpdateChatroomTitle, 
+        switchChatroom,
+        forceReloadChatroom,
+        reloadCurrentChatroom, 
+        updateChatroomCache,
+        getChatroomCache,
+        clearChatroomCache,
+        logout,
+    };
 
     return (
         <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

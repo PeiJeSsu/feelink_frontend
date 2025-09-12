@@ -144,7 +144,6 @@ export default function TextInputArea({
                     </Button>
                 </Box>
 
-                {/* 右側：發送按鈕 */}
                 <IconButton
                     onClick={sendText}
                     disabled={disabled || !isValidMessage(message)}

@@ -18,10 +18,6 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
         disabled,
         historyLoading,
         historyLoaded,
-        sendTextMessage, 
-        sendImageMessage, 
-        sendCanvasAnalysis, 
-        sendAIDrawing,
         sendGenerateObject,
         sendTextMessageStream,
         sendImageMessageStream,
@@ -60,7 +56,6 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
     };
     useEffect(() => {
         if (historyLoaded && !historyLoading && messages.length > 0) {
-            // 延遲滾動，確保 DOM 已更新
             setTimeout(() => {
                 scrollToBottom();
             }, 1);
@@ -75,20 +70,16 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
 
         try {
             setClearing(true);
-            
-            // 使用 apiConfig 調用後端API刪除聊天室所有訊息
-            const response = await apiConfig.delete(`/api/messages/chatroom/${currentChatroomId}`, {
+            await apiConfig.delete(`/api/messages/chatroom/${currentChatroomId}`, {
                 headers: {
                     'Content-Type': 'application/json',
                 }
             });
 
             console.log('聊天室清空成功');
-            // 重新載入聊天室歷史（應該會是空的）
             reloadChatroomHistory();
         } catch (error) {
             console.error('清空聊天室失敗:', error);
-            // 即使後端失敗，也可以嘗試重新載入看看實際狀況
             reloadChatroomHistory();
         } finally {
             setClearing(false);

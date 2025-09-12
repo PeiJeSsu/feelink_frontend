@@ -34,7 +34,7 @@ export const sendCanvasAnalysisToBackend = async (messageText, canvasImage, chat
     return handleServiceCall(() => analysisImage(messageText || defaultMessage, canvasImage, chatroomId, getSelectedPersonality()));
 };
 
-// AI 繪圖函數，增加 chatroomId 參數和去背邏輯 (非串流版本)
+// AI 繪圖函數，增加 chatroomId 參數和去背邏輯
 export const sendAIDrawingToBackend = async (messageText, canvasData, chatroomId, mode = 'drawing') => {
     const defaultMessage = "請根據這張圖片生成新的內容";
 
@@ -88,7 +88,6 @@ export const loadAIMessagesService = async (chatroomId) => {
     return handleServiceCall(() => loadAIMessages(chatroomId));
 };
 
-// 通用的錯誤處理和回應格式化函數（保持不變）
 const handleServiceCall = async (serviceCall) => {
     try {
         const response = await serviceCall();
