@@ -339,3 +339,60 @@ export const deleteChatroom = async (chatroomId) => {
         throw new Error(error.response?.data?.message || '刪除聊天室失敗');
     }
 };
+
+export const getTodayEmotionAnalysis = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/emotion/today`, {
+            headers: {
+                'Accept': '*/*',
+                'Content-Type': 'application/json'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('當天情緒分析失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '情緒分析失敗');
+    }
+};
+
+export const getTodayChatSummary = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/summary/today`);
+        return response.data;
+    } catch (error) {
+        console.error('取得當天聊天摘要失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '取得摘要失敗');
+    }
+};
+
+export const getChatSummaryByDate = async (chatroomId, date) => {
+    try {
+        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/summary`, {
+            params: { date }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('取得聊天摘要失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '取得摘要失敗');
+    }
+};
+
+export const getTodayDemandAnalysis = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/demands/today`);
+        return response.data;
+    } catch (error) {
+        console.error('取得當天需求分析失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '需求分析失敗');
+    }
+};
+
+export const getTodaySentimentScore = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/score/today`);
+        return response.data;
+    } catch (error) {
+        console.error('取得當天情緒分數失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '取得情緒分數失敗');
+    }
+};

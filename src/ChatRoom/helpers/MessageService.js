@@ -1,16 +1,19 @@
 import {
-    sendMessage, 
-    callAIDrawingAPI, 
+    sendMessage,
+    callAIDrawingAPI,
     callAIDrawingAPIStream,
-    sendMessageStream, 
-    analysisImage, 
-    sendImageToBackendStream, 
+    sendMessageStream,
+    analysisImage,
+    sendImageToBackendStream,
     sendCanvasAnalysisToBackendStream,
     loadChatroomMessages,
     loadChatroomTextMessages,
     loadChatroomDrawingMessages,
     loadUserMessages,
-    loadAIMessages
+    loadAIMessages,
+    getTodayEmotionAnalysis,
+    getTodayChatSummary,
+    getTodayDemandAnalysis, getTodaySentimentScore
 } from "./MessageAPI";
 
 // 獲取選中的個性設置
@@ -86,6 +89,24 @@ export const loadUserMessagesService = async (chatroomId) => {
 // 載入AI訊息服務
 export const loadAIMessagesService = async (chatroomId) => {
     return handleServiceCall(() => loadAIMessages(chatroomId));
+};
+
+// 情緒分析報告
+export const loadEmotionAnalysisService = async (chatroomId) => {
+    return handleServiceCall(() => getTodayEmotionAnalysis(chatroomId));
+};
+// 摘要報告
+export const loadSummaryService = async (chatroomId) => {
+    return handleServiceCall(() => getTodayChatSummary(chatroomId));
+};
+
+// 需求報告
+export const loadDemandAnalysisService = async (chatroomId) => {
+    return handleServiceCall(() => getTodayDemandAnalysis(chatroomId));
+};
+// 情緒分數
+export const loadSentimentScoreService = async (chatroomId) => {
+    return handleServiceCall(() => getTodaySentimentScore(chatroomId));
 };
 
 const handleServiceCall = async (serviceCall) => {

@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import CanvasPage from "./pages/CanvasPage";
 import PersonalitySelectPage from "./pages/PersonalitySelectPage";
+import EmotionReportPage from "./pages/EmotionReportPage";
 import './i18n'; 
 
 function App() {
@@ -48,6 +49,15 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <CanvasPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/emotion-report"
+                            element={
+                                <ProtectedRoute>
+                                    <EmotionReportPage />
                                 </ProtectedRoute>
                             }
                         />
