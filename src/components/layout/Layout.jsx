@@ -17,7 +17,6 @@ import AppTour from "./AppTour";
 import ChatroomManager from "../toolbar/ChatroomManager";
 import { AuthContext } from "../../contexts/AuthContext";
 import { layoutStyles } from "../../styles/layoutStyles";
-import { useNavigate } from "react-router-dom";
 import "./Layout.css";
 
 const Layout = () => {
@@ -28,7 +27,6 @@ const Layout = () => {
 	const [isChatOpen, setIsChatOpen] = useState(true);
 	const [chatWidth, setChatWidth] = useState(400);
 	const [chatDisabled, setChatDisabled] = useState(false);
-	const navigate = useNavigate();
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
 		size: 5,
@@ -36,11 +34,6 @@ const Layout = () => {
 		color: "#000000",
 	});
 
-	const handleEmotionReport = () => {
-		navigate('/emotion-report', {
-			state: { chatroomId: currentChatroomId }
-		});
-	};
 	const [shapeSettings, setShapeSettings] = useState({
 		type: "RECT",
 		color: "#000000",
@@ -210,38 +203,6 @@ const Layout = () => {
 					/>
 				</Box>
 
-				<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-				<Button
-					onClick={handleEmotionReport}
-					disabled={chatDisabled}
-					variant="contained"
-					sx={{
-						color: isChatOpen ? "#2563eb" : "#64748b",
-						backgroundColor: isChatOpen ? "#f1f5f9" : "transparent",
-						border: isChatOpen ? "1px solid #2563eb" : "1px solid #d1d5db",
-						fontSize: "14px",
-						fontWeight: isChatOpen ? 500 : 600,
-						padding: "6px 12px",
-						borderRadius: "8px",
-						textTransform: "none",
-						fontFamily: '"Inter", "Noto Sans TC", sans-serif',
-						height: "36px",
-						"&:hover": {
-							backgroundColor: isChatOpen ? "#f1f5f9" : "#f9fafb",
-							color: "#2563eb",
-							border: isChatOpen ? "none" : "1px solid #2563eb",
-						},
-						"&:disabled": {
-							backgroundColor: "#f3f4f6",
-							color: "#9ca3af",
-							border: "1px solid #d1d5db",
-						},
-					}}
-				>
-					當天情緒分析
-				</Button>
-				</Box>
-
 				{/* 右側：使用者功能 */}
 				<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 					{/* 聊天室切換按鈕 */}
@@ -406,6 +367,7 @@ const Layout = () => {
 					</ResizableBox>
 				)}
 			</Box>
+			
 			{/* 導覽組件 */}
 			<AppTour runTour={runTour} setRunTour={setRunTour} />
 		</Box>
