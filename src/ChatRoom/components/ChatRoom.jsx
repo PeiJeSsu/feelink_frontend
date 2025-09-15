@@ -1,15 +1,14 @@
 import { Box, CircularProgress, Typography, Chip, Skeleton, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button } from "@mui/material";
 import { Assistant as AssistantIcon, DeleteSweep as DeleteSweepIcon } from '@mui/icons-material';
-import { useState, useEffect ,useRef} from 'react';
+import { useState, useEffect ,useRef, forwardRef, useImperativeHandle} from 'react';
 import { chatRoomStyles } from "../styles/ChatRoomStyles";
 import useChatMessages from "../hooks/UseChatMessages";
 import ChatMessage from "./ChatMessage";
 import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
-import { IconButton } from "@mui/material";
 import { apiConfig } from "../config/ApiConfig"
 
-export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
+const ChatRoom = forwardRef(function ChatRoom({ canvas, onClose, onDisabledChange }, ref) {
     const [inputNotification, setInputNotification] = useState(null);
     const chatAreaRef = useRef(null);
     const { 
@@ -38,6 +37,15 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
         }
     }, [disabled, loading, historyLoading, clearing, onDisabledChange]);
 
+    // 暴露清空聊天室函數給父組件
+    useImperativeHandle(ref, () => ({
+        handleClearChatroom: () => {
+            if (historyLoaded && messages.length > 0) {
+                setOpenClearDialog(true);
+            }
+        }
+    }));
+
     // 取得 AI 夥伴名稱的函數
     const getAIPartnerName = () => {
         const aiPartnerName = localStorage.getItem('aiPartnerName');
@@ -61,7 +69,7 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
             }, 1);
         }
     }, [historyLoaded, historyLoading, messages.length]);
-    // 清空聊天室函數
+    
     const handleClearChatroom = async () => {
         if (!currentChatroomId) {
             console.error('沒有可用的聊天室ID');
@@ -134,22 +142,6 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
                     <Typography sx={chatRoomStyles.titleText}>
                         {getAIPartnerName()}
                     </Typography>
-                    {/* 清空聊天室按鈕 */}
-                    {historyLoaded && messages.length > 0 && (
-                        <IconButton
-                            size="small"
-                            onClick={() => setOpenClearDialog(true)}
-                            disabled={clearing || historyLoading}
-                            sx={chatRoomStyles.clearButton}
-                            title="清空聊天室"
-                        >
-                            <DeleteSweepIcon 
-                                sx={{ 
-                                    fontSize: 18
-                                }} 
-                            />
-                        </IconButton>
-                    )}
                 </Box>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -245,10 +237,14 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
             </Dialog>
         </Box>
     );
-}
+});
+
+ChatRoom.displayName = 'ChatRoom';
 
 ChatRoom.propTypes = {
     canvas: PropTypes.object.isRequired,
     onClose: PropTypes.func,
     onDisabledChange: PropTypes.func,
 };
+
+export default ChatRoom;
