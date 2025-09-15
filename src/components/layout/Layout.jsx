@@ -14,7 +14,7 @@ import Canvas from "../canvas/Canvas";
 import ChatRoom from "../../ChatRoom/components/ChatRoom";
 import UserProfileMenu from "../auth/UserProfileMenu";
 import AppTour from "./AppTour";
-import ChatroomManager from "../toolbar/ChatroomManager";
+import ChatroomManager from "../ChatRoomController/ChatroomManager";
 import { AuthContext } from "../../contexts/AuthContext";
 import { layoutStyles } from "../../styles/layoutStyles";
 import "./Layout.css";
