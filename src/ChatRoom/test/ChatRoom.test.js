@@ -205,60 +205,59 @@ describe('ChatRoom Component', () => {
     });
   });
 
-  describe('Clear Chat Functionality', () => {
-    test('shows clear button when messages exist and history loaded', () => {
+  describe('Clear Chat Functionality - Ref Method', () => {
+    test('exposes handleClearChatroom method via ref', () => {
+      const refMock = { current: null };
+      
       useChatMessages.mockReturnValue({
         ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
 
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
       
-      const clearButton = screen.getByTitle('清空聊天室');
-      expect(clearButton).toBeInTheDocument();
+      // Check that the ref has the handleClearChatroom method
+      expect(refMock.current).toBeDefined();
+      expect(refMock.current.handleClearChatroom).toBeDefined();
+      expect(typeof refMock.current.handleClearChatroom).toBe('function');
     });
 
-    test('does not show clear button when no messages', () => {
-      useChatMessages.mockReturnValue({
-        ...defaultMockReturn,
-        messages: [],
-        historyLoaded: true
-      });
-
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+    test('handleClearChatroom opens confirmation dialog', () => {
+      const refMock = { current: null };
       
-      expect(screen.queryByTitle('清空聊天室')).not.toBeInTheDocument();
-    });
-
-    test('opens confirmation dialog when clear button clicked', () => {
       useChatMessages.mockReturnValue({
         ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
 
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
       
-      const clearButton = screen.getByTitle('清空聊天室');
-      fireEvent.click(clearButton);
+      // Call the method via ref
+      act(() => {
+        refMock.current.handleClearChatroom();
+      });
       
       expect(screen.getByText('清空聊天室')).toBeInTheDocument();
       expect(screen.getByText('確定要清空這個聊天室的所有訊息嗎？此操作無法復原。')).toBeInTheDocument();
     });
 
-    test('closes dialog when cancel clicked', async () => {
+    test('closes dialog when cancel clicked via ref method', async () => {
+      const refMock = { current: null };
+      
       useChatMessages.mockReturnValue({
         ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
 
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
       
-      // Open dialog
-      const clearButton = screen.getByTitle('清空聊天室');
-      fireEvent.click(clearButton);
+      // Open dialog via ref
+      act(() => {
+        refMock.current.handleClearChatroom();
+      });
       
       // Click cancel
       const cancelButton = screen.getByText('取消');
@@ -273,13 +272,15 @@ describe('ChatRoom Component', () => {
       });
     });
 
-    test('calls clear API and reloads history when confirmed', async () => {
+    test('calls clear API and reloads history when confirmed via ref method', async () => {
       apiConfig.delete.mockResolvedValueOnce({
         status: 200,
         data: 'Success'
       });
 
       const mockReload = jest.fn();
+      const refMock = { current: null };
+      
       useChatMessages.mockReturnValue({
         ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
@@ -287,11 +288,12 @@ describe('ChatRoom Component', () => {
         reloadChatroomHistory: mockReload
       });
 
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
       
-      // Open dialog
-      const clearButton = screen.getByTitle('清空聊天室');
-      fireEvent.click(clearButton);
+      // Open dialog via ref
+      act(() => {
+        refMock.current.handleClearChatroom();
+      });
       
       // Click confirm
       const confirmButton = screen.getByText('確認清空');
@@ -314,12 +316,13 @@ describe('ChatRoom Component', () => {
       });
     });
 
-    test('handles API error gracefully', async () => {
+    test('handles API error gracefully via ref method', async () => {
       const apiError = new Error('API Error');
       apiConfig.delete.mockRejectedValueOnce(apiError);
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const mockReload = jest.fn();
+      const refMock = { current: null };
 
       useChatMessages.mockReturnValue({
         ...defaultMockReturn,
@@ -328,11 +331,12 @@ describe('ChatRoom Component', () => {
         reloadChatroomHistory: mockReload
       });
 
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
       
-      // Open dialog
-      const clearButton = screen.getByTitle('清空聊天室');
-      fireEvent.click(clearButton);
+      // Open dialog via ref
+      act(() => {
+        refMock.current.handleClearChatroom();
+      });
       
       // Click confirm
       const confirmButton = screen.getByText('確認清空');
@@ -347,22 +351,25 @@ describe('ChatRoom Component', () => {
       consoleSpy.mockRestore();
     });
 
-    test('shows loading state during clearing', async () => {
+    test('shows loading state during clearing via ref method', async () => {
       apiConfig.delete.mockImplementationOnce(() => new Promise(resolve => {
         setTimeout(() => resolve({ status: 200, data: 'Success' }), 100);
       }));
 
+      const refMock = { current: null };
+      
       useChatMessages.mockReturnValue({
         ...defaultMockReturn,
         messages: [{ id: '1', message: 'Test', isUser: true }],
         historyLoaded: true
       });
 
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
       
-      // Open dialog
-      const clearButton = screen.getByTitle('清空聊天室');
-      fireEvent.click(clearButton);
+      // Open dialog via ref
+      act(() => {
+        refMock.current.handleClearChatroom();
+      });
       
       // Click confirm
       const confirmButton = screen.getByText('確認清空');
@@ -370,6 +377,71 @@ describe('ChatRoom Component', () => {
       
       // Should show loading state
       expect(screen.getByText('清空中...')).toBeInTheDocument();
+    });
+
+    test('handles missing currentChatroomId gracefully via ref method', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const refMock = { current: null };
+
+      useChatMessages.mockReturnValue({
+        ...defaultMockReturn,
+        messages: [{ id: '1', message: 'Test', isUser: true }],
+        historyLoaded: true,
+        currentChatroomId: null
+      });
+
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
+      
+      // Open dialog via ref
+      act(() => {
+        refMock.current.handleClearChatroom();
+      });
+      
+      // Click confirm
+      const confirmButton = screen.getByText('確認清空');
+      
+      await act(async () => {
+        fireEvent.click(confirmButton);
+      });
+      
+      expect(consoleSpy).toHaveBeenCalledWith('沒有可用的聊天室ID');
+      expect(apiConfig.delete).not.toHaveBeenCalled();
+      
+      consoleSpy.mockRestore();
+    });
+
+    test('handles network error during clearing via ref method', async () => {
+      const networkError = new Error('Network error');
+      apiConfig.delete.mockRejectedValueOnce(networkError);
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const mockReload = jest.fn();
+      const refMock = { current: null };
+
+      useChatMessages.mockReturnValue({
+        ...defaultMockReturn,
+        messages: [{ id: '1', message: 'Test', isUser: true }],
+        historyLoaded: true,
+        reloadChatroomHistory: mockReload
+      });
+
+      renderWithTheme(<ChatRoom ref={refMock} canvas={mockCanvas} />);
+      
+      // Open dialog via ref
+      act(() => {
+        refMock.current.handleClearChatroom();
+      });
+      
+      // Click confirm
+      const confirmButton = screen.getByText('確認清空');
+      
+      await act(async () => {
+        fireEvent.click(confirmButton);
+      });
+      
+      expect(consoleSpy).toHaveBeenCalledWith('清空聊天室失敗:', networkError);
+      
+      consoleSpy.mockRestore();
     });
   });
 
@@ -387,69 +459,6 @@ describe('ChatRoom Component', () => {
       fireEvent.click(sendButton);
       
       expect(mockSendTextMessageStream).toHaveBeenCalledWith('test message');
-    });
-  });
-
-  describe('Error Handling', () => {
-    test('handles missing currentChatroomId gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-      useChatMessages.mockReturnValue({
-        ...defaultMockReturn,
-        messages: [{ id: '1', message: 'Test', isUser: true }],
-        historyLoaded: true,
-        currentChatroomId: null
-      });
-
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
-      
-      // Open dialog
-      const clearButton = screen.getByTitle('清空聊天室');
-      fireEvent.click(clearButton);
-      
-      // Click confirm
-      const confirmButton = screen.getByText('確認清空');
-      
-      await act(async () => {
-        fireEvent.click(confirmButton);
-      });
-      
-      expect(consoleSpy).toHaveBeenCalledWith('沒有可用的聊天室ID');
-      expect(apiConfig.delete).not.toHaveBeenCalled();
-      
-      consoleSpy.mockRestore();
-    });
-
-    test('handles network error during clearing', async () => {
-      const networkError = new Error('Network error');
-      apiConfig.delete.mockRejectedValueOnce(networkError);
-
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      const mockReload = jest.fn();
-
-      useChatMessages.mockReturnValue({
-        ...defaultMockReturn,
-        messages: [{ id: '1', message: 'Test', isUser: true }],
-        historyLoaded: true,
-        reloadChatroomHistory: mockReload
-      });
-
-      renderWithTheme(<ChatRoom canvas={mockCanvas} />);
-      
-      // Open dialog
-      const clearButton = screen.getByTitle('清空聊天室');
-      fireEvent.click(clearButton);
-      
-      // Click confirm
-      const confirmButton = screen.getByText('確認清空');
-      
-      await act(async () => {
-        fireEvent.click(confirmButton);
-      });
-      
-      expect(consoleSpy).toHaveBeenCalledWith('清空聊天室失敗:', networkError);
-      
-      consoleSpy.mockRestore();
     });
   });
 

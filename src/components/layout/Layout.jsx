@@ -1,6 +1,31 @@
 import { useState, useCallback, useRef, useEffect, useContext } from "react";
-import { Box, TextField, Typography, Button, Select, MenuItem, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItem, ListItemText } from "@mui/material";
-import { Help, Add as AddIcon, Settings as SettingsIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { 
+	Box, 
+	TextField, 
+	Typography, 
+	Button, 
+	Select, 
+	MenuItem, 
+	IconButton, 
+	Dialog, 
+	DialogActions, 
+	DialogContent, 
+	DialogContentText, 
+	DialogTitle, 
+	List, 
+	ListItem, 
+	ListItemText,
+	CircularProgress 
+} from "@mui/material";
+import { 
+	Help, 
+	Add as AddIcon, 
+	Settings as SettingsIcon, 
+	Edit as EditIcon, 
+	Delete as DeleteIcon,
+	DeleteSweep as DeleteSweepIcon,
+	Warning as WarningIcon
+} from "@mui/icons-material";
 import { ResizableBox } from "react-resizable";
 import LeftToolbar from "../toolbar/left-toolbar/LeftToolbar";
 import TopToolbar from "../toolbar/top-toolbar/TopToolbar";
@@ -73,8 +98,18 @@ const Layout = () => {
 	const [newTitle, setNewTitle] = useState('');
 	const [openCreateDialog, setOpenCreateDialog] = useState(false);
 	const [createTitle, setCreateTitle] = useState('');
+	
+	// 刪除聊天室確認對話框相關狀態
+	const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+	const [deletingRoomId, setDeletingRoomId] = useState(null);
+	const [deleting, setDeleting] = useState(false);
+
+	// 切換聊天室確認對話框相關狀態
+	const [openSwitchDialog, setOpenSwitchDialog] = useState(false);
+	const [pendingSwitchRoomId, setPendingSwitchRoomId] = useState(null);
 
 	const canvasRef = useRef(null);
+	const chatRoomRef = useRef(null); // 新增 ChatRoom 的 ref
 
 	const [canvasReady, setCanvasReady] = useState(false);
 
@@ -140,6 +175,56 @@ const Layout = () => {
 		setChatWidth(size.width);
 	}, []);
 
+	// 處理聊天室切換 - 先檢查是否需要彈出確認視窗
+	const handleChatroomSelectChange = (selectedRoomId) => {
+		// 如果選擇的是當前聊天室，不做任何操作
+		if (selectedRoomId === currentChatroomId) {
+			return;
+		}
+
+		// 檢查畫布是否有內容（這裡可以根據你的需求調整檢查邏輯）
+		const hasCanvasContent = checkCanvasContent();
+		
+		if (hasCanvasContent) {
+			// 如果有內容，彈出確認對話框
+			setPendingSwitchRoomId(selectedRoomId);
+			setOpenSwitchDialog(true);
+		} else {
+			// 如果沒有內容，直接切換
+			switchChatroom(selectedRoomId);
+		}
+	};
+
+	// 檢查畫布是否有內容的函式
+	const checkCanvasContent = () => {
+		if (!canvasRef.current) return false;
+		
+		const canvas = canvasRef.current;
+		// 檢查畫布上是否有物件（除了背景）
+		const objects = canvas.getObjects();
+		return objects && objects.length > 0;
+	};
+
+	// 確認切換聊天室
+	const handleConfirmSwitchChatroom = () => {
+		if (pendingSwitchRoomId) {
+			// 清空畫布
+			handleClearCanvas();
+			// 切換聊天室
+			switchChatroom(pendingSwitchRoomId);
+			// 重置狀態
+			setPendingSwitchRoomId(null);
+			setOpenSwitchDialog(false);
+			showAlert('已切換聊天室並清空畫布', 'success');
+		}
+	};
+
+	// 取消切換聊天室
+	const handleCancelSwitchChatroom = () => {
+		setPendingSwitchRoomId(null);
+		setOpenSwitchDialog(false);
+	};
+
 	// 聊天室管理函數
 	const handleCreateChatroom = async () => {
 		if (!createTitle.trim()) {
@@ -157,17 +242,33 @@ const Layout = () => {
 		}
 	};
 
-	const handleDeleteChatroom = async (chatroomId) => {
+	// 觸發刪除確認對話框
+	const handleDeleteChatroomClick = (chatroomId) => {
+		setDeletingRoomId(chatroomId);
+		setOpenDeleteDialog(true);
+	};
+
+	// 執行刪除聊天室
+	const handleDeleteChatroom = async () => {
+		if (!deletingRoomId) return;
+		
 		if (userChatrooms.length <= 1) {
 			showAlert('至少需要保留一個聊天室', 'warning');
+			setOpenDeleteDialog(false);
+			setDeletingRoomId(null);
 			return;
 		}
 
+		setDeleting(true);
 		try {
-			await deleteChatroomFunc(chatroomId);
+			await deleteChatroomFunc(deletingRoomId);
 			showAlert('聊天室已刪除', 'success');
+			setOpenDeleteDialog(false);
+			setDeletingRoomId(null);
 		} catch (error) {
 			showAlert('刪除聊天室失敗', 'error');
+		} finally {
+			setDeleting(false);
 		}
 	};
 
@@ -195,6 +296,20 @@ const Layout = () => {
 	const cancelEditing = () => {
 		setEditingRoom(null);
 		setNewTitle('');
+	};
+
+	// 處理清空聊天室按鈕點擊
+	const handleClearChatroomClick = () => {
+		if (chatRoomRef.current) {
+			chatRoomRef.current.handleClearChatroom();
+		}
+	};
+
+	// 獲取目標聊天室的標題
+	const getTargetRoomTitle = () => {
+		if (!pendingSwitchRoomId) return '';
+		const targetRoom = userChatrooms?.find(room => room.chatroomId === pendingSwitchRoomId);
+		return targetRoom ? targetRoom.title : '';
 	};
 
 	return (
@@ -229,7 +344,7 @@ const Layout = () => {
 					{/* 聊天室選擇下拉選單 */}
 					<Select
 						value={currentChatroomId || ''}
-						onChange={(e) => switchChatroom(e.target.value)}
+						onChange={(e) => handleChatroomSelectChange(e.target.value)}
 						size="small"
 						sx={{ 
 							minWidth: 200,
@@ -303,6 +418,34 @@ const Layout = () => {
 						}}
 					>
 						<SettingsIcon sx={{ fontSize: 18 }} />
+					</IconButton>
+
+					{/* 清空聊天室按鈕 */}
+					<IconButton
+						size="small"
+						onClick={handleClearChatroomClick}
+						disabled={chatDisabled}
+						title="清空聊天室"
+						sx={{ 
+							color: "#64748b",
+							backgroundColor: "#f8fafc",
+							border: "1px solid #d1d5db",
+							borderRadius: "8px",
+							width: "36px",
+							height: "36px",
+							"&:hover": {
+								backgroundColor: "#f1f5f9",
+								color: "#dc2626",
+								borderColor: "#dc2626",
+							},
+							"&:disabled": { 
+								backgroundColor: "#f3f4f6",
+								color: "#9ca3af",
+								border: "1px solid #d1d5db",
+							},
+						}}
+					>
+						<DeleteSweepIcon sx={{ fontSize: 18 }} />
 					</IconButton>
 				</Box>
 
@@ -461,10 +604,51 @@ const Layout = () => {
 							}
 						}}
 					>
-						<ChatRoom canvas={canvasRef.current} onClose={toggleChat} onDisabledChange={setChatDisabled}/>
+						<ChatRoom 
+							ref={chatRoomRef} 
+							canvas={canvasRef.current} 
+							onClose={toggleChat} 
+							onDisabledChange={setChatDisabled}
+						/>
 					</ResizableBox>
 				)}
 			</Box>
+			
+			{/* 切換聊天室確認對話框 */}
+			<Dialog
+				open={openSwitchDialog}
+				onClose={handleCancelSwitchChatroom}
+				aria-labelledby="switch-dialog-title"
+				aria-describedby="switch-dialog-description"
+			>
+				<DialogTitle id="switch-dialog-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+					<WarningIcon color="warning" />
+					切換聊天室確認
+				</DialogTitle>
+				<DialogContent>
+					<DialogContentText id="switch-dialog-description">
+						切換到「{getTargetRoomTitle()}」聊天室將會清空目前的畫布內容。
+						<br />
+						確定要繼續嗎？
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button 
+						onClick={handleCancelSwitchChatroom} 
+						color="inherit"
+					>
+						取消
+					</Button>
+					<Button 
+						onClick={handleConfirmSwitchChatroom} 
+						color="warning"
+						variant="contained"
+						startIcon={<WarningIcon />}
+					>
+						確認切換
+					</Button>
+				</DialogActions>
+			</Dialog>
 			
 			{/* 創建聊天室對話框 */}
 			<Dialog
@@ -559,7 +743,7 @@ const Layout = () => {
 											<EditIcon />
 										</IconButton>
 										<IconButton 
-											onClick={() => handleDeleteChatroom(room.chatroomId)}
+											onClick={() => handleDeleteChatroomClick(room.chatroomId)}
 											size="small"
 											disabled={userChatrooms.length === 1}
 											title={userChatrooms.length === 1 ? "至少需要保留一個聊天室" : "刪除聊天室"}
@@ -576,6 +760,41 @@ const Layout = () => {
 				<DialogActions>
 					<Button onClick={() => setOpenManageDialog(false)}>
 						關閉
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* 刪除聊天室確認對話框 */}
+			<Dialog
+				open={openDeleteDialog}
+				onClose={() => !deleting && setOpenDeleteDialog(false)}
+				aria-labelledby="delete-dialog-title"
+				aria-describedby="delete-dialog-description"
+			>
+				<DialogTitle id="delete-dialog-title">
+					刪除聊天室
+				</DialogTitle>
+				<DialogContent>
+					<DialogContentText id="delete-dialog-description">
+						確定要刪除這個聊天室嗎？此操作將永久刪除聊天室及其所有訊息，無法復原。
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button 
+						onClick={() => setOpenDeleteDialog(false)} 
+						disabled={deleting}
+						color="inherit"
+					>
+						取消
+					</Button>
+					<Button 
+						onClick={handleDeleteChatroom} 
+						disabled={deleting}
+						color="error"
+						variant="contained"
+						startIcon={deleting ? <CircularProgress size={16} /> : <DeleteIcon />}
+					>
+						{deleting ? '刪除中...' : '確認刪除'}
 					</Button>
 				</DialogActions>
 			</Dialog>
