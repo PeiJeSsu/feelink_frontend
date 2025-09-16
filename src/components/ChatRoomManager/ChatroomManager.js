@@ -29,7 +29,9 @@ import { showAlert } from "../../utils/AlertUtils";
 
 const ChatroomManager = ({ 
 	onSwitchChatroom, 
-	onClearChatroom, 
+	onConfirmSwitchChatroom, // 新增：確認切換的回調函式
+	onClearChatroom,
+	onClearCanvas, // 新增：清除畫布的回調函式 
 	chatDisabled 
 }) => {
 	const {
@@ -38,7 +40,6 @@ const ChatroomManager = ({
 		createNewChatroom,
 		deleteChatroom: deleteChatroomFunc,
 		updateChatroomTitle: updateChatroomTitleFunc,
-		switchChatroom
 	} = useContext(AuthContext);
 
 	// 聊天室管理相關狀態
@@ -64,21 +65,19 @@ const ChatroomManager = ({
 			return;
 		}
 
-		// 呼叫父組件的切換函數，讓父組件決定是否需要確認對話框
 		if (onSwitchChatroom) {
 			onSwitchChatroom(selectedRoomId, setPendingSwitchRoomId, setOpenSwitchDialog);
 		}
 	};
 
-	// 確認切換聊天室
+	// 確認切換聊天室 - 修正邏輯，這裡才清空畫布並切換
 	const handleConfirmSwitchChatroom = () => {
-		if (pendingSwitchRoomId) {
-			// 切換聊天室
-			switchChatroom(pendingSwitchRoomId);
-			// 重置狀態
-			setPendingSwitchRoomId(null);
-			setOpenSwitchDialog(false);
-			showAlert('已切換聊天室並清空畫布', 'success');
+		if (pendingSwitchRoomId && onConfirmSwitchChatroom) {
+			onConfirmSwitchChatroom(pendingSwitchRoomId, () => {
+				setPendingSwitchRoomId(null);
+				setOpenSwitchDialog(false);
+				showAlert('已切換聊天室並清空畫布', 'success');
+			});
 		}
 	};
 
@@ -122,9 +121,18 @@ const ChatroomManager = ({
 			return;
 		}
 
+		// 檢查是否要刪除當前聊天室
+		const isDeletingCurrentRoom = deletingRoomId === currentChatroomId;
+
 		setDeleting(true);
 		try {
 			await deleteChatroomFunc(deletingRoomId);
+			
+			// 如果刪除的是當前聊天室，則清除畫布
+			if (isDeletingCurrentRoom && onClearCanvas) {
+				onClearCanvas();
+			}
+			
 			showAlert('聊天室已刪除', 'success');
 			setOpenDeleteDialog(false);
 			setDeletingRoomId(null);
@@ -176,6 +184,7 @@ const ChatroomManager = ({
 				<Select
 					value={currentChatroomId || ''}
 					onChange={(e) => handleChatroomSelectChange(e.target.value)}
+					disabled={chatDisabled} 
 					size="small"
 					sx={{
 						minWidth: 200,
@@ -196,6 +205,15 @@ const ChatroomManager = ({
 							'&.Mui-focused fieldset': {
 								borderColor: '#2563eb',
 							},
+							'&.Mui-disabled': {
+								backgroundColor: '#f3f4f6',
+								'& fieldset': {
+									borderColor: '#d1d5db',
+								},
+								'& .MuiSelect-select': {
+									color: '#9ca3af',
+								}
+							}
 						}
 					}}
 					displayEmpty
@@ -211,6 +229,7 @@ const ChatroomManager = ({
 				<IconButton
 					size="small"
 					onClick={() => setOpenCreateDialog(true)}
+					disabled={chatDisabled} 
 					title="新增聊天室"
 					sx={{
 						color: "#64748b",
@@ -223,7 +242,12 @@ const ChatroomManager = ({
 							backgroundColor: "#f1f5f9",
 							color: "#2563eb",
 							borderColor: "#2563eb",
-						}
+						},
+						"&:disabled": {
+							backgroundColor: "#f3f4f6",
+							color: "#9ca3af",
+							border: "1px solid #d1d5db",
+						},
 					}}
 				>
 					<AddIcon sx={{ fontSize: 18 }} />
@@ -261,6 +285,7 @@ const ChatroomManager = ({
 				<IconButton
 					size="small"
 					onClick={() => setOpenManageDialog(true)}
+					disabled={chatDisabled} // 添加 disabled 狀態
 					title="管理聊天室"
 					sx={{
 						color: "#64748b",
@@ -273,7 +298,12 @@ const ChatroomManager = ({
 							backgroundColor: "#f1f5f9",
 							color: "#2563eb",
 							borderColor: "#2563eb",
-						}
+						},
+						"&:disabled": {
+							backgroundColor: "#f3f4f6",
+							color: "#9ca3af",
+							border: "1px solid #d1d5db",
+						},
 					}}
 				>
 					<SettingsIcon sx={{ fontSize: 18 }} />
@@ -296,6 +326,10 @@ const ChatroomManager = ({
 						切換到「{getTargetRoomTitle()}」聊天室將會清空目前的畫布內容。
 						<br />
 						確定要繼續嗎？
+						 <br />
+						<small style={{ color: '#6b7280', fontSize: '12px' }}>
+							提醒：如需保留畫布內容，請先使用存檔功能
+						</small>
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
@@ -442,7 +476,14 @@ const ChatroomManager = ({
 				</DialogTitle>
 				<DialogContent>
 					<DialogContentText id="delete-dialog-description">
-						確定要刪除這個聊天室嗎？此操作將永久刪除聊天室及其所有訊息，無法復原。
+						<p>確定要刪除這個聊天室嗎？此操作將永久刪除聊天室及其所有訊息，無法復原。</p>
+						{deletingRoomId === currentChatroomId && (
+							<p>
+								<small style={{ color: '#6b7280', fontSize: '12px' }}>
+									注意：刪除當前聊天室也會清空畫布內容，如需保留畫布內容，請先使用存檔功能
+								</small>
+							</p>
+						)}
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>

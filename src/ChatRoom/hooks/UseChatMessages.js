@@ -13,7 +13,7 @@ import {
     handleSendCanvasAnalysisStream,
     handleSendGenerateObject
 } from "../helpers/MessageController";
-import { loadChatroomHistoryService } from "../helpers/MessageService";
+import { loadChatroomHistoryService, savePreQuestionService  } from "../helpers/MessageService";
 import { 
     convertDBMessagesToUIMessages, 
     removeDuplicateMessages 
@@ -642,8 +642,27 @@ export default function useChatMessages(canvas, setInputNotification) {
             const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
             const greetingMessage = getGreetingWithNickname(randomQuestion);
             
-            addSystemMessage(greetingMessage);
-            questionAdded.current = true;
+            // 先呼叫 API 儲存到資料庫
+            savePreQuestionService(currentChatroomId, greetingMessage)
+                .then(result => {
+                    if (result.success) {
+                        console.log('預設問題已儲存到資料庫');
+                        // API 成功後再顯示在前端
+                        addSystemMessage(greetingMessage);
+                        questionAdded.current = true;
+                    } else {
+                        console.error('儲存預設問題失敗:', result.error);
+                        // 即使 API 失敗，仍然顯示預設問題
+                        addSystemMessage(greetingMessage);
+                        questionAdded.current = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('呼叫預設問題 API 時發生錯誤:', error);
+                    // 即使 API 失敗，仍然顯示預設問題
+                    addSystemMessage(greetingMessage);
+                    questionAdded.current = true;
+                });
         }
     }, [historyLoaded, messages.length, loading, historyLoading, currentChatroomId, addSystemMessage]);
 
