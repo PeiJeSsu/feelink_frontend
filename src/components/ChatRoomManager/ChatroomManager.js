@@ -176,6 +176,7 @@ const ChatroomManager = ({
 				<Select
 					value={currentChatroomId || ''}
 					onChange={(e) => handleChatroomSelectChange(e.target.value)}
+					disabled={chatDisabled} // 添加 disabled 狀態
 					size="small"
 					sx={{
 						minWidth: 200,
@@ -196,6 +197,16 @@ const ChatroomManager = ({
 							'&.Mui-focused fieldset': {
 								borderColor: '#2563eb',
 							},
+							// 添加 disabled 樣式
+							'&.Mui-disabled': {
+								backgroundColor: '#f3f4f6',
+								'& fieldset': {
+									borderColor: '#d1d5db',
+								},
+								'& .MuiSelect-select': {
+									color: '#9ca3af',
+								}
+							}
 						}
 					}}
 					displayEmpty
@@ -211,6 +222,7 @@ const ChatroomManager = ({
 				<IconButton
 					size="small"
 					onClick={() => setOpenCreateDialog(true)}
+					disabled={chatDisabled} // 添加 disabled 狀態
 					title="新增聊天室"
 					sx={{
 						color: "#64748b",
@@ -223,7 +235,12 @@ const ChatroomManager = ({
 							backgroundColor: "#f1f5f9",
 							color: "#2563eb",
 							borderColor: "#2563eb",
-						}
+						},
+						"&:disabled": {
+							backgroundColor: "#f3f4f6",
+							color: "#9ca3af",
+							border: "1px solid #d1d5db",
+						},
 					}}
 				>
 					<AddIcon sx={{ fontSize: 18 }} />
@@ -261,6 +278,7 @@ const ChatroomManager = ({
 				<IconButton
 					size="small"
 					onClick={() => setOpenManageDialog(true)}
+					disabled={chatDisabled} // 添加 disabled 狀態
 					title="管理聊天室"
 					sx={{
 						color: "#64748b",
@@ -273,7 +291,12 @@ const ChatroomManager = ({
 							backgroundColor: "#f1f5f9",
 							color: "#2563eb",
 							borderColor: "#2563eb",
-						}
+						},
+						"&:disabled": {
+							backgroundColor: "#f3f4f6",
+							color: "#9ca3af",
+							border: "1px solid #d1d5db",
+						},
 					}}
 				>
 					<SettingsIcon sx={{ fontSize: 18 }} />
