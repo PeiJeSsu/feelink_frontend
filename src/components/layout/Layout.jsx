@@ -143,22 +143,32 @@ const Layout = () => {
 		return objects && objects.length > 0;
 	}, []);
 
-	// 處理聊天室切換 - 修正 Hook 使用位置
+	// 處理聊天室切換 - 修正邏輯，不要在這裡清空畫布
 	const handleSwitchChatroom = useCallback((selectedRoomId, setPendingSwitchRoomId, setOpenSwitchDialog) => {
-		// 檢查畫布是否有內容（這裡可以根據你的需求調整檢查邏輯）
+		// 檢查畫布是否有內容
 		const hasCanvasContent = checkCanvasContent();
 		
 		if (hasCanvasContent) {
-			// 如果有內容，彈出確認對話框
+			// 如果有內容，彈出確認對話框，但不清空畫布
 			setPendingSwitchRoomId(selectedRoomId);
 			setOpenSwitchDialog(true);
-			// 需要清空畫布
-			handleClearCanvas();
 		} else {
 			// 如果沒有內容，直接切換
 			switchChatroom(selectedRoomId);
 		}
-	}, [switchChatroom, handleClearCanvas, checkCanvasContent]);
+	}, [switchChatroom, checkCanvasContent]); // 移除 handleClearCanvas 依賴
+
+	// 新增：處理確認切換聊天室的函式，這裡才清空畫布
+	const handleConfirmSwitchChatroom = useCallback((selectedRoomId, onSuccess) => {
+		// 先清空畫布
+		handleClearCanvas();
+		// 然後切換聊天室
+		switchChatroom(selectedRoomId);
+		// 執行成功回調
+		if (onSuccess) {
+			onSuccess();
+		}
+	}, [handleClearCanvas, switchChatroom]);
 
 	// 處理清空聊天室按鈕點擊
 	const handleClearChatroomClick = () => {
@@ -198,7 +208,9 @@ const Layout = () => {
 				<Box sx={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
 					<ChatroomManager 
 						onSwitchChatroom={handleSwitchChatroom}
+						onConfirmSwitchChatroom={handleConfirmSwitchChatroom}
 						onClearChatroom={handleClearChatroomClick}
+						onClearCanvas={handleClearCanvas}
 						chatDisabled={chatDisabled}
 					/>
 				</Box>

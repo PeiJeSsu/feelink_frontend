@@ -29,7 +29,9 @@ import { showAlert } from "../../utils/AlertUtils";
 
 const ChatroomManager = ({ 
 	onSwitchChatroom, 
-	onClearChatroom, 
+	onConfirmSwitchChatroom, // 新增：確認切換的回調函式
+	onClearChatroom,
+	onClearCanvas, // 新增：清除畫布的回調函式 
 	chatDisabled 
 }) => {
 	const {
@@ -38,7 +40,6 @@ const ChatroomManager = ({
 		createNewChatroom,
 		deleteChatroom: deleteChatroomFunc,
 		updateChatroomTitle: updateChatroomTitleFunc,
-		switchChatroom
 	} = useContext(AuthContext);
 
 	// 聊天室管理相關狀態
@@ -70,15 +71,16 @@ const ChatroomManager = ({
 		}
 	};
 
-	// 確認切換聊天室
+	// 確認切換聊天室 - 修正邏輯，這裡才清空畫布並切換
 	const handleConfirmSwitchChatroom = () => {
-		if (pendingSwitchRoomId) {
-			// 切換聊天室
-			switchChatroom(pendingSwitchRoomId);
-			// 重置狀態
-			setPendingSwitchRoomId(null);
-			setOpenSwitchDialog(false);
-			showAlert('已切換聊天室並清空畫布', 'success');
+		if (pendingSwitchRoomId && onConfirmSwitchChatroom) {
+			// 調用父組件提供的確認切換函式，這裡會清空畫布並切換聊天室
+			onConfirmSwitchChatroom(pendingSwitchRoomId, () => {
+				// 成功回調：重置狀態並顯示訊息
+				setPendingSwitchRoomId(null);
+				setOpenSwitchDialog(false);
+				showAlert('已切換聊天室並清空畫布', 'success');
+			});
 		}
 	};
 
@@ -122,9 +124,18 @@ const ChatroomManager = ({
 			return;
 		}
 
+		// 檢查是否要刪除當前聊天室
+		const isDeletingCurrentRoom = deletingRoomId === currentChatroomId;
+
 		setDeleting(true);
 		try {
 			await deleteChatroomFunc(deletingRoomId);
+			
+			// 如果刪除的是當前聊天室，則清除畫布
+			if (isDeletingCurrentRoom && onClearCanvas) {
+				onClearCanvas();
+			}
+			
 			showAlert('聊天室已刪除', 'success');
 			setOpenDeleteDialog(false);
 			setDeletingRoomId(null);
@@ -466,6 +477,12 @@ const ChatroomManager = ({
 				<DialogContent>
 					<DialogContentText id="delete-dialog-description">
 						確定要刪除這個聊天室嗎？此操作將永久刪除聊天室及其所有訊息，無法復原。
+						{deletingRoomId === currentChatroomId && (
+							<>
+								<br /><br />
+								<strong>注意：刪除當前聊天室也會清空畫布內容。</strong>
+							</>
+						)}
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
