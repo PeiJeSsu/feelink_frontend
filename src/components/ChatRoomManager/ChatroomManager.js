@@ -330,6 +330,10 @@ const ChatroomManager = ({
 						切換到「{getTargetRoomTitle()}」聊天室將會清空目前的畫布內容。
 						<br />
 						確定要繼續嗎？
+						 <br />
+						<small style={{ color: '#6b7280', fontSize: '12px' }}>
+							提醒：如需保留畫布內容，請先使用存檔功能
+						</small>
 					</DialogContentText>
 				</DialogContent>
 				<DialogActions>
@@ -479,8 +483,10 @@ const ChatroomManager = ({
 						確定要刪除這個聊天室嗎？此操作將永久刪除聊天室及其所有訊息，無法復原。
 						{deletingRoomId === currentChatroomId && (
 							<>
-								<br /><br />
-								<strong>注意：刪除當前聊天室也會清空畫布內容。</strong>
+								<br />
+								<small style={{ color: '#6b7280', fontSize: '12px' }}>
+									注意：刪除當前聊天室也會清空畫布內容，如需保留畫布內容，請先使用存檔功能
+								</small>
 							</>
 						)}
 					</DialogContentText>
