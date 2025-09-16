@@ -480,14 +480,13 @@ const ChatroomManager = ({
 				</DialogTitle>
 				<DialogContent>
 					<DialogContentText id="delete-dialog-description">
-						確定要刪除這個聊天室嗎？此操作將永久刪除聊天室及其所有訊息，無法復原。
+						<p>確定要刪除這個聊天室嗎？此操作將永久刪除聊天室及其所有訊息，無法復原。</p>
 						{deletingRoomId === currentChatroomId && (
-							<>
-								<br />
+							<p>
 								<small style={{ color: '#6b7280', fontSize: '12px' }}>
 									注意：刪除當前聊天室也會清空畫布內容，如需保留畫布內容，請先使用存檔功能
 								</small>
-							</>
+							</p>
 						)}
 					</DialogContentText>
 				</DialogContent>
