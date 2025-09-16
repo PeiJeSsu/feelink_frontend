@@ -65,7 +65,6 @@ const ChatroomManager = ({
 			return;
 		}
 
-		// 呼叫父組件的切換函數，讓父組件決定是否需要確認對話框
 		if (onSwitchChatroom) {
 			onSwitchChatroom(selectedRoomId, setPendingSwitchRoomId, setOpenSwitchDialog);
 		}
@@ -74,9 +73,7 @@ const ChatroomManager = ({
 	// 確認切換聊天室 - 修正邏輯，這裡才清空畫布並切換
 	const handleConfirmSwitchChatroom = () => {
 		if (pendingSwitchRoomId && onConfirmSwitchChatroom) {
-			// 調用父組件提供的確認切換函式，這裡會清空畫布並切換聊天室
 			onConfirmSwitchChatroom(pendingSwitchRoomId, () => {
-				// 成功回調：重置狀態並顯示訊息
 				setPendingSwitchRoomId(null);
 				setOpenSwitchDialog(false);
 				showAlert('已切換聊天室並清空畫布', 'success');
@@ -187,7 +184,7 @@ const ChatroomManager = ({
 				<Select
 					value={currentChatroomId || ''}
 					onChange={(e) => handleChatroomSelectChange(e.target.value)}
-					disabled={chatDisabled} // 添加 disabled 狀態
+					disabled={chatDisabled} 
 					size="small"
 					sx={{
 						minWidth: 200,
@@ -208,7 +205,6 @@ const ChatroomManager = ({
 							'&.Mui-focused fieldset': {
 								borderColor: '#2563eb',
 							},
-							// 添加 disabled 樣式
 							'&.Mui-disabled': {
 								backgroundColor: '#f3f4f6',
 								'& fieldset': {
@@ -233,7 +229,7 @@ const ChatroomManager = ({
 				<IconButton
 					size="small"
 					onClick={() => setOpenCreateDialog(true)}
-					disabled={chatDisabled} // 添加 disabled 狀態
+					disabled={chatDisabled} 
 					title="新增聊天室"
 					sx={{
 						color: "#64748b",
