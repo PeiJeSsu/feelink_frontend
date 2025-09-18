@@ -17,22 +17,50 @@ import AppTour from "./AppTour";
 import ChatroomManager from "../ChatRoomManager/ChatroomManager";
 import { AuthContext } from "../../contexts/AuthContext";
 import { layoutStyles } from "../../styles/layoutStyles";
+import { showAlert } from "../../utils/AlertUtils";
 import "./Layout.css";
+import {useNavigate} from "react-router-dom";
+import {getChatMessagesCount} from "../../ChatRoom/helpers/MessageAPI";
+import {loadAnalyzeAndSaveToday} from "../../ChatRoom/helpers/MessageService";
 
 const Layout = () => {
 	// 將 AuthContext 移到組件頂層
-	const { switchChatroom } = useContext(AuthContext);
+	const { switchChatroom , currentChatroomId } = useContext(AuthContext);
 
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(true);
 	const [chatWidth, setChatWidth] = useState(400);
 	const [chatDisabled, setChatDisabled] = useState(false);
+	const [analysisLoading, setAnalysisLoading] = useState(false);
+	const navigate = useNavigate();
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
 		size: 5,
 		opacity: 1,
 		color: "#000000",
 	});
+
+	const handleEmotionReport = async () => {
+		if (analysisLoading) return;
+
+		try {
+			setAnalysisLoading(true);
+			const currentMessageCount = await getChatMessagesCount(currentChatroomId);
+			if (currentMessageCount < 3) {
+				showAlert('請先與AI對話超過3句話，再進行情緒分析', 'warning');
+				setAnalysisLoading(false);
+				return;
+			}
+			navigate('/emotion-report', {
+				state: { chatroomId: currentChatroomId ,
+					messageCount: currentMessageCount}
+			});
+		} catch (error) {
+			showAlert('檢查對話狀態時發生錯誤，請稍後再試', 'error');
+		} finally {
+			setAnalysisLoading(false);
+		}
+	};
 
 	const [shapeSettings, setShapeSettings] = useState({
 		type: "RECT",
@@ -218,6 +246,35 @@ const Layout = () => {
 				{/* 右側：使用者功能 */}
 				<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 					{/* 聊天室切換按鈕 */}
+					<Button
+						onClick={handleEmotionReport || analysisLoading}
+						disabled={chatDisabled}
+						sx={{
+							color: isChatOpen ? "#2563eb" : "#64748b",
+							backgroundColor: isChatOpen ? "#f1f5f9" : "transparent",
+							border: isChatOpen ? "1px solid #2563eb" : "1px solid #d1d5db",
+							fontSize: "14px",
+							fontWeight: isChatOpen ? 500 : 600,
+							padding: "6px 12px",
+							borderRadius: "8px",
+							textTransform: "none",
+							fontFamily: '"Inter", "Noto Sans TC", sans-serif',
+							height: "36px",
+							"&:hover": {
+								backgroundColor: isChatOpen ? "#f1f5f9" : "#f9fafb",
+								color: "#2563eb",
+								border: isChatOpen ? "none" : "1px solid #2563eb",
+							},
+							"&:disabled": {
+								backgroundColor: "#f3f4f6",
+								color: "#9ca3af",
+								border: "1px solid #d1d5db",
+							},
+						}}
+					>
+						當天情緒分析
+					</Button>
+
 					<Button
 						onClick={toggleChat}
 						disabled={chatDisabled}
