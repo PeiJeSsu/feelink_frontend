@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useRef} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
     Box,
@@ -105,15 +105,12 @@ const EmotionReportPage = () => {
                 let analysis = null;
 
                 if (messageCount > lastCount) {
-                    // 需要重新分析
                     analysis = await loadAnalyzeAndSaveToday(chatroomId);
                     localStorage.setItem(lastCountKey, messageCount.toString());
                 } else {
-                    // 載入現有結果
                     try {
                         analysis = await loadGetTodayAnalysis(chatroomId);
                     } catch (dbError) {
-                        // 如果沒有現有結果，執行新分析
                         analysis = await loadAnalyzeAndSaveToday(chatroomId);
                     }
                 }
