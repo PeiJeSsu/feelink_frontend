@@ -8,6 +8,7 @@ import TextInputArea from "./TextInputArea";
 import PropTypes from "prop-types";
 import { IconButton } from "@mui/material";
 import { apiConfig } from "../config/ApiConfig"
+import { deleteTodayEmotionAnalysis } from '../helpers/MessageAPI';
 
 export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
     const [inputNotification, setInputNotification] = useState(null);
@@ -64,22 +65,23 @@ export default function ChatRoom({ canvas, onClose, onDisabledChange }) {
     // 清空聊天室函數
     const handleClearChatroom = async () => {
         if (!currentChatroomId) {
-            console.error('沒有可用的聊天室ID');
             return;
         }
 
         try {
             setClearing(true);
-            await apiConfig.delete(`/api/messages/chatroom/${currentChatroomId}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
 
-            console.log('聊天室清空成功');
+            // 同時刪除聊天訊息和當天情緒分析
+            await Promise.allSettled([
+                apiConfig.delete(`/api/messages/chatroom/${currentChatroomId}`, {
+                    headers: { 'Content-Type': 'application/json' }
+                }),
+                deleteTodayEmotionAnalysis(currentChatroomId)
+            ]);
+
             reloadChatroomHistory();
+
         } catch (error) {
-            console.error('清空聊天室失敗:', error);
             reloadChatroomHistory();
         } finally {
             setClearing(false);

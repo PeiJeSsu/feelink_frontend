@@ -340,6 +340,17 @@ export const deleteChatroom = async (chatroomId) => {
     }
 };
 
+// 取得使用者聊天數量
+export const getChatMessagesCount = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/user/text/count`);
+        return response.data.count  || 0;
+    } catch (error) {
+        console.error('取得對話數量失敗:', error);
+        return 0;
+    }
+};
+
 export const getTodayEmotionAnalysis = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/emotion/today`, {
@@ -365,18 +376,6 @@ export const getTodayChatSummary = async (chatroomId) => {
     }
 };
 
-export const getChatSummaryByDate = async (chatroomId, date) => {
-    try {
-        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/summary`, {
-            params: { date }
-        });
-        return response.data;
-    } catch (error) {
-        console.error('取得聊天摘要失敗:', error);
-        throw new Error(error.response?.data?.message || error.message || '取得摘要失敗');
-    }
-};
-
 export const getTodayDemandAnalysis = async (chatroomId) => {
     try {
         const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/demands/today`);
@@ -394,5 +393,67 @@ export const getTodaySentimentScore = async (chatroomId) => {
     } catch (error) {
         console.error('取得當天情緒分數失敗:', error);
         throw new Error(error.response?.data?.message || error.message || '取得情緒分數失敗');
+    }
+};
+
+// 分析資料並儲存
+export const analyzeAndSaveToday = async (chatroomId) => {
+    try {
+        const response = await apiConfig.post(`/api/emotion-analysis/chatroom/${chatroomId}/analyze-today`);
+        return response.data;
+    } catch (error) {
+        console.error('執行今日分析失敗:', error);
+        throw error;
+    }
+};
+
+export const getTodayAnalysis = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/emotion-analysis/chatroom/${chatroomId}/today`);
+        const data = response.data;
+
+        // 檢查資料是否存在
+        if (!data || !data.emotions) {
+            console.log('今日分析資料不存在');
+            throw new Error('今日分析資料不存在');
+        }
+
+        const emotions = data.emotions;
+        const allValuesZero = Object.values(emotions).every(value => value === -1);
+
+        if (allValuesZero) {
+            console.log('所有情緒值均為-1，視為無效資料');
+            throw new Error('所有情緒值均為-1，資料無效');
+        }
+
+        // 檢查關鍵欄位是否存在
+        if (!data.dateString) {
+            console.log('分析資料格式不完整:', data);
+            throw new Error('分析資料格式不完整');
+        }
+
+        console.log('成功取得今日分析資料:', data);
+        return data;
+
+    } catch (error) {
+        // 如果是 404 (沒找到資料)，回傳 null 而不是拋出錯誤
+        if (error.response && error.response.status === 404) {
+            console.log('今日尚無分析資料，將自動生成');
+            return null;
+        }
+
+        console.error('取得今日分析失敗:', error);
+        throw error;
+    }
+};
+
+// 刪除當天的情緒分析記錄
+export const deleteTodayEmotionAnalysis = async (chatroomId) => {
+    try {
+        const response = await apiConfig.delete(`/api/emotion-analysis/chatroom/${chatroomId}/today`);
+        return response.data;
+    } catch (error) {
+        console.error('刪除當天情緒分析記錄失敗:', error);
+        throw error;
     }
 };
