@@ -41,21 +41,9 @@ const Layout = () => {
 				setAnalysisLoading(false);
 				return;
 			}
-			const lastCountKey = `lastAnalysisCount_${currentChatroomId}`;
-			const lastCount = parseInt(localStorage.getItem(lastCountKey) || '0');
-
-			if (currentMessageCount > lastCount) {
-				showAlert('檢測到新對話，正在重新分析...', 'info');
-
-				try {
-					await loadAnalyzeAndSaveToday(currentChatroomId);
-					localStorage.setItem(lastCountKey, currentMessageCount.toString());
-				} catch (analysisError) {
-					showAlert('重新分析失敗，顯示現有結果', 'warning');
-				}
-			}
 			navigate('/emotion-report', {
-				state: { chatroomId: currentChatroomId }
+				state: { chatroomId: currentChatroomId ,
+						messageCount: currentMessageCount}
 			});
 
 		} catch (error) {
@@ -351,7 +339,6 @@ const Layout = () => {
 					<Button
 						onClick={handleEmotionReport || analysisLoading}
 						disabled={chatDisabled}
-						variant="contained"
 						sx={{
 							color: isChatOpen ? "#2563eb" : "#64748b",
 							backgroundColor: isChatOpen ? "#f1f5f9" : "transparent",

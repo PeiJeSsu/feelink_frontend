@@ -38,14 +38,14 @@ import {loadAnalyzeAndSaveToday, loadGetTodayAnalysis,} from '../ChatRoom//helpe
 const EmotionReportPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const chatroomId = location.state?.chatroomId || "default-room-id";
+    const messageCount = location.state?.messageCount || 0;
     const [emotionData, setEmotionData] = useState(null);
     const [summaryData, setSummaryData] = useState(null);
     const [demandData, setDemandData] = useState(null);
     const [sentimentScore, setSentimentScore] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
-    const chatroomId = location.state?.chatroomId || "default-room-id";
 
     const handleReanalyze = async () => {
         try {
@@ -94,55 +94,42 @@ const EmotionReportPage = () => {
         }
     };
 
-
-
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                // 先嘗試從資料庫載入
-                try {
-                    const existingAnalysis = await loadGetTodayAnalysis(chatroomId);
-                    console.log("資料庫查詢結果:", existingAnalysis);
+                // 檢查是否需要重新分析
+                const lastCountKey = `lastAnalysisCount_${chatroomId}`;
+                const lastCount = parseInt(localStorage.getItem(lastCountKey) || '0');
 
-                    if (existingAnalysis) {
-                        console.log("emotions 資料:", existingAnalysis.emotions);
+                let analysis = null;
 
-                        // 從統一的分析資料中設定各狀態
-                        setEmotionData(existingAnalysis.emotions);
-                        setSummaryData({
-                            summary: existingAnalysis.summary,
-                            date: existingAnalysis.dateString
-                        });
-                        setDemandData(existingAnalysis.demand);
-                        setSentimentScore({
-                            score: existingAnalysis.score,
-                            magnitude: existingAnalysis.magnitude
-                        });
-                        setLoading(false);
-                        return;
+                if (messageCount > lastCount) {
+                    // 需要重新分析
+                    analysis = await loadAnalyzeAndSaveToday(chatroomId);
+                    localStorage.setItem(lastCountKey, messageCount.toString());
+                } else {
+                    // 載入現有結果
+                    try {
+                        analysis = await loadGetTodayAnalysis(chatroomId);
+                    } catch (dbError) {
+                        // 如果沒有現有結果，執行新分析
+                        analysis = await loadAnalyzeAndSaveToday(chatroomId);
                     }
-                } catch (dbError) {
-                    console.log('資料庫無現有分析資料，將生成新的分析');
                 }
 
-                // 如果資料庫沒有資料，則生成新的
-                console.log('開始生成新的分析資料...');
-                const newAnalysis = await loadAnalyzeAndSaveToday(chatroomId);
-                console.log("新生成的分析資料:", newAnalysis);
-
-                if (newAnalysis && newAnalysis.emotions) {
-                    setEmotionData(newAnalysis.emotions);
+                if (analysis && analysis.emotions) {
+                    setEmotionData(analysis.emotions);
                     setSummaryData({
-                        summary: newAnalysis.summary,
-                        date: newAnalysis.dateString
+                        summary: analysis.summary,
+                        date: analysis.dateString
                     });
-                    setDemandData(newAnalysis.demand);
+                    setDemandData(analysis.demand);
                     setSentimentScore({
-                        score: newAnalysis.score,
-                        magnitude: newAnalysis.magnitude
+                        score: analysis.score,
+                        magnitude: analysis.magnitude
                     });
                 } else {
                     setError("載入情緒分析失敗");
@@ -158,16 +145,7 @@ const EmotionReportPage = () => {
         if (chatroomId) {
             fetchData();
         }
-
-        return () => {
-            setEmotionData(null);
-            setSummaryData(null);
-            setDemandData(null);
-            setSentimentScore(null);
-            setLoading(true);
-            setError(null);
-        };
-    }, [chatroomId]);
+    }, [chatroomId, messageCount]);
 
     const getMainEmotion = () => {
         if (!emotionData) return "平靜";
@@ -558,6 +536,7 @@ const EmotionReportPage = () => {
                         justifyContent: 'center',
                         flexDirection: { xs: 'column', sm: 'row' }
                     }}>
+                        {/*
                         <Button
                             variant="contained"
                             startIcon={<Timeline />}
@@ -574,7 +553,7 @@ const EmotionReportPage = () => {
                             }}
                         >
                             查看詳細內容
-                        </Button>
+                        </Button> */}
                         <Button
                             variant="outlined"
                             startIcon={<TrendingUp />}
