@@ -457,3 +457,18 @@ export const deleteTodayEmotionAnalysis = async (chatroomId) => {
         throw error;
     }
 };
+=======
+export const savePreQuestionForChatroom = async (chatroomId, preQuestion) => {
+    try {
+        const response = await apiConfig.post(`/api/messages/chatroom/${chatroomId}/prequestion`, preQuestion, {
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('儲存預設問題失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '儲存預設問題失敗');
+    }
+};
+

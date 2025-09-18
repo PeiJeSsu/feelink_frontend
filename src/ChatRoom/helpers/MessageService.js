@@ -18,6 +18,7 @@ import {
     getChatMessagesCount,
     getTodayAnalysis,
     analyzeAndSaveToday
+    savePreQuestionForChatroom
 } from "./MessageAPI";
 
 // 獲取選中的個性設置
@@ -143,4 +144,7 @@ const handleServiceCall = async (serviceCall) => {
             error: error.message
         };
     }
+};
+export const savePreQuestionService = async (chatroomId, preQuestion) => {
+    return handleServiceCall(() => savePreQuestionForChatroom(chatroomId, preQuestion));
 };
