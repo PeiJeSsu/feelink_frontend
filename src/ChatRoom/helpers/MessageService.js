@@ -15,7 +15,7 @@ import {
     getTodayChatSummary,
     getTodayDemandAnalysis,
     getTodaySentimentScore,
-    savePreQuestionForChatroom
+    savePreQuestionForChatroom, analyzeAndSaveToday, getTodayAnalysis
 } from "./MessageAPI";
 
 // 獲取選中的個性設置
@@ -109,6 +109,24 @@ export const loadDemandAnalysisService = async (chatroomId) => {
 // 情緒分數
 export const loadSentimentScoreService = async (chatroomId) => {
     return handleServiceCall(() => getTodaySentimentScore(chatroomId));
+};
+
+export const loadAnalyzeAndSaveToday = async (chatroomId) => {
+    try {
+        const result = await analyzeAndSaveToday(chatroomId);
+        return result;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const loadGetTodayAnalysis = async (chatroomId) => {
+    try {
+        const result = await getTodayAnalysis(chatroomId);
+        return result;
+    } catch (error) {
+        throw error;
+    }
 };
 
 const handleServiceCall = async (serviceCall) => {

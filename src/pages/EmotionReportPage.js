@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useRef} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
     Box,
@@ -33,19 +33,19 @@ import {
     Star,
     EmojiEmotions,
 } from "@mui/icons-material";
-import { loadEmotionAnalysisService, loadSummaryService, loadDemandAnalysisService, loadSentimentScoreService } from '../ChatRoom//helpers/MessageService';
+import {loadAnalyzeAndSaveToday, loadGetTodayAnalysis,} from '../ChatRoom//helpers/MessageService';
 
 const EmotionReportPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const chatroomId = location.state?.chatroomId || "default-room-id";
+    const messageCount = location.state?.messageCount || 0;
     const [emotionData, setEmotionData] = useState(null);
     const [summaryData, setSummaryData] = useState(null);
     const [demandData, setDemandData] = useState(null);
     const [sentimentScore, setSentimentScore] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
-    const chatroomId = location.state?.chatroomId || "default-room-id";
 
     const handleReanalyze = async () => {
         try {
@@ -56,42 +56,38 @@ const EmotionReportPage = () => {
             setLoading(true);
             setError(null);
 
-            const emotionResult = await loadEmotionAnalysisService(chatroomId);
-            if (emotionResult.success) {
-                setEmotionData(emotionResult.content);
+            const newAnalysisResult = await loadAnalyzeAndSaveToday(chatroomId);
+            if (newAnalysisResult && newAnalysisResult.success && newAnalysisResult.content) {
+                const newAnalysis = newAnalysisResult.content;
+
+                setEmotionData(newAnalysis.emotions);
+                setSummaryData({
+                    summary: newAnalysis.summary,
+                    date: newAnalysis.dateString
+                });
+                setDemandData(newAnalysis.demand);
+                setSentimentScore({
+                    score: newAnalysis.score,
+                    magnitude: newAnalysis.magnitude
+                });
+            }
+            else if (newAnalysisResult && newAnalysisResult.emotions) {
+                setEmotionData(newAnalysisResult.emotions);
+                setSummaryData({
+                    summary: newAnalysisResult.summary,
+                    date: newAnalysisResult.dateString
+                });
+                setDemandData(newAnalysisResult.demand);
+                setSentimentScore({
+                    score: newAnalysisResult.score,
+                    magnitude: newAnalysisResult.magnitude
+                });
             } else {
-                setError(emotionResult.error || "載入情緒分析失敗");
-            }
-
-            try {
-                const summaryResult = await loadSummaryService(chatroomId);
-                if (summaryResult.success) {
-                    setSummaryData(summaryResult.content);
-                }
-            } catch (summaryError) {
-                console.warn("摘要載入失敗:", summaryError);
-            }
-
-            try {
-                const demandResult = await loadDemandAnalysisService(chatroomId);
-                if (demandResult.success) {
-                    setDemandData(demandResult.content);
-                }
-            } catch (demandError) {
-                console.warn("需求分析載入失敗:", demandError);
-            }
-
-            try {
-                const sentimentResult = await loadSentimentScoreService(chatroomId);
-                if (sentimentResult.success) {
-                    setSentimentScore(sentimentResult.content);
-                }
-            } catch (sentimentError) {
-                console.warn("情緒指數載入失敗:", sentimentError);
+                setError("重新分析失敗");
             }
 
         } catch (err) {
-            setError("發生未知錯誤: " + err.message);
+            setError("重新分析失敗: " + err.message);
         } finally {
             setLoading(false);
         }
@@ -103,39 +99,35 @@ const EmotionReportPage = () => {
                 setLoading(true);
                 setError(null);
 
-                const emotionResult = await loadEmotionAnalysisService(chatroomId);
+                const lastCountKey = `lastAnalysisCount_${chatroomId}`;
+                const lastCount = parseInt(localStorage.getItem(lastCountKey) || '0');
 
-                if (emotionResult.success) {
-                    setEmotionData(emotionResult.content);
+                let analysis = null;
+
+                if (messageCount > lastCount) {
+                    analysis = await loadAnalyzeAndSaveToday(chatroomId);
+                    localStorage.setItem(lastCountKey, messageCount.toString());
                 } else {
-                    setError(emotionResult.error || "載入情緒分析失敗");
+                    try {
+                        analysis = await loadGetTodayAnalysis(chatroomId);
+                    } catch (dbError) {
+                        analysis = await loadAnalyzeAndSaveToday(chatroomId);
+                    }
                 }
 
-                try {
-                    const summaryResult = await loadSummaryService(chatroomId);
-                    if (summaryResult.success) {
-                        setSummaryData(summaryResult.content);
-                    }
-                } catch (summaryError) {
-                    console.warn("摘要載入失敗，但不影響主要功能:", summaryError);
-                }
-
-                try {
-                    const demandResult = await loadDemandAnalysisService(chatroomId);
-                    if (demandResult.success) {
-                        setDemandData(demandResult.content);
-                    }
-                } catch (demandError) {
-                    console.warn("需求分析載入失敗，但不影響主要功能:", demandError);
-                }
-
-                try {
-                    const sentimentResult = await loadSentimentScoreService(chatroomId);
-                    if (sentimentResult.success) {
-                        setSentimentScore(sentimentResult.content);
-                    }
-                } catch (sentimentError) {
-                    console.warn("情緒指數載入失敗，但不影響主要功能:", sentimentError);
+                if (analysis && analysis.emotions) {
+                    setEmotionData(analysis.emotions);
+                    setSummaryData({
+                        summary: analysis.summary,
+                        date: analysis.dateString
+                    });
+                    setDemandData(analysis.demand);
+                    setSentimentScore({
+                        score: analysis.score,
+                        magnitude: analysis.magnitude
+                    });
+                } else {
+                    setError("載入情緒分析失敗");
                 }
 
             } catch (err) {
@@ -148,32 +140,25 @@ const EmotionReportPage = () => {
         if (chatroomId) {
             fetchData();
         }
-
-        return () => {
-            setEmotionData(null);
-            setSummaryData(null);
-            setDemandData(null);
-            setSentimentScore(null);
-            setLoading(true);
-            setError(null);
-        };
-    }, [chatroomId]);
+    }, [chatroomId, messageCount]);
 
     const getMainEmotion = () => {
         if (!emotionData) return "平靜";
 
+        // 改用中文鍵名
         const emotions = {
-            "難過": emotionData.sadness || 0,
-            "喜悅": emotionData.joy || 0,
-            "興奮": emotionData.excited || 0,
-            "焦慮": emotionData.anxiety || 0,
-            "生氣": emotionData.anger || 0,
-            "平靜": emotionData.calm || 0,
-            "期待": emotionData.anticipation || 0,
-            "樂觀": emotionData.optimism || 0,
+            "難過": emotionData["難過"] || 0,
+            "喜悅": emotionData["喜悅"] || 0,
+            "興奮": emotionData["興奮"] || 0,
+            "焦慮": emotionData["焦慮"] || 0,
+            "生氣": emotionData["生氣"] || 0,
+            "平靜": emotionData["平靜"] || 0,
+            "期待": emotionData["期待"] || 0,
+            "樂觀": emotionData["樂觀"] || 0,
         };
         return Object.keys(emotions).reduce((a, b) => emotions[a] > emotions[b] ? a : b);
     };
+
 
     const getEmotionColor = (emotion) => {
         const colors = {
@@ -214,15 +199,20 @@ const EmotionReportPage = () => {
     const getEmotionList = () => {
         if (!emotionData) return [];
         return [
-            { name: "難過", value: emotionData.sadness || 0 },
-            { name: "喜悅", value: emotionData.joy || 0 },
-            { name: "興奮", value: emotionData.excited || 0 },
-            { name: "焦慮", value: emotionData.anxiety || 0 },
-            { name: "生氣", value: emotionData.anger || 0 },
-            { name: "平靜", value: emotionData.calm || 0 },
-            { name: "期待", value: emotionData.anticipation || 0 },
-            { name: "樂觀", value: emotionData.optimism || 0 },
+            { name: "難過", value: emotionData["難過"] || 0 },
+            { name: "喜悅", value: emotionData["喜悅"] || 0 },
+            { name: "興奮", value: emotionData["興奮"] || 0 },
+            { name: "焦慮", value: emotionData["焦慮"] || 0 },
+            { name: "生氣", value: emotionData["生氣"] || 0 },
+            { name: "平靜", value: emotionData["平靜"] || 0 },
+            { name: "期待", value: emotionData["期待"] || 0 },
+            { name: "樂觀", value: emotionData["樂觀"] || 0 },
         ];
+    };
+
+    const toNumber = (value) => {
+        const num = parseFloat(value);
+        return isNaN(num) ? 0 : num;
     };
 
     if (loading) {
@@ -316,16 +306,7 @@ const EmotionReportPage = () => {
                                         今日主要情緒狀態
                                     </Typography>
                                     <Chip
-                                        label={`情緒強度: ${emotionData ? Math.max(...Object.values({
-                                            sadness: emotionData.sadness || 0,
-                                            joy: emotionData.joy || 0,
-                                            excited: emotionData.excited || 0,
-                                            anxiety: emotionData.anxiety || 0,
-                                            anger: emotionData.anger || 0,
-                                            calm: emotionData.calm || 0,
-                                            anticipation: emotionData.anticipation || 0,
-                                            optimism: emotionData.optimism || 0,
-                                        })).toFixed(1) : 0}/10`}
+                                        label={`情緒強度: ${emotionData ? Math.max(...getEmotionList().map(e => e.value)).toFixed(1) : 0}/10`}
                                         sx={{
                                             mt: 2,
                                             fontSize: '14px',
@@ -550,10 +531,13 @@ const EmotionReportPage = () => {
                         justifyContent: 'center',
                         flexDirection: { xs: 'column', sm: 'row' }
                     }}>
+                        {/*
                         <Button
                             variant="contained"
-                            startIcon={<Chat />}
-                            onClick={() => navigate('/canvas')}
+                            startIcon={<Timeline />}
+                            onClick={() => navigate('/emotion-history', {
+                                state: { chatroomId: chatroomId }
+                            })}
                             sx={{
                                 px: 4,
                                 py: 1.5,
@@ -563,8 +547,8 @@ const EmotionReportPage = () => {
                                 }
                             }}
                         >
-                            與AI夥伴聊聊
-                        </Button>
+                            查看詳細內容
+                        </Button> */}
                         <Button
                             variant="outlined"
                             startIcon={<TrendingUp />}
