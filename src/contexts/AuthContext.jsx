@@ -2,6 +2,7 @@ import { createContext, useEffect, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../config/firebase";
 import {createChatroom, deleteChatroom as deleteChatroomAPI, updateChatroomTitle as updateChatroomTitleAPI , getUserChatrooms} from "../ChatRoom/helpers/MessageAPI";
+import UserService from "../helpers/personality/UserService";
  
 export const AuthContext = createContext();
 
@@ -13,6 +14,10 @@ export const AuthProvider = ({ children }) => {
     const [chatroomLoading, setChatroomLoading] = useState(false);
     const [chatroomMessagesCache, setChatroomMessagesCache] = useState({});
     const [chatroomRefreshTrigger, setChatroomRefreshTrigger] = useState(0);
+    
+    // 新增：使用者人格設定狀態
+    const [hasPersonality, setHasPersonality] = useState(false);
+    const [checkingPersonality, setCheckingPersonality] = useState(true);
 
     const ensureUserChatroom = async (firebaseUser) => {
         try {
@@ -42,6 +47,61 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // 新增：檢查使用者是否已設定 AI 人格
+    const checkUserPersonality = async (firebaseUser) => {
+        if (!firebaseUser) {
+            setHasPersonality(false);
+            setCheckingPersonality(false);
+            return;
+        }
+
+        try {
+            console.log('正在從資料庫檢查使用者是否已設定 AI 人格...');
+            setCheckingPersonality(true);
+            
+            const userData = await UserService.getUserByEmail(firebaseUser.email);
+
+            // 檢查 preferredAIPartner 欄位（而非 AINickname）
+            if (userData && userData.preferredAIPartner && userData.preferredAIPartner.trim() !== "") {
+                console.log('資料庫中找到 AI 人格設定:', userData.preferredAIPartner);
+                setHasPersonality(true);
+                
+                // 同步到 localStorage
+                const personalityMap = {
+                    'MUSE': 'creative',
+                    'QIQI': 'curious',
+                    'NUANNUAN': 'warm'
+                };
+                const personalityId = personalityMap[userData.preferredAIPartner];
+                if (personalityId) {
+                    localStorage.setItem('selectedPersonality', personalityId);
+                }
+                
+                if (userData.AINickname) {
+                    localStorage.setItem('aiPartnerName', userData.AINickname);
+                }
+                if (userData.nickname) {
+                    localStorage.setItem('userNickname', userData.nickname);
+                }
+            } else {
+                console.log('資料庫中未找到 AI 人格設定');
+                setHasPersonality(false);
+            }
+        } catch (error) {
+            console.error("從資料庫檢查使用者人格設定失敗:", error);
+            setHasPersonality(false);
+        } finally {
+            setCheckingPersonality(false);
+        }
+    };
+
+    // 新增：更新使用者人格狀態（供 PersonalitySelectPage 使用）
+    const refreshPersonalityStatus = async () => {
+        if (user) {
+            await checkUserPersonality(user);
+        }
+    };
+
     // 創建新聊天室
     const createNewChatroom = async (title) => {
         if (!user) return null;
@@ -65,7 +125,6 @@ export const AuthProvider = ({ children }) => {
     const handleDeleteChatroom = async (chatroomId) => {
         try {
             setChatroomLoading(true);
-            // 使用重命名後的 API 函數
             await deleteChatroomAPI(chatroomId);
             setUserChatrooms(prev => prev.filter(room => room.chatroomId !== chatroomId));
             clearChatroomCache(chatroomId);
@@ -88,7 +147,6 @@ export const AuthProvider = ({ children }) => {
 
     const handleUpdateChatroomTitle = async (chatroomId, newTitle) => {
         try {
-            // 使用重命名後的 API 函數
             await updateChatroomTitleAPI(chatroomId, newTitle);
             setUserChatrooms(prev => 
                 prev.map(room => 
@@ -110,20 +168,17 @@ export const AuthProvider = ({ children }) => {
         }
         
         setCurrentChatroomId(chatroomId);
-        // 移除強制重新載入的邏輯
     };
 
     const forceReloadChatroom = (chatroomId = currentChatroomId) => {
         if (!chatroomId) return;
         
-        // 清除該聊天室的快取
         setChatroomMessagesCache(prev => {
             const newCache = { ...prev };
             delete newCache[chatroomId];
             return newCache;
         });
         
-        // 觸發重新載入
         setChatroomRefreshTrigger(prev => prev + 1);
     };
 
@@ -156,18 +211,23 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            console.log('Auth state changed:', user ? `用戶登入: ${user.uid}` : '用戶登出');
+            console.log('Auth state changed:', user ? `使用者登入: ${user.uid}` : '使用者登出');
             
             if (user) {
                 console.log('使用者登入，正在檢查聊天室...');
                 await ensureUserChatroom(user);
                 console.log('聊天室檢查完成');
+                
+                // 檢查使用者人格設定
+                await checkUserPersonality(user);
             } else {
                 console.log('清空聊天室資訊');
                 setUserChatrooms([]);
                 setCurrentChatroomId(null);
                 setChatroomLoading(false);
                 setChatroomMessagesCache({});
+                setHasPersonality(false);
+                setCheckingPersonality(false);
             }
             
             setUser(user);
@@ -183,10 +243,14 @@ export const AuthProvider = ({ children }) => {
             setCurrentChatroomId(null);
             setUserChatrooms([]);
             setChatroomLoading(false);
-            setChatroomMessagesCache({}); 
+            setChatroomMessagesCache({});
+            setHasPersonality(false);
             
             localStorage.removeItem('selectedPersonality');
             localStorage.removeItem('currentSessionId');
+            localStorage.removeItem('aiPartnerName');
+            localStorage.removeItem('userNickname');
+            
             await signOut(auth);
             console.log('登出完成');
         } catch (error) {
@@ -195,7 +259,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-
     const value = {
         user,
         initializing,
@@ -203,6 +266,9 @@ export const AuthProvider = ({ children }) => {
         currentChatroomId,
         chatroomLoading,
         chatroomRefreshTrigger,
+        hasPersonality,
+        checkingPersonality,
+        refreshPersonalityStatus,
         createNewChatroom,
         deleteChatroom: handleDeleteChatroom, 
         updateChatroomTitle: handleUpdateChatroomTitle, 

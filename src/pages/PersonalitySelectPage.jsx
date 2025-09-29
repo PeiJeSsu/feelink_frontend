@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../contexts/AuthContext';
 import { 
     Container, 
     Typography, 
@@ -16,7 +17,9 @@ import {
     Select,
     MenuItem,
     Paper,
-    Divider
+    Divider,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import { 
     Palette as CreativeIcon, 
@@ -26,13 +29,17 @@ import {
     Language as LanguageIcon
 } from '@mui/icons-material';
 import { v4 as uuidv4 } from 'uuid';
+import UserService from '../helpers/personality/UserService'; 
 
 const PersonalitySelectPage = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
+    const { user, refreshPersonalityStatus } = useContext(AuthContext);
     const [selectedPersonality, setSelectedPersonality] = useState(null);
     const [nickname, setNickname] = useState('');
     const [preferredLanguage, setPreferredLanguage] = useState('zh-TW');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     // 初始化已儲存的設定
     useEffect(() => {
@@ -109,13 +116,13 @@ const PersonalitySelectPage = () => {
 
     const handleSelectPersonality = (personalityId) => {
         setSelectedPersonality(personalityId);
+        setError(null);
     };
 
     const handleLanguageChange = (newLanguage) => {
         setPreferredLanguage(newLanguage);
         i18n.changeLanguage(newLanguage);
         
-        // 如果已選擇個性，更新 AI 名字
         if (selectedPersonality) {
             const personalityNames = {
                 'zh-TW': {
@@ -136,41 +143,60 @@ const PersonalitySelectPage = () => {
         }
     };
 
-    const handleConfirm = () => {
-        if (selectedPersonality && nickname.trim()) {
+    const handleConfirm = async () => {
+        if (!selectedPersonality || !nickname.trim()) {
+            return;
+        }
+
+        if (!user) {
+            setError('請先登入後再進行設定');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const userId = user.uid;
+            const userEmail = user.email || '';
+            
+            const userData = {
+                userId: userId, 
+                nickname: nickname.trim(),
+                AINickname: UserService.getAIPartnerDisplayName(selectedPersonality, preferredLanguage),
+                email: userEmail,
+                preferredAIPartner: UserService.mapPersonalityToAIPartner(selectedPersonality)
+            };
+
+            console.log('準備同步使用者資料:', userData);
+
+            const syncedUser = await UserService.syncUser(userData);
+            
+            console.log('使用者資料同步成功:', syncedUser);
+
+            localStorage.setItem('userId', userId); 
+            localStorage.setItem('userEmail', userEmail); 
             localStorage.setItem('selectedPersonality', selectedPersonality);
             localStorage.setItem('userNickname', nickname.trim());
             localStorage.setItem('preferredLanguage', preferredLanguage);
+            localStorage.setItem('aiPartnerName', userData.AINickname);
             
-            // 儲存 AI 夥伴的名字
-            const getAIPartnerName = () => {
-                const personalityNames = {
-                    'zh-TW': {
-                        creative: '謬思',
-                        curious: '奇奇', 
-                        warm: '暖暖'
-                    },
-                    'en-US': {
-                        creative: 'Muse',
-                        curious: 'QiQi',
-                        warm: 'NuanNuan'
-                    }
-                };
-                
-                const names = personalityNames[preferredLanguage] || personalityNames['zh-TW'];
-                return names[selectedPersonality] || 'AI夥伴';
-            };
-            
-            localStorage.setItem('aiPartnerName', getAIPartnerName());
-            
-            // 觸發自定義事件通知其他組件暱稱已更新
             window.dispatchEvent(new Event('nicknameUpdated'));
             
             const newSessionId = uuidv4();
             localStorage.setItem('currentSessionId', newSessionId);
-            console.log(`已選擇個性: ${selectedPersonality}, 暱稱: ${nickname}, 語言: ${preferredLanguage}, AI名字: ${getAIPartnerName()}, SessionId: ${newSessionId}`);
 
+            console.log(`設定完成 - 個性: ${selectedPersonality}, 暱稱: ${nickname}, 語言: ${preferredLanguage}, AI名字: ${userData.AINickname}, SessionId: ${newSessionId}`);
+
+            await refreshPersonalityStatus();
+            
             navigate('/canvas');
+
+        } catch (error) {
+            console.error('同步使用者資料時發生錯誤:', error);
+            setError(error.message || '保存設定時發生錯誤，請稍後再試');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -197,7 +223,16 @@ const PersonalitySelectPage = () => {
                 </Typography>
             </Box>
 
-            {/* 上半部：用戶設置區 */}
+            {/* 錯誤訊息 */}
+            {error && (
+                <Box sx={{ mb: 3 }}>
+                    <Alert severity="error" sx={{ borderRadius: '12px' }}>
+                        {error}
+                    </Alert>
+                </Box>
+            )}
+
+            {/* 上半部：使用者設置區 */}
             <Paper 
                 elevation={0} 
                 sx={{ 
@@ -233,6 +268,7 @@ const PersonalitySelectPage = () => {
                             placeholder={t('personalSettings.nicknamePlaceholder')}
                             value={nickname}
                             onChange={(e) => setNickname(e.target.value)}
+                            disabled={isLoading}
                             sx={{
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: '12px',
@@ -270,6 +306,7 @@ const PersonalitySelectPage = () => {
                                 value={preferredLanguage}
                                 label={t('personalSettings.language')}
                                 onChange={(e) => handleLanguageChange(e.target.value)}
+                                disabled={isLoading}
                                 sx={{
                                     borderRadius: '12px',
                                     backgroundColor: '#f8fafc',
@@ -341,7 +378,7 @@ const PersonalitySelectPage = () => {
                     {t('personalSettings.aiPartnerSection.subtitle')}
                 </Typography>
 
-                <Grid2 container spacing={3} justifyContent="center" sx={{ maxWidth: '1300px', mx: 'auto' }}> {/* 從 1200px 增加到 1300px */}
+                <Grid2 container spacing={3} justifyContent="center" sx={{ maxWidth: '1300px', mx: 'auto' }}>
                     {personalities.map((personality) => (
                         <Grid2
                             key={personality.id}
@@ -358,8 +395,7 @@ const PersonalitySelectPage = () => {
                                     width: '100%',
                                     maxWidth: '360px', 
                                     minHeight: '480px', 
-                                    cursor: 'pointer',
-                                    // 使用 outline 而不是 border，完全不影響佈局
+                                    cursor: isLoading ? 'default' : 'pointer',
                                     border: '1px solid #cbd5e1',
                                     outline: selectedPersonality === personality.id ? `3px solid ${personality.color}` : 'none',
                                     outlineOffset: selectedPersonality === personality.id ? '-1px' : '0px',
@@ -368,19 +404,19 @@ const PersonalitySelectPage = () => {
                                     backgroundColor: selectedPersonality === personality.id ? 
                                         `${personality.color}05` : '#ffffff',
                                     boxSizing: 'border-box',
-                                    '&:hover': {
+                                    opacity: isLoading ? 0.7 : 1,
+                                    '&:hover': !isLoading ? {
                                         transform: 'translateY(-8px)',
                                         boxShadow: '0 8px 30px rgba(0, 0, 0, 0.15)',
                                         outline: `3px solid ${personality.color}`,
                                         outlineOffset: '-1px'
-                                    },
-                                    // 確保卡片內容不受選擇狀態影響佈局
+                                    } : {},
                                     '& .MuiCardContent-root': {
                                         width: '100%',
                                         boxSizing: 'border-box'
                                     }
                                 }}
-                                onClick={() => handleSelectPersonality(personality.id)}
+                                onClick={() => !isLoading && handleSelectPersonality(personality.id)}
                             >
                                 <CardContent sx={{
                                     textAlign: 'center',
@@ -389,7 +425,6 @@ const PersonalitySelectPage = () => {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'space-between',
-                                    // 固定寬度避免文字排版變化
                                     width: '100%',
                                     boxSizing: 'border-box'
                                 }}>
@@ -421,7 +456,7 @@ const PersonalitySelectPage = () => {
                                         </Typography>
 
                                         <Box sx={{ 
-                                            minHeight: '72px', // 固定描述區域高度
+                                            minHeight: '72px',
                                             display: 'flex',
                                             alignItems: 'flex-start',
                                             mb: 2
@@ -431,7 +466,7 @@ const PersonalitySelectPage = () => {
                                                     fontFamily: '"Noto Sans TC", sans-serif',
                                                     color: '#64748b',
                                                     lineHeight: 1.6,
-                                                    wordBreak: 'break-word', // 防止文字溢出
+                                                    wordBreak: 'break-word',
                                                 }}
                                             >
                                                 {personality.description}
@@ -508,7 +543,7 @@ const PersonalitySelectPage = () => {
                     variant="contained"
                     size="large"
                     onClick={handleConfirm}
-                    disabled={!selectedPersonality || !nickname.trim()}
+                    disabled={!selectedPersonality || !nickname.trim() || isLoading || !user}
                     sx={{
                         px: 6,
                         py: 2,
@@ -519,11 +554,11 @@ const PersonalitySelectPage = () => {
                         background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
                         boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)',
                         transition: 'all 0.3s ease',
-                        '&:hover': {
+                        '&:hover': !isLoading ? {
                             background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
                             transform: 'translateY(-2px)',
                             boxShadow: '0 8px 25px rgba(59, 130, 246, 0.5)',
-                        },
+                        } : {},
                         '&:disabled': {
                             background: '#cbd5e1',
                             color: '#9ca3af',
@@ -532,10 +567,17 @@ const PersonalitySelectPage = () => {
                         }
                     }}
                 >
-                    {t('personalSettings.startButton')}
+                    {isLoading ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <CircularProgress size={20} sx={{ color: 'inherit' }} />
+                            正在保存設定...
+                        </Box>
+                    ) : (
+                        t('personalSettings.startButton')
+                    )}
                 </Button>
                 
-                {(!selectedPersonality || !nickname.trim()) && (
+                {(!selectedPersonality || !nickname.trim() || !user) && !isLoading && (
                     <Typography 
                         variant="caption" 
                         sx={{ 
@@ -545,7 +587,7 @@ const PersonalitySelectPage = () => {
                             fontFamily: '"Noto Sans TC", sans-serif'
                         }}
                     >
-                        {t('personalSettings.validationMessage')}
+                        {!user ? '請先登入後再進行設定' : t('personalSettings.validationMessage')}
                     </Typography>
                 )}
             </Box>
