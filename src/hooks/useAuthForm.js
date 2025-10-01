@@ -28,30 +28,55 @@ export const useAuthForm = (isRegistering = false) => {
         setShowPassword(!showPassword);
     };
 
-    // 同步用戶資料到後端
     const syncUserToBackend = async (firebaseUser) => {
         try {
-            // 如果沒有 displayName，就使用 email 的 @ 前面部分作為 nickname
+            // 先檢查使用者是否已存在
+            let existingUser = null;
+            try {
+                const response = await apiConfig.get(`/api/users/email/${encodeURIComponent(firebaseUser.email)}`);
+                existingUser = response.data;
+                console.log('找到現有使用者資料:', existingUser);
+                
+                if (existingUser.preferredAIPartner && existingUser.preferredAIPartner.trim() !== "") {
+                    console.log('使用者已設定 AI 夥伴:', existingUser.preferredAIPartner);
+                } else {
+                    console.log('使用者尚未設定 AI 夥伴');
+                }
+            } catch (error) {
+                if (error.response?.status === 404) {
+                    console.log('使用者不存在，將創建新使用者');
+                } else {
+                    throw error;
+                }
+            }
+
+            // 如果使用者已存在，就不要覆蓋資料
+            if (existingUser) {
+                console.log('使用者已存在，跳過同步以保留現有資料');
+                return existingUser;
+            }
+
+            // 只有新使用者才創建資料
             let nickname = firebaseUser.displayName || "";
             if (!nickname && firebaseUser.email) {
                 nickname = firebaseUser.email.split('@')[0];
             }
             
             const userData = {
-                userId: firebaseUser.uid,  // 使用 Firebase UID 作為 userId
+                userId: firebaseUser.uid,
                 email: firebaseUser.email,
                 nickname: nickname,
-                AINickname: "" // 預設為空，之後可以讓用戶設定
+                AINickname: "" 
             };
             
-            // 使用 apiConfig 進行 API 調用
+            console.log('創建新使用者資料:', userData);
             const response = await apiConfig.post('/api/users/sync', userData);
-
             const syncedUser = response.data;
-            console.log('用戶資料同步成功:', syncedUser);
+            console.log('新使用者資料創建成功:', syncedUser);
+            return syncedUser;
+
         } catch (error) {
-            console.error('同步用戶資料到後端失敗:', error);
-            // 注意：這裡不拋出錯誤，因為同步失敗不應影響登入流程
+            console.error('同步使用者資料到後端失敗:', error);
         }
     };
 
@@ -74,7 +99,6 @@ export const useAuthForm = (isRegistering = false) => {
                 userCredential = await signInWithEmailAndPassword(auth, email, password);
             }
             
-            // 同步用戶資料到後端
             await syncUserToBackend(userCredential.user);
             
             resetForm();
@@ -111,7 +135,6 @@ export const useAuthForm = (isRegistering = false) => {
             const provider = new GoogleAuthProvider();
             const userCredential = await signInWithPopup(auth, provider);
             
-            // 同步用戶資料到後端
             await syncUserToBackend(userCredential.user);
             
             resetForm();

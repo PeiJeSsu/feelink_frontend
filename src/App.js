@@ -63,7 +63,7 @@ function App() {
                         />
                         <Route
                             path="/"
-                            element={<Navigate to="/personality" replace />}
+                            element={<Navigate to="/canvas" replace />}  
                         />
                         <Route
                             path="*"

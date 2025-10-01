@@ -60,6 +60,10 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
             typewriterTimer = null;
             
             if (streamCompleted) {
+                setMessages(prevMessages => {
+                    if (updateCache) updateCache(prevMessages);
+                    return prevMessages;
+                });
                 ensureUnlocked();
             }
         }
@@ -94,35 +98,13 @@ const handleStreamMessage = async (messageText, image, messages, setMessages, se
         console.log('Stream completed');
         streamCompleted = true;
         
-        cleanup();
-        
-        // 確保所有剩餘內容都顯示出來
-        if (pendingQueue.length > 0) {
-            displayedContent += pendingQueue.join('');
-            pendingQueue = [];
-            
-            if (responseMessageAdded) {
-                setMessages(prevMessages => {
-                    const updatedMessages = prevMessages.map(msg => {
-                        if (msg.id === aiResponseId) {
-                            return {...msg, message: displayedContent};
-                        }
-                        return msg;
-                    });
-                    // 串流完成時更新快取
-                    if (updateCache) updateCache(updatedMessages);  
-                    return updatedMessages;
-                });
-            }
-        } else {
-            // 即使沒有待處理內容，也要觸發快取更新
+        if (!isTypewriting && pendingQueue.length === 0) {
             setMessages(prevMessages => {
-                if (updateCache) updateCache(prevMessages);  
+                if (updateCache) updateCache(prevMessages);
                 return prevMessages;
             });
+            ensureUnlocked();
         }
-        
-        ensureUnlocked();
     };
 
     const onError = (error) => {

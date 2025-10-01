@@ -29,9 +29,9 @@ import { showAlert } from "../../utils/AlertUtils";
 
 const ChatroomManager = ({ 
 	onSwitchChatroom, 
-	onConfirmSwitchChatroom, // 新增：確認切換的回調函式
+	onConfirmSwitchChatroom, 
 	onClearChatroom,
-	onClearCanvas, // 新增：清除畫布的回調函式 
+	onClearCanvas, 
 	chatDisabled 
 }) => {
 	const {
