@@ -49,6 +49,7 @@ const EmotionReportPage = () => {
 
     const handleReanalyze = async () => {
         try {
+            console.log('開始重新分析，chatroomId:', chatroomId, 'messageCount:', messageCount);  // 新增
             setEmotionData(null);
             setSummaryData(null);
             setDemandData(null);
@@ -57,7 +58,9 @@ const EmotionReportPage = () => {
             setError(null);
 
             const newAnalysisResult = await loadAnalyzeAndSaveToday(chatroomId);
+            console.log('API 回應:', newAnalysisResult);
             if (newAnalysisResult && newAnalysisResult.success && newAnalysisResult.content) {
+                console.log('使用 content 結構');
                 const newAnalysis = newAnalysisResult.content;
 
                 setEmotionData(newAnalysis.emotions);
@@ -72,6 +75,7 @@ const EmotionReportPage = () => {
                 });
             }
             else if (newAnalysisResult && newAnalysisResult.emotions) {
+                console.log('使用直接 emotions 結構');
                 setEmotionData(newAnalysisResult.emotions);
                 setSummaryData({
                     summary: newAnalysisResult.summary,
@@ -83,10 +87,12 @@ const EmotionReportPage = () => {
                     magnitude: newAnalysisResult.magnitude
                 });
             } else {
+                console.error('條件檢查失敗，回應無 emotions:', newAnalysisResult);
                 setError("重新分析失敗");
             }
 
         } catch (err) {
+            console.error('API 錯誤:', err);  // 新增：檢查具體錯誤
             setError("重新分析失敗: " + err.message);
         } finally {
             setLoading(false);
@@ -96,6 +102,7 @@ const EmotionReportPage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                console.log('useEffect 觸發，chatroomId:', chatroomId, 'messageCount:', messageCount, 'lastCount:', localStorage.getItem(`lastAnalysisCount_${chatroomId}`));
                 setLoading(true);
                 setError(null);
 
@@ -106,11 +113,13 @@ const EmotionReportPage = () => {
 
                 if (messageCount > lastCount) {
                     analysis = await loadAnalyzeAndSaveToday(chatroomId);
+                    console.log('載入分析回應:', analysis);
                     localStorage.setItem(lastCountKey, messageCount.toString());
                 } else {
                     try {
                         analysis = await loadGetTodayAnalysis(chatroomId);
                     } catch (dbError) {
+                        console.error('useEffect 錯誤:', dbError);
                         analysis = await loadAnalyzeAndSaveToday(chatroomId);
                     }
                 }
