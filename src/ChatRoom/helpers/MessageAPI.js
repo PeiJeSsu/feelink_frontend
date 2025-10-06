@@ -343,7 +343,7 @@ export const deleteChatroom = async (chatroomId) => {
 // 取得使用者聊天數量
 export const getChatMessagesCount = async (chatroomId) => {
     try {
-        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/user/text/count`);
+        const response = await apiConfig.get(`/api/messages/chatroom/${chatroomId}/user/today/text/count`);
         return response.data.count  || 0;
     } catch (error) {
         console.error('取得對話數量失敗:', error);
