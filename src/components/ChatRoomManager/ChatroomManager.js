@@ -14,7 +14,10 @@ import {
 	List,
 	ListItem,
 	ListItemText,
-	CircularProgress
+	CircularProgress,
+	Typography,
+	FormControl,
+	InputLabel
 } from "@mui/material";
 import {
 	Add as AddIcon,
@@ -22,7 +25,7 @@ import {
 	Edit as EditIcon,
 	Delete as DeleteIcon,
 	DeleteSweep as DeleteSweepIcon,
-	Warning as WarningIcon
+	Warning as WarningIcon,
 } from "@mui/icons-material";
 import { AuthContext } from "../../contexts/AuthContext";
 import { showAlert } from "../../utils/AlertUtils";
@@ -48,6 +51,7 @@ const ChatroomManager = ({
 	const [newTitle, setNewTitle] = useState('');
 	const [openCreateDialog, setOpenCreateDialog] = useState(false);
 	const [createTitle, setCreateTitle] = useState('');
+	const [selectedAIPartner, setSelectedAIPartner] = useState(''); 
 
 	// 刪除聊天室確認對話框相關狀態
 	const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -57,6 +61,39 @@ const ChatroomManager = ({
 	// 切換聊天室確認對話框相關狀態
 	const [openSwitchDialog, setOpenSwitchDialog] = useState(false);
 	const [pendingSwitchRoomId, setPendingSwitchRoomId] = useState(null);
+
+	// AI 夥伴選項列表
+	const aiPartnerOptions = [
+		{ value: 'MUSE', chineseName: '謬思', englishName: 'Muse' },
+		{ value: 'QIQI', chineseName: '奇奇', englishName: 'QiQi' },
+		{ value: 'NUANNUAN', chineseName: '暖暖', englishName: 'NuanNuan' }
+	];
+
+	// 獲取預設 AI 夥伴的 value (用於後端)
+	const getDefaultAIPartnerValue = () => {
+		const aiPartnerName = localStorage.getItem('aiPartnerName');
+		
+		// 根據中文名稱找到對應的 value
+		const partner = aiPartnerOptions.find(
+			option => option.chineseName === aiPartnerName
+		);
+		
+		return partner ? partner.value : 'MUSE'; // 預設為 MUSE
+	};
+
+	// 開啟創建對話框時，初始化選擇的 AI 夥伴為使用者預設值
+	const handleOpenCreateDialog = () => {
+		const defaultPartnerValue = getDefaultAIPartnerValue();
+		setSelectedAIPartner(defaultPartnerValue);
+		setOpenCreateDialog(true);
+	};
+
+	// 關閉創建對話框並重置狀態
+	const handleCloseCreateDialog = () => {
+		setOpenCreateDialog(false);
+		setCreateTitle('');
+		setSelectedAIPartner('');
+	};
 
 	// 處理聊天室切換 - 先檢查是否需要彈出確認視窗
 	const handleChatroomSelectChange = (selectedRoomId) => {
@@ -94,12 +131,20 @@ const ChatroomManager = ({
 			return;
 		}
 
+		if (!selectedAIPartner) {
+			showAlert('請選擇 AI 夥伴', 'warning');
+			return;
+		}
+
 		try {
-			await createNewChatroom(createTitle);
+			// 將選擇的 AI 夥伴一起傳給 createNewChatroom
+			await createNewChatroom(createTitle, selectedAIPartner);
 			setCreateTitle('');
+			setSelectedAIPartner('');
 			setOpenCreateDialog(false);
 			showAlert('聊天室創建成功', 'success');
 		} catch (error) {
+			console.error('創建聊天室失敗:', error);
 			showAlert('創建聊天室失敗', 'error');
 		}
 	};
@@ -228,7 +273,7 @@ const ChatroomManager = ({
 				{/* 新增聊天室按鈕 */}
 				<IconButton
 					size="small"
-					onClick={() => setOpenCreateDialog(true)}
+					onClick={handleOpenCreateDialog}
 					disabled={chatDisabled} 
 					title="新增聊天室"
 					sx={{
@@ -285,7 +330,7 @@ const ChatroomManager = ({
 				<IconButton
 					size="small"
 					onClick={() => setOpenManageDialog(true)}
-					disabled={chatDisabled} // 添加 disabled 狀態
+					disabled={chatDisabled}
 					title="管理聊天室"
 					sx={{
 						color: "#64748b",
@@ -350,14 +395,20 @@ const ChatroomManager = ({
 				</DialogActions>
 			</Dialog>
 
-			{/* 創建聊天室對話框 */}
+			{/* 創建聊天室對話框 - 加上右上角顯示預設夥伴和 AI 夥伴選擇 */}
 			<Dialog
 				open={openCreateDialog}
-				onClose={() => setOpenCreateDialog(false)}
+				onClose={handleCloseCreateDialog}
 				maxWidth="sm"
 				fullWidth
 			>
-				<DialogTitle>創建新聊天室</DialogTitle>
+				<DialogTitle>
+					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+						<Typography variant="h6" component="span">
+							創建新聊天室
+						</Typography>
+					</Box>
+				</DialogTitle>
 				<DialogContent>
 					<TextField
 						autoFocus
@@ -368,20 +419,52 @@ const ChatroomManager = ({
 						value={createTitle}
 						onChange={(e) => setCreateTitle(e.target.value)}
 						onKeyPress={(e) => {
-							if (e.key === 'Enter') {
+							if (e.key === 'Enter' && selectedAIPartner) {
 								handleCreateChatroom();
 							}
 						}}
+						sx={{ mb: 2 }}
 					/>
+					
+					<FormControl fullWidth variant="outlined">
+						<InputLabel id="ai-partner-select-label">選擇 AI 夥伴</InputLabel>
+						<Select
+							labelId="ai-partner-select-label"
+							value={selectedAIPartner}
+							onChange={(e) => setSelectedAIPartner(e.target.value)}
+							label="選擇 AI 夥伴"
+							sx={{
+								'& .MuiSelect-select': {
+									fontSize: '15px',
+									fontFamily: '"Inter", "Noto Sans TC", sans-serif',
+								}
+							}}
+						>
+							{aiPartnerOptions.map(option => (
+								<MenuItem key={option.value} value={option.value}>
+									<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+										<Typography>
+											{option.chineseName} ({option.englishName})
+										</Typography>
+									</Box>
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+					
+					<Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#6b7280' }}>
+						此聊天室將使用選擇的 AI 夥伴進行對話
+					</Typography>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={() => setOpenCreateDialog(false)} color="inherit">
+					<Button onClick={handleCloseCreateDialog} color="inherit">
 						取消
 					</Button>
 					<Button
 						onClick={handleCreateChatroom}
 						variant="contained"
 						startIcon={<AddIcon />}
+						disabled={!createTitle.trim() || !selectedAIPartner}
 					>
 						創建
 					</Button>

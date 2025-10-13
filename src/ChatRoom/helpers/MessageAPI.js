@@ -309,11 +309,12 @@ export const getUserChatrooms = async (userId) => {
     }
 };
 
-export const createChatroom = async (userId, title) => {
+export const createChatroom = async (userId, title, aiPartner) => {
     try {
         const response = await apiConfig.post('/api/chatrooms', {
             userId: userId,
-            title: title
+            title: title,
+            aiPartner: aiPartner  
         });
         return response.data;
     } catch (error) {

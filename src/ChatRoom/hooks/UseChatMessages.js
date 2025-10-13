@@ -41,9 +41,8 @@ const predefinedQuestions = {
 
 const getGreetingWithNickname = (question) => {
     const userNickname = localStorage.getItem('userNickname') || '朋友';
-    const aiPartnerName = localStorage.getItem('aiPartnerName') || 'AI夥伴';
     const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
-    
+    const aiPartnerName = localStorage.getItem(currentLanguage === 'zh-TW' ? 'currentChatroomAIPartnerName' : 'currentChatroomAIPartnerEnglish') || 'AI夥伴';
     if (currentLanguage === 'zh-TW') {
         return `嗨，${userNickname}！我是你的 AI 夥伴${aiPartnerName}。${question}`;
     } else {

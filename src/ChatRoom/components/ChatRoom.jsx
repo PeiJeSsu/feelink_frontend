@@ -48,9 +48,14 @@ const ChatRoom = forwardRef(function ChatRoom({ canvas, onClose, onDisabledChang
 
     // 取得 AI 夥伴名稱的函數
     const getAIPartnerName = () => {
-        const aiPartnerName = localStorage.getItem('aiPartnerName');
+        let aiPartnerName;
         const currentLanguage = localStorage.getItem('preferredLanguage') || 'zh-TW';
-        
+        if(currentLanguage ==='zh-TW'){
+            aiPartnerName = localStorage.getItem('currentChatroomAIPartnerName');
+        }
+        else{
+            aiPartnerName = localStorage.getItem('currentChatroomAIPartnerEnglish');
+        }
         if (!aiPartnerName) {
             return currentLanguage === 'zh-TW' ? 'AI 夥伴' : 'AI Partner';
         }
