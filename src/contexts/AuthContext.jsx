@@ -14,10 +14,57 @@ export const AuthProvider = ({ children }) => {
     const [chatroomLoading, setChatroomLoading] = useState(false);
     const [chatroomMessagesCache, setChatroomMessagesCache] = useState({});
     const [chatroomRefreshTrigger, setChatroomRefreshTrigger] = useState(0);
-    
-    // 新增：使用者人格設定狀態
     const [hasPersonality, setHasPersonality] = useState(false);
     const [checkingPersonality, setCheckingPersonality] = useState(true);
+
+    const updateCurrentChatroomPartner = (chatroomId) => {
+    if (!chatroomId || !userChatrooms || userChatrooms.length === 0) {
+        return;
+    }
+
+    const currentChatroom = userChatrooms.find(room => room.chatroomId === chatroomId);
+    
+        if (currentChatroom && currentChatroom.aiPartner) {
+            const partnerNameMap = {
+                'MUSE': '謬思',
+                'QIQI': '奇奇',
+                'NUANNUAN': '暖暖'
+            };
+
+            // AI Partner enum 值轉換為英文名稱
+            const partnerEnglishMap = {
+                'MUSE': 'Muse',
+                'QIQI': 'QiQi',
+                'NUANNUAN': 'NuanNuan'
+            };
+
+            // AI Partner enum 值轉換為人格 ID
+            const personalityMap = {
+                'MUSE': 'creative',
+                'QIQI': 'curious',
+                'NUANNUAN': 'warm'
+            };
+
+            const aiPartnerValue = currentChatroom.aiPartner;
+            const chineseName = partnerNameMap[aiPartnerValue] || aiPartnerValue;
+            const englishName = partnerEnglishMap[aiPartnerValue] || aiPartnerValue;
+            const personalityId = personalityMap[aiPartnerValue];
+
+            localStorage.setItem('currentChatroomAIPartnerName', chineseName); 
+            localStorage.setItem('currentChatroomAIPartnerEnglish', englishName);
+            
+            // 根據聊天室的 AI 夥伴設定對應的人格
+            if (personalityId) {
+                localStorage.setItem('selectedPersonality', personalityId);
+            }
+
+            console.log('已更新當前聊天室 AI 夥伴到 localStorage:', {
+                chineseName: chineseName,
+                englishName: englishName,
+                personalityId: personalityId
+            });
+        }
+    };
 
     const ensureUserChatroom = async (firebaseUser) => {
         try {
@@ -27,18 +74,39 @@ export const AuthProvider = ({ children }) => {
             
             if (chatrooms && chatrooms.length > 0) {
                 setUserChatrooms(chatrooms);
-                setCurrentChatroomId(chatrooms[0].chatroomId);
+                const firstChatroomId = chatrooms[0].chatroomId;
+                setCurrentChatroomId(firstChatroomId);
+                
+                updateCurrentChatroomPartner(firstChatroomId);
                 return;
             }
 
             // 沒有聊天室時創建新的
+            // 獲取使用者的預設 AI 夥伴
+            let defaultPartner = 'MUSE'; 
+            const aiPartnerName = localStorage.getItem('aiPartnerName');
+            if (aiPartnerName) {
+                const partnerMap = {
+                    '謬思': 'MUSE',
+                    '奇奇': 'QIQI',
+                    '暖暖': 'NUANNUAN'
+                };
+                defaultPartner = partnerMap[aiPartnerName] || 'MUSE';
+            }
+
             const newChatroom = await createChatroom(
                 firebaseUser.uid,
-                `${firebaseUser.displayName || firebaseUser.email.split('@')[0]} 的聊天室`
+                `${firebaseUser.displayName || firebaseUser.email.split('@')[0]} 的聊天室`,
+                defaultPartner 
             );
             
             setUserChatrooms([newChatroom]);
             setCurrentChatroomId(newChatroom.chatroomId);
+            
+            // 更新新建聊天室的 AI 夥伴到 localStorage
+            setTimeout(() => {
+                updateCurrentChatroomPartner(newChatroom.chatroomId);
+            }, 100);
             
         } catch (error) {
             console.error('處理使用者聊天室時發生錯誤:', error);
@@ -47,7 +115,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 新增：檢查使用者是否已設定 AI 人格
     const checkUserPersonality = async (firebaseUser) => {
         if (!firebaseUser) {
             setHasPersonality(false);
@@ -61,12 +128,10 @@ export const AuthProvider = ({ children }) => {
             
             const userData = await UserService.getUserByEmail(firebaseUser.email);
 
-            // 檢查 preferredAIPartner 欄位（而非 AINickname）
             if (userData && userData.preferredAIPartner && userData.preferredAIPartner.trim() !== "") {
                 console.log('資料庫中找到 AI 人格設定:', userData.preferredAIPartner);
                 setHasPersonality(true);
                 
-                // 同步到 localStorage
                 const personalityMap = {
                     'MUSE': 'creative',
                     'QIQI': 'curious',
@@ -95,7 +160,6 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 新增：更新使用者人格狀態（供 PersonalitySelectPage 使用）
     const refreshPersonalityStatus = async () => {
         if (user) {
             await checkUserPersonality(user);
@@ -103,16 +167,37 @@ export const AuthProvider = ({ children }) => {
     };
 
     // 創建新聊天室
-    const createNewChatroom = async (title) => {
+    const createNewChatroom = async (title, aiPartner) => {
         if (!user) return null;
         try {
             setChatroomLoading(true);
+            
+            let partnerToUse = aiPartner;
+            
+            if (!partnerToUse) {
+                const aiPartnerName = localStorage.getItem('aiPartnerName');
+                const partnerMap = {
+                    '謬思': 'MUSE',
+                    '奇奇': 'QIQI',
+                    '暖暖': 'NUANNUAN'
+                };
+                partnerToUse = partnerMap[aiPartnerName] || 'MUSE'; 
+            }
+            
             const newChatroom = await createChatroom(
                 user.uid,
-                title || `新聊天室 ${new Date().toLocaleString()}`
+                title || `新聊天室 ${new Date().toLocaleString()}`,
+                partnerToUse  
             );
+            
             setUserChatrooms(prev => [...prev, newChatroom]);
             setCurrentChatroomId(newChatroom.chatroomId);
+            
+            // 創建新聊天室後更新 localStorage
+            setTimeout(() => {
+                updateCurrentChatroomPartner(newChatroom.chatroomId);
+            }, 100);
+            
             return newChatroom;
         } catch (error) {
             console.error('創建聊天室失敗:', error);
@@ -133,6 +218,8 @@ export const AuthProvider = ({ children }) => {
                 const remaining = userChatrooms.filter(room => room.chatroomId !== chatroomId);
                 if (remaining.length > 0) {
                     setCurrentChatroomId(remaining[0].chatroomId);
+                    // 刪除當前聊天室後，更新到下一個聊天室的 AI 夥伴
+                    updateCurrentChatroomPartner(remaining[0].chatroomId);
                 } else {
                     await createNewChatroom();
                 }
@@ -168,6 +255,9 @@ export const AuthProvider = ({ children }) => {
         }
         
         setCurrentChatroomId(chatroomId);
+        
+        // 切換聊天室時更新 AI 夥伴到 localStorage
+        updateCurrentChatroomPartner(chatroomId);
     };
 
     const forceReloadChatroom = (chatroomId = currentChatroomId) => {
@@ -208,6 +298,13 @@ export const AuthProvider = ({ children }) => {
     const reloadCurrentChatroom = () => {
         forceReloadChatroom();
     };
+
+    // 監聽 userChatrooms 的變化，確保在資料載入後更新 localStorage
+    useEffect(() => {
+        if (currentChatroomId && userChatrooms.length > 0) {
+            updateCurrentChatroomPartner(currentChatroomId);
+        }
+    }, [userChatrooms, currentChatroomId]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -250,6 +347,9 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('currentSessionId');
             localStorage.removeItem('aiPartnerName');
             localStorage.removeItem('userNickname');
+            localStorage.removeItem('currentChatroomAIPartner');
+            localStorage.removeItem('currentChatroomAIPartnerName');
+            localStorage.removeItem('currentChatroomAIPartnerEnglish');
             
             await signOut(auth);
             console.log('登出完成');
