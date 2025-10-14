@@ -350,6 +350,9 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('currentChatroomAIPartner');
             localStorage.removeItem('currentChatroomAIPartnerName');
             localStorage.removeItem('currentChatroomAIPartnerEnglish');
+            localStorage.removeItem('currentChatroomAIPartner');
+            localStorage.removeItem('currentChatroomAIPartnerName');
+            localStorage.removeItem('currentChatroomAIPartnerEnglish');
             
             await signOut(auth);
             console.log('登出完成');
