@@ -496,8 +496,8 @@ export const saveCanvasToBackend = async (canvasData, chatroomId) => {
         });
         return response.data;
     } catch (error) {
-        console.error('保存畫布失败:', error);
-        throw new Error(error.response?.data?.message || error.message || '保存畫布失败');
+        console.error('儲存畫布失败:', error);
+        throw new Error(error.response?.data?.message || error.message || '儲存畫布失败');
     }
 };
 

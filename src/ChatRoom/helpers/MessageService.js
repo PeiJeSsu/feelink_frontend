@@ -167,7 +167,7 @@ export const saveCanvasToBackendAPI = async (canvas, chatroomId) => {
 
         return await saveCanvasToBackend(canvasData, chatroomId);
     } catch (error) {
-        console.error('保存畫布到後端失敗:', error);
+        console.error('儲存畫布到後端失敗:', error);
         throw error;
     }
 };
