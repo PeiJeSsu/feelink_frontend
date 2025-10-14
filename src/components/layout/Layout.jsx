@@ -19,9 +19,13 @@ import { AuthContext } from "../../contexts/AuthContext";
 import { layoutStyles } from "../../styles/layoutStyles";
 import { showAlert } from "../../utils/AlertUtils";
 import "./Layout.css";
-import {useNavigate} from "react-router-dom";
-import {getChatMessagesCount} from "../../ChatRoom/helpers/MessageAPI";
-import {loadAnalyzeAndSaveToday} from "../../ChatRoom/helpers/MessageService";
+import {getChatMessagesCount, getChatroomCanvas} from "../../ChatRoom/helpers/MessageAPI";
+import {loadAnalyzeAndSaveToday, saveCanvasToBackendAPI} from "../../ChatRoom/helpers/MessageService";
+import { loadCanvasFromJSON } from "../../helpers/file/LoadCanvas";
+import SaveCanvasDialog from "../SaveCanvas/SaveCanvasDialog";
+import {useBeforeunloadBlocker} from "../SaveCanvas/useBeforeunloadBlocker";
+import { useHandleDirtyButtonClick } from "../SaveCanvas/useHandleDirtyButtonClick";
+import {useCanvasDirty} from "../SaveCanvas/useCanvasDirty";
 
 const Layout = () => {
 	// 將 AuthContext 移到組件頂層
@@ -32,7 +36,9 @@ const Layout = () => {
 	const [chatWidth, setChatWidth] = useState(400);
 	const [chatDisabled, setChatDisabled] = useState(false);
 	const [analysisLoading, setAnalysisLoading] = useState(false);
-	const navigate = useNavigate();
+    const [openSaveDialog, setOpenSaveDialog] = useState(false);
+    const canvasRef = useRef(null);
+    const { isDirty, resetDirty } = useCanvasDirty(canvasRef);
 	const [brushSettings, setBrushSettings] = useState({
 		type: "PencilBrush",
 		size: 5,
@@ -51,10 +57,10 @@ const Layout = () => {
 				setAnalysisLoading(false);
 				return;
 			}
-			navigate('/emotion-report', {
-				state: { chatroomId: currentChatroomId ,
-					messageCount: currentMessageCount}
-			});
+			handleNavigate({
+                path: '/emotion-report',
+                state: {chatroomId: currentChatroomId, messageCount: currentMessageCount}
+            });
 		} catch (error) {
 			showAlert('檢查對話狀態時發生錯誤，請稍後再試', 'error');
 		} finally {
@@ -94,7 +100,6 @@ const Layout = () => {
 	// 導覽相關狀態
 	const [runTour, setRunTour] = useState(false);
 
-	const canvasRef = useRef(null);
 	const chatRoomRef = useRef(null); // 新增 ChatRoom 的 ref
 
 	const [canvasReady, setCanvasReady] = useState(false);
@@ -205,7 +210,64 @@ const Layout = () => {
 		}
 	};
 
-	return (
+    const handleSaveClick = () => {
+        setOpenSaveDialog(true);
+    };
+
+    const handleConfirmSaveCanvas = async () => {
+        try {
+            if (!currentChatroomId) {
+                showAlert('請先選擇聊天室', 'error');
+                return;
+            }
+
+            showAlert('正在儲存畫布...', 'info');
+
+            await saveCanvasToBackendAPI(canvasRef.current, currentChatroomId);
+
+            resetDirty();
+
+            showAlert('畫布儲存成功！', 'success');
+        } catch (error) {
+            console.error('儲存畫布失敗:', error);
+            showAlert(`儲存失敗: ${error.message}`, 'error');
+        }
+    };
+
+    useEffect(() => {
+        if (!currentChatroomId || !canvasReady || !canvasRef.current) {
+            return;
+        }
+
+        const loadCanvasData = async () => {
+			try {
+				const canvasData = await getChatroomCanvas(currentChatroomId);
+		
+				if (canvasData) {
+					const success = loadCanvasFromJSON(canvasRef.current, canvasData);
+					
+					if (success) {
+                        resetDirty();
+					} else {
+					}
+				} else {
+					handleClearCanvas();
+					resetDirty();
+				}
+			} catch (error) {
+				handleClearCanvas();
+				resetDirty();
+			}
+		};
+
+        loadCanvasData();
+    }, [currentChatroomId, canvasReady]);
+
+    useBeforeunloadBlocker(isDirty, () => {});
+
+    const handleNavigate = useHandleDirtyButtonClick(isDirty);
+
+    return (
 		<Box sx={layoutStyles.layoutContainer}>
 			{/* 現代化頂部導航欄 */}
 			<Box sx={layoutStyles.topToolbarContainer} className="top-toolbar">
@@ -245,6 +307,30 @@ const Layout = () => {
 
 				{/* 右側：使用者功能 */}
 				<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Button
+                        onClick={handleSaveClick}
+                        disabled={chatDisabled}
+                        sx={{
+                            color: "#2563eb",
+                            backgroundColor: "#f1f5f9",
+                            border: "1px solid #2563eb",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            padding: "6px 12px",
+                            borderRadius: "8px",
+                            textTransform: "none",
+                            height: "36px",
+                        }}
+                    >
+                        儲存畫布
+                    </Button>
+
+                    <SaveCanvasDialog
+                        open={openSaveDialog}
+                        onClose={() => setOpenSaveDialog(false)}
+                        onConfirm={handleConfirmSaveCanvas}
+                    />
+
 					{/* 聊天室切換按鈕 */}
 					<Button
 						onClick={handleEmotionReport || analysisLoading}
@@ -330,9 +416,9 @@ const Layout = () => {
 					>
 						導覽
 					</Button>
-					
+
 					<Box className="user-profile">
-						<UserProfileMenu />
+                        <UserProfileMenu isDirty={isDirty} />
 					</Box>
 				</Box>
 			</Box>
@@ -439,7 +525,7 @@ const Layout = () => {
 			
 			{/* 導覽組件 */}
 			<AppTour runTour={runTour} setRunTour={setRunTour} />
-		</Box>
+        </Box>
 	);
 };
 
