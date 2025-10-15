@@ -17,9 +17,6 @@ import {
 	CircularProgress,
 	Typography,
 	FormControl,
-	InputLabel,
-	Typography,
-	FormControl,
 	InputLabel
 } from "@mui/material";
 import {
