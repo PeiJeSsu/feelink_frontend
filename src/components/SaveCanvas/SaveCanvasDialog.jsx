@@ -11,7 +11,24 @@ const SaveCanvasDialog = ({ open, onClose, onConfirm }) => {
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose} color="inherit">
+                <Button
+                    onClick={onClose}
+                    sx={{
+                        color: "#2563eb",
+                        backgroundColor: "#f1f5f9",
+                        border: "1px solid #2563eb",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        height: "36px",
+                        "&:hover": {
+                            backgroundColor: "#f1f5f9",
+                            color: "#2563eb",
+                            border: "none",
+                        }
+                    }}>
                     取消
                 </Button>
                 <Button
@@ -20,7 +37,22 @@ const SaveCanvasDialog = ({ open, onClose, onConfirm }) => {
                         onClose();
                     }}
                     variant="contained"
-                    color="primary"
+                    sx={{
+                        color: "#2563eb",
+                        backgroundColor: "#f1f5f9",
+                        border: "1px solid #2563eb",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        textTransform: "none",
+                        height: "36px",
+                        "&:hover": {
+                            backgroundColor: "#f1f5f9",
+                            color: "#2563eb",
+                            border: "none",
+                        }
+                    }}
                 >
                     確定
                 </Button>
