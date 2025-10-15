@@ -11,12 +11,14 @@ import {
 } from "@mui/material";
 import { AccountCircle, Logout, Person } from "@mui/icons-material";
 import { useAuth } from "../../hooks/useAuth";
+import {useHandleDirtyButtonClick} from "../SaveCanvas/useHandleDirtyButtonClick";
 
-const UserProfileMenu = () => {
+const UserProfileMenu = ({ isDirty = false }) => {
     const { user, logout } = useAuth();
     const [anchorEl, setAnchorEl] = useState(null);
     const [userNickname, setUserNickname] = useState("");
     const open = Boolean(anchorEl);
+    const handleDirtyButtonClick = useHandleDirtyButtonClick(isDirty);
 
     // 監聽 localStorage 的變化，取得使用者設定的暱稱
     useEffect(() => {
@@ -57,13 +59,17 @@ const UserProfileMenu = () => {
     };
 
     const handleLogout = async () => {
-        try {
-            await logout();
-            handleClose();
-        } catch (error) {
-            console.error("登出失敗:", error);
-        }
+        // 使用 handleDirtyButtonClick 來處理登出
+        handleDirtyButtonClick(async () => {
+            try {
+                await logout();
+                handleClose();
+            } catch (error) {
+                console.error("登出失敗:", error);
+            }
+        });
     };
+
 
     return (
         <Box>

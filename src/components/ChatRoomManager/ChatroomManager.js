@@ -29,6 +29,7 @@ import {
 } from "@mui/icons-material";
 import { AuthContext } from "../../contexts/AuthContext";
 import { showAlert } from "../../utils/AlertUtils";
+import { deleteChatroomCanvas } from "../../ChatRoom/helpers/MessageAPI";
 
 const ChatroomManager = ({ 
 	onSwitchChatroom, 
@@ -156,39 +157,45 @@ const ChatroomManager = ({
 	};
 
 	// 執行刪除聊天室
-	const handleDeleteChatroom = async () => {
-		if (!deletingRoomId) return;
+    const handleDeleteChatroom = async () => {
+        if (!deletingRoomId) return;
 
-		if (userChatrooms.length <= 1) {
-			showAlert('至少需要保留一個聊天室', 'warning');
-			setOpenDeleteDialog(false);
-			setDeletingRoomId(null);
-			return;
-		}
+        if (userChatrooms.length <= 1) {
+            showAlert('至少需要保留一個聊天室', 'warning');
+            setOpenDeleteDialog(false);
+            setDeletingRoomId(null);
+            return;
+        }
 
-		// 檢查是否要刪除當前聊天室
-		const isDeletingCurrentRoom = deletingRoomId === currentChatroomId;
+        setDeleting(true);
+        try {
+            await deleteChatroomFunc(deletingRoomId);
 
-		setDeleting(true);
-		try {
-			await deleteChatroomFunc(deletingRoomId);
-			
-			// 如果刪除的是當前聊天室，則清除畫布
-			if (isDeletingCurrentRoom && onClearCanvas) {
-				onClearCanvas();
-			}
-			
-			showAlert('聊天室已刪除', 'success');
-			setOpenDeleteDialog(false);
-			setDeletingRoomId(null);
-		} catch (error) {
-			showAlert('刪除聊天室失敗', 'error');
-		} finally {
-			setDeleting(false);
-		}
-	};
+            try {
+                await deleteChatroomCanvas(deletingRoomId);
 
-	const handleUpdateTitle = async () => {
+                if (deletingRoomId === currentChatroomId && onClearCanvas) {
+                    onClearCanvas();
+                }
+
+                showAlert('聊天室及畫布已刪除', 'success');
+            } catch (canvasError) {
+                console.error('刪除畫布失敗:', canvasError);
+
+                // 即使畫布刪除失敗，也通知用戶聊天室已刪除
+                showAlert('聊天室已刪除，但畫布刪除失敗', 'warning');
+            }
+
+            setOpenDeleteDialog(false);
+            setDeletingRoomId(null);
+        } catch (error) {
+            showAlert('刪除聊天室失敗', 'error');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleUpdateTitle = async () => {
 		if (!editingRoom || !newTitle.trim()) {
 			showAlert('請輸入有效的標題', 'warning');
 			return;

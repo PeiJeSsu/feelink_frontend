@@ -15,8 +15,10 @@ import {
     getTodayChatSummary,
     getTodayDemandAnalysis,
     getTodaySentimentScore,
-    savePreQuestionForChatroom, analyzeAndSaveToday, getTodayAnalysis
+    savePreQuestionForChatroom, analyzeAndSaveToday, getTodayAnalysis,
+    saveCanvasToBackend
 } from "./MessageAPI";
+import {serializeCanvas} from "../../helpers/file/CanvasSerialization";
 
 // 獲取選中的個性設置
 const getSelectedPersonality = () => {
@@ -145,4 +147,27 @@ const handleServiceCall = async (serviceCall) => {
 };
 export const savePreQuestionService = async (chatroomId, preQuestion) => {
     return handleServiceCall(() => savePreQuestionForChatroom(chatroomId, preQuestion));
+};
+
+export const saveCanvasToBackendAPI = async (canvas, chatroomId) => {
+    if (!canvas) {
+        throw new Error('畫布未初始化');
+    }
+
+    if (!chatroomId) {
+        throw new Error('聊天室 ID 不能為空');
+    }
+
+    try {
+        const canvasData = serializeCanvas(canvas);
+
+        if (!canvasData) {
+            throw new Error('畫布 Serialize 失敗');
+        }
+
+        return await saveCanvasToBackend(canvasData, chatroomId);
+    } catch (error) {
+        console.error('儲存畫布到後端失敗:', error);
+        throw error;
+    }
 };

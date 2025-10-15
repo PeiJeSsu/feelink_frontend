@@ -484,3 +484,40 @@ export const savePreQuestionForChatroom = async (chatroomId, preQuestion) => {
         throw new Error(error.response?.data?.message || error.message || '儲存預設問題失敗');
     }
 };
+
+export const saveCanvasToBackend = async (canvasData, chatroomId) => {
+    try {
+        const response = await apiConfig.post(`/api/canvas/save`, {
+            canvasData: canvasData,
+            chatroomId: chatroomId
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('儲存畫布失败:', error);
+        throw new Error(error.response?.data?.message || error.message || '儲存畫布失败');
+    }
+};
+
+export const getChatroomCanvas = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/canvas/chatroom/${chatroomId}`);
+        return JSON.stringify(response.data);
+    } catch (error) {
+        console.error('取得畫布失败:', error);
+        throw new Error(error.response?.data?.message || error.message || '取得畫布失败');
+    }
+};
+
+export const deleteChatroomCanvas = async (chatroomId) => {
+    try {
+        const response = await apiConfig.delete(`/api/canvas/${chatroomId}`);
+        return response.data;
+    } catch (error) {
+        console.error('刪除畫布失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '刪除畫布失敗');
+    }
+};
