@@ -36,7 +36,6 @@ const SaveCanvasDialog = ({ open, onClose, onConfirm }) => {
                         onConfirm();
                         onClose();
                     }}
-                    variant="contained"
                     sx={{
                         color: "#2563eb",
                         backgroundColor: "#f1f5f9",
