@@ -320,6 +320,11 @@ const Layout = () => {
                             borderRadius: "8px",
                             textTransform: "none",
                             height: "36px",
+                            "&:hover": {
+                                backgroundColor: "#f1f5f9",
+                                color: "#2563eb",
+                                border: "none",
+                            }
                         }}
                     >
                         儲存畫布
