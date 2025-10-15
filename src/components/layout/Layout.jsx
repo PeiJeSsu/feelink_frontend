@@ -320,6 +320,7 @@ const Layout = () => {
                             borderRadius: "8px",
                             textTransform: "none",
                             height: "36px",
+                            fontFamily: '"Inter", "Noto Sans TC", sans-serif',
                             "&:hover": {
                                 backgroundColor: "#f1f5f9",
                                 color: "#2563eb",
