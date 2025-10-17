@@ -74,7 +74,7 @@ const createSSEStream = (url, formData, onToken, onComplete, onError, onImageGen
 const createJsonSSEStream = (url, jsonData, onToken, onComplete, onError, onImageGenerated = null) => {
     let buffer = '';
     let lastProcessedLength = 0;
-    
+
     $.ajax({
         url: url,
         type: 'POST',
@@ -185,7 +185,7 @@ export const sendMessage = (text, conversationCount, hasDefaultQuestion, chatroo
     const formData = new FormData();
     formData.append('userMessage', text);
     formData.append('chatroomId', chatroomId);
-    
+
     if (conversationCount !== null) {
         formData.append('conversationCount', conversationCount);
         formData.append('hasDefaultQuestion', hasDefaultQuestion);
@@ -224,7 +224,7 @@ export const analysisImage = (text, file, chatroomId) => {
     const formData = new FormData();
     formData.append('userMessage', text);
     formData.append('chatroomId', chatroomId);
-    
+
     if (file) {
         formData.append('file', file);
     }
@@ -486,18 +486,19 @@ export const savePreQuestionForChatroom = async (chatroomId, preQuestion) => {
 
 export const saveCanvasToBackend = async (canvasData, chatroomId) => {
     try {
-        const response = await apiConfig.post(`/api/canvas/save`, {
-            canvasData: canvasData,
-            chatroomId: chatroomId
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-            }
+        const formData = new FormData();
+        formData.append('chatroomId', chatroomId);
+
+        const blob = new Blob([canvasData], { type: 'application/json' });
+        formData.append('canvasData', blob, 'canvas.json');
+
+        const response = await apiConfig.post(`/api/canvas/save`, formData, {
+            timeout: 60000,
         });
         return response.data;
     } catch (error) {
-        console.error('儲存畫布失败:', error);
-        throw new Error(error.response?.data?.message || error.message || '儲存畫布失败');
+        console.error('儲存畫布失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '儲存畫布失敗');
     }
 };
 
