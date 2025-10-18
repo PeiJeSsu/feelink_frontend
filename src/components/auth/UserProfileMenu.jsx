@@ -70,6 +70,11 @@ const UserProfileMenu = ({ isDirty = false }) => {
         });
     };
 
+    const handleProfileClick = () => {
+        handleClose();
+        handleDirtyButtonClick("/personality");
+    };
+
 
     return (
         <Box>
@@ -135,7 +140,7 @@ const UserProfileMenu = ({ isDirty = false }) => {
                 <Divider sx={{ borderColor: "#cbd5e1" }} />
 
                 <MenuItem
-                    onClick={handleClose}
+                    onClick={handleProfileClick}
                     sx={{
                         color: "#1e293b",
                         fontFamily: '"Noto Sans TC", sans-serif',
