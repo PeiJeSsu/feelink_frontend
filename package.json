@@ -101,7 +101,7 @@
 			"^.+\\.[t|j]sx?$": "babel-jest"
 		},
 		"transformIgnorePatterns": [
-			"node_modules/(?!(axios|@erase2d/fabric)/)"
+			"node_modules/(?!(axios|@erase2d/fabric|react-router-dom|react-router)/)"
 		]
 	}
 }
