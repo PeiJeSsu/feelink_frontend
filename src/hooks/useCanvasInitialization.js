@@ -8,7 +8,7 @@ import createHistoryManager from "../helpers/history/HistoryManager";
  * @param {Object} options - 初始化選項
  * @returns {Object} 畫布相關的 refs
  */
-export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth = 0, isChatOpen = false }) => {
+export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth = 0, isChatOpen = false, leftToolbarWidth = 352 }) => {
 	const canvasRef = useRef(null);
 	const fabricCanvasRef = useRef(null);
 	const historyManagerRef = useRef(null);
@@ -100,12 +100,12 @@ export const useCanvasInitialization = ({ onCanvasInit, clearTrigger, chatWidth 
 		};
 	}, [onCanvasInit, handleResize]);
 
-	// 監聽聊天室寬度變化並調整畫布尺寸
+	// 監聽聊天室寬度和左側工具欄寬度變化並調整畫布尺寸
 	useEffect(() => {
 		if (fabricCanvasRef.current) {
 			handleResize();
 		}
-	}, [chatWidth, isChatOpen, handleResize]);
+	}, [chatWidth, isChatOpen, leftToolbarWidth, handleResize]);
 
 	// 處理清除畫布
 	useEffect(() => {

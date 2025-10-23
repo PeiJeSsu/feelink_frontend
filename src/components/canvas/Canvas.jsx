@@ -16,6 +16,7 @@ const Canvas = ({
 	onCanvasInit,
 	chatWidth = 0,
 	isChatOpen = false,
+	leftToolbarWidth = 352,
 }) => {
 	// 創建容器的 ref
 	const containerRef = useRef(null);
@@ -26,6 +27,7 @@ const Canvas = ({
 		clearTrigger,
 		chatWidth,
 		isChatOpen,
+		leftToolbarWidth,
 	});
 
 	// 設置工具
@@ -113,6 +115,7 @@ Canvas.propTypes = {
 	onCanvasInit: PropTypes.func,
 	chatWidth: PropTypes.number,
 	isChatOpen: PropTypes.bool,
+	leftToolbarWidth: PropTypes.number,
 };
 
 export default Canvas;

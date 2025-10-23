@@ -25,6 +25,7 @@ const LeftToolbar = ({
 	setTextSettings,
 	textSettings,
 	canvas,
+	onToolbarWidthChange,
 }) => {
 	const [showSettings, setShowSettings] = useState(true);
 
@@ -35,8 +36,19 @@ const LeftToolbar = ({
 		}
 	}, [activeTool]);
 
+	useEffect(() => {
+		if (onToolbarWidthChange) {
+			const toolbarWidth = showSettings && activeTool ? 352 : 72;
+			onToolbarWidthChange(toolbarWidth);
+		}
+	}, [showSettings, activeTool, onToolbarWidthChange]);
+
 	const handleToolClick = (tool) => {
-		setActiveTool(tool);
+		if (tool === activeTool && !showSettings) {
+			setShowSettings(true);
+		} else {
+			setActiveTool(tool);
+		}
 	};
 
 	const handleCloseSettings = () => {
@@ -253,6 +265,7 @@ LeftToolbar.propTypes = {
 	setTextSettings: PropTypes.func.isRequired,
 	textSettings: PropTypes.object.isRequired,
 	canvas: PropTypes.object.isRequired,
+	onToolbarWidthChange: PropTypes.func,
 };
 
 export default LeftToolbar;

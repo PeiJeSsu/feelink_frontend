@@ -34,6 +34,7 @@ const Layout = () => {
 	const [activeTool, setActiveTool] = useState("select");
 	const [isChatOpen, setIsChatOpen] = useState(true);
 	const [chatWidth, setChatWidth] = useState(400);
+	const [leftToolbarWidth, setLeftToolbarWidth] = useState(352); 
 	const [chatDisabled, setChatDisabled] = useState(false);
 	const [analysisLoading, setAnalysisLoading] = useState(false);
     const [openSaveDialog, setOpenSaveDialog] = useState(false);
@@ -164,6 +165,11 @@ const Layout = () => {
 	const handleResize = useCallback((e, { size }) => {
 		// 立即更新寬度狀態，避免延遲
 		setChatWidth(size.width);
+	}, []);
+
+	// 處理左側工具欄寬度變化
+	const handleToolbarWidthChange = useCallback((width) => {
+		setLeftToolbarWidth(width);
 	}, []);
 
 	// 檢查畫布是否有內容的函式 - 用 useCallback 包裝
@@ -448,6 +454,7 @@ const Layout = () => {
 						textSettings={textSettings}
 						onClearCanvas={handleClearCanvas}
 						canvas={canvasRef.current}
+						onToolbarWidthChange={handleToolbarWidthChange}
 					/>
 				</Box>
 
@@ -481,6 +488,7 @@ const Layout = () => {
 							onCanvasInit={setCanvasInstance}
 							chatWidth={chatWidth}
 							isChatOpen={isChatOpen}
+							leftToolbarWidth={leftToolbarWidth}
 						/>
 					</Box>
 				</Box>
