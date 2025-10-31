@@ -422,7 +422,28 @@ export default function useChatMessages(canvas, setInputNotification) {
         if (!canvas) {
             throw new Error('沒有可用的畫布');
         }
-        const dataUrl = canvas.toDataURL('image/png');
+        // 確保導出時有實色背景（避免透明背景被後端判為全黑）
+        const originalBg = canvas.backgroundColor;
+        let dataUrl;
+        try {
+            // 若目前背景為空或透明，臨時設為白色
+            if (!originalBg || originalBg === '' || originalBg === 'transparent') {
+                canvas.backgroundColor = '#ffffff';
+                canvas.renderAll();
+            }
+            dataUrl = canvas.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: 1,
+                backgroundColor: canvas.backgroundColor || '#ffffff'
+            });
+        } finally {
+            // 還原背景
+            if (canvas.backgroundColor !== originalBg) {
+                canvas.backgroundColor = originalBg;
+                canvas.renderAll();
+            }
+        }
         return await (await fetch(dataUrl)).blob();
     }, [canvas]);
 
