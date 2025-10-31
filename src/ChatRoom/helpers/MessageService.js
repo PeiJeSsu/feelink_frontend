@@ -15,8 +15,11 @@ import {
     getTodayChatSummary,
     getTodayDemandAnalysis,
     getTodaySentimentScore,
-    savePreQuestionForChatroom, analyzeAndSaveToday, getTodayAnalysis,
-    saveCanvasToBackend
+    savePreQuestionForChatroom,
+    analyzeAndSaveToday,
+    getTodayAnalysis,
+    saveCanvasToBackend,
+    getLatestAnalysisForChatrooms
 } from "./MessageAPI";
 import {serializeCanvas} from "../../helpers/file/CanvasSerialization";
 
@@ -165,9 +168,30 @@ export const saveCanvasToBackendAPI = async (canvas, chatroomId) => {
             throw new Error('畫布 Serialize 失敗');
         }
 
-        return await saveCanvasToBackend(canvasData, chatroomId);
+        // 生成畫布縮圖
+        let canvasImageUrl = null;
+        try {
+            const { generateCanvasPreview } = await import('../../helpers/image/ImageExport');
+            const preview = await generateCanvasPreview(canvas, 'png', false);
+            canvasImageUrl = preview.dataURL;
+        } catch (previewError) {
+            console.warn('生成畫布縮圖失敗:', previewError);
+            // 縮圖生成失敗不影響畫布儲存
+        }
+
+        return await saveCanvasToBackend(canvasData, chatroomId, canvasImageUrl);
     } catch (error) {
         console.error('儲存畫布到後端失敗:', error);
+        throw error;
+    }
+};
+
+// 獲取多個聊天室的最新情緒分析摘要
+export const loadLatestAnalysisForChatroomsService = async (chatroomIds) => {
+    try {
+        const result = await getLatestAnalysisForChatrooms(chatroomIds);
+        return result;
+    } catch (error) {
         throw error;
     }
 };
