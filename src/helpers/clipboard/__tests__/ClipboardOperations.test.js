@@ -163,23 +163,4 @@ describe("ClipboardOperations", () => {
 		expect(canvas.setActiveObject).toHaveBeenCalled();
 		expect(canvas.requestRenderAll).toHaveBeenCalled();
 	});
-
-	it("cut: 應儲存到歷史記錄", async () => {
-		const mockHistoryManager = {
-			saveState: jest.fn(),
-		};
-		canvas.historyManager = mockHistoryManager;
-		await ClipboardOperations.cut(canvas);
-		expect(mockHistoryManager.saveState).toHaveBeenCalled();
-	});
-
-	it("paste: 應儲存到歷史記錄", async () => {
-		const mockHistoryManager = {
-			saveState: jest.fn(),
-		};
-		canvas.historyManager = mockHistoryManager;
-		await ClipboardOperations.copy(canvas);
-		await ClipboardOperations.paste(canvas);
-		expect(mockHistoryManager.saveState).toHaveBeenCalled();
-	});
 });

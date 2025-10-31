@@ -13,12 +13,9 @@ export const setupHistoryEventListeners = (canvas, onStateChange, isUndoRedoing)
 	const handleObjectEvent = (e) => {
 		const target = e.target || e.path;
 		if (isEraserIndicator(target)) return;
-		// 優先檢查是否正在執行 undo/redo
-		if (isUndoRedoing()) return;
-		// 檢查是否是批量操作中,跳過記錄
-		if (canvas.isBatchOperation) return;
-		// 保存狀態
-		onStateChange();
+		if (!isUndoRedoing()) {
+			onStateChange();
+		}
 	};
 
 	const handleObjectRemoved = (e) => {

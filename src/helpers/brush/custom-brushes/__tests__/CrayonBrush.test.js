@@ -156,22 +156,4 @@ describe("CrayonBrush", () => {
 		brush._latestStrokeLength = 1;
 		expect(() => brush.draw(mockCtx)).not.toThrow();
 	});
-
-	it("onMouseUp 應儲存到歷史記錄", async () => {
-		const mockHistoryManager = {
-			saveState: jest.fn(),
-		};
-		mockCanvas.historyManager = mockHistoryManager;
-		const brush = new CrayonBrush(mockCanvas);
-		brush._drawn = true;
-		const img = { set: jest.fn(), setCoords: jest.fn() };
-		require("../../../../utils/BrushUtils").convertToImg.mockImplementation(() => Promise.resolve(img));
-		
-		brush.onMouseUp();
-		
-		// 等待 Promise 解析
-		await new Promise(resolve => setTimeout(resolve, 0));
-		
-		expect(mockHistoryManager.saveState).toHaveBeenCalled();
-	});
 });

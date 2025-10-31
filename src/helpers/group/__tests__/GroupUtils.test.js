@@ -247,32 +247,4 @@ describe('GroupUtils 測試', () => {
             );
         });
     });
-
-    describe('歷史記錄測試', () => {
-        test('groupSelectedObjects: 應透過事件自動儲存歷史記錄', () => {
-            // 群組操作會觸發 object:added 事件
-            // HistoryEventListeners 會自動捕捉並保存狀態
-            // 這裡只驗證基本操作正確執行
-            mockCanvas.getActiveObject.mockReturnValue(mockActiveObject);
-            Object.setPrototypeOf(mockActiveObject, fabric.ActiveSelection.prototype);
-
-            groupSelectedObjects(mockCanvas);
-
-            expect(mockCanvas.add).toHaveBeenCalled();
-            expect(mockCanvas.setActiveObject).toHaveBeenCalled();
-        });
-
-        test('ungroupSelectedGroup: 應透過事件自動儲存歷史記錄', () => {
-            // 解散群組操作會觸發 object:removed 事件
-            // HistoryEventListeners 會自動捕捉並保存狀態
-            // 這裡只驗證基本操作正確執行
-            mockCanvas.getActiveObject.mockReturnValue(mockGroup);
-            Object.setPrototypeOf(mockGroup, fabric.Group.prototype);
-
-            ungroupSelectedGroup(mockCanvas);
-
-            expect(mockCanvas.remove).toHaveBeenCalled();
-            expect(mockCanvas.setActiveObject).toHaveBeenCalled();
-        });
-    });
 });

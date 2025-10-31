@@ -74,10 +74,6 @@ class SpraypaintBrush extends fabric.BaseBrush {
 						img.setCoords();
 						this.canvas.add(img);
 						this.canvas.clearContext(this.canvas.contextTop);
-						// 儲存到歷史記錄
-						if (this.canvas.historyManager) {
-							this.canvas.historyManager.saveState();
-						}
 					}
 				})
 				.catch(() => {});

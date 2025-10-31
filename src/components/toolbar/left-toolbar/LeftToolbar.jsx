@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Box, Paper, Typography, IconButton } from "@mui/material";
 import { Close } from "@mui/icons-material";
@@ -26,27 +25,15 @@ const LeftToolbar = ({
 	textSettings,
 	canvas,
 }) => {
-	const [showSettings, setShowSettings] = useState(true);
-
-	// 當切換工具時，自動顯示設定面板
-	useEffect(() => {
-		if (activeTool) {
-			setShowSettings(true);
-		}
-	}, [activeTool]);
-
 	const handleToolClick = (tool) => {
 		setActiveTool(tool);
 	};
 
 	const handleCloseSettings = () => {
-		setShowSettings(false);
+		setActiveTool(null);
 	};
 
 	const renderSettingsPanel = () => {
-		// 只有在 showSettings 為 true 且有選擇工具時才顯示面板
-		if (!showSettings || !activeTool) return null;
-
 		const settingsMap = {
 			select: { title: "選擇工具設置", component: <SelectSettings canvas={canvas} /> },
 			pencil: { title: "畫筆設置", component: <BrushSettings brushSettings={brushSettings} onBrushSettingsChange={setBrushSettings} /> },

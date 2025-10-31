@@ -46,10 +46,6 @@ export const deserializeCanvasState = async (canvas, jsonState) => {
 	const currentViewport = canvas.viewportTransform;
 	const currentZoom = canvas.getZoom();
 
-	// 設置批量操作標記,確保不會觸發歷史記錄事件
-	const wasBatchOperation = canvas.isBatchOperation;
-	canvas.isBatchOperation = true;
-
 	canvas.clear();
 
 	try {
@@ -70,20 +66,13 @@ export const deserializeCanvasState = async (canvas, jsonState) => {
 					}
 					obj.setCoords();
 				});
-				
-				// 恢復批量操作標記
-				canvas.isBatchOperation = wasBatchOperation;
-				
-				// 渲染畫布
+
 				canvas.requestRenderAll();
-				
 				resolve();
 			});
 		});
 	} catch (error) {
 		console.error("Error loading canvas state:", error);
-		// 發生錯誤時也要恢復標記
-		canvas.isBatchOperation = wasBatchOperation;
 		throw error;
 	}
 };

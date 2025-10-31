@@ -39,11 +39,6 @@ export const cut = async (canvas) => {
     }
 
     canvas.requestRenderAll();
-
-    // 儲存到歷史記錄
-    if (canvas.historyManager) {
-        canvas.historyManager.saveState();
-    }
 };
 
 export const copy = async (canvas) => {
@@ -110,11 +105,6 @@ export const paste = async (canvas) => {
             canvas.setActiveObject(clonedObj);
         }
         canvas.requestRenderAll();
-
-        // 儲存到歷史記錄
-        if (canvas.historyManager) {
-            canvas.historyManager.saveState();
-        }
     } catch (error) {
         console.error("貼上失敗:", error);
     }

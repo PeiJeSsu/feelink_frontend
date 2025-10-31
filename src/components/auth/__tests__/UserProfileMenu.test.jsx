@@ -11,17 +11,6 @@ jest.mock("../../../hooks/useAuth", () => ({
     useAuth: () => mockUseAuth(),
 }));
 
-// 模擬 useHandleDirtyButtonClick Hook
-// 此 Hook 會回傳一個函式,該函式接收一個 target 參數
-// 當 target 是函式時,直接執行它
-jest.mock("../../SaveCanvas/useHandleDirtyButtonClick", () => ({
-    useHandleDirtyButtonClick: () => (target) => {
-        if (typeof target === 'function') {
-            target();
-        }
-    },
-}));
-
 // 模擬 Firebase Auth
 const mockOnAuthStateChanged = jest.fn();
 const mockSignOut = jest.fn();
