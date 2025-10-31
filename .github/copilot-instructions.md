@@ -1,2 +1,0 @@
-- When performing a code review, respond in Traditional Chinese using wording and expressions commonly used in Taiwan for all summary, overview, Reviewed Changes, and inline comments.
-- Before providing any comments, please first understand the overall project structure and related logic, then proceed with your review.

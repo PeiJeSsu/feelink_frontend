@@ -337,16 +337,15 @@ const Layout = () => {
                         onConfirm={handleConfirmSaveCanvas}
                     />
 
-					{/* 聊天室切換按鈕 */}
 					<Button
 						onClick={handleEmotionReport || analysisLoading}
 						disabled={chatDisabled}
 						sx={{
-							color: isChatOpen ? "#2563eb" : "#64748b",
-							backgroundColor: isChatOpen ? "#f1f5f9" : "transparent",
-							border: isChatOpen ? "1px solid #2563eb" : "1px solid #d1d5db",
+							color: "#2563eb",
+							backgroundColor: "#f1f5f9",
+							border: "1px solid #2563eb",
 							fontSize: "14px",
-							fontWeight: isChatOpen ? 500 : 600,
+							fontWeight: 500,
 							padding: "6px 12px",
 							borderRadius: "8px",
 							textTransform: "none",
@@ -355,7 +354,7 @@ const Layout = () => {
 							"&:hover": {
 								backgroundColor: isChatOpen ? "#f1f5f9" : "#f9fafb",
 								color: "#2563eb",
-								border: isChatOpen ? "none" : "1px solid #2563eb",
+								border: isChatOpen ? "1px solid transparent" : "1px solid #2563eb",
 							},
 							"&:disabled": {
 								backgroundColor: "#f3f4f6",
@@ -367,6 +366,7 @@ const Layout = () => {
 						情緒分析
 					</Button>
 
+					{/* 聊天室切換按鈕 */}
 					<Button
 						onClick={toggleChat}
 						disabled={chatDisabled}
@@ -377,7 +377,7 @@ const Layout = () => {
 							backgroundColor: isChatOpen ? "#f1f5f9" : "transparent",
 							border: isChatOpen ? "1px solid #2563eb" : "1px solid #d1d5db",
 							fontSize: "14px",
-							fontWeight: isChatOpen ? 500 : 600,
+							fontWeight: 500,
 							padding: "6px 12px",
 							borderRadius: "8px",
 							textTransform: "none",
@@ -386,7 +386,7 @@ const Layout = () => {
 							"&:hover": {
 								backgroundColor: isChatOpen ? "#f1f5f9" : "#f9fafb",
 								color: "#2563eb",
-								border: isChatOpen ? "none" : "1px solid #2563eb",
+								border: isChatOpen ? "1px solid transparent" : "1px solid #2563eb",
 							},
 							"&:disabled": { 
 								backgroundColor: "#f3f4f6",

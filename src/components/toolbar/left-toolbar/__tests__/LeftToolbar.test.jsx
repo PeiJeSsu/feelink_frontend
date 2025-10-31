@@ -374,13 +374,36 @@ describe("LeftToolbar 組件測試", () => {
 	});
 
 	describe("關閉設置面板功能", () => {
-		test("點擊關閉按鈕應調用 setActiveTool(null)", () => {
+		test("點擊關閉按鈕應隱藏設置面板但保持工具選取狀態", () => {
 			render(<LeftToolbar {...defaultProps} activeTool="pencil" />);
+
+			// 確認設置面板存在
+			expect(screen.getByTestId("brush-settings")).toBeInTheDocument();
 
 			const closeButton = screen.getByTestId("close-settings-button");
 			fireEvent.click(closeButton);
 
-			expect(defaultProps.setActiveTool).toHaveBeenCalledWith(null);
+			// 設置面板應該被隱藏
+			expect(screen.queryByTestId("brush-settings")).not.toBeInTheDocument();
+
+			// setActiveTool 不應該被調用 (工具保持選取狀態)
+			expect(defaultProps.setActiveTool).not.toHaveBeenCalled();
+		});
+
+		test("關閉設置面板後再次點擊相同工具應重新顯示設置面板", () => {
+			render(<LeftToolbar {...defaultProps} activeTool="pencil" />);
+
+			// 關閉設置面板
+			const closeButton = screen.getByTestId("close-settings-button");
+			fireEvent.click(closeButton);
+			expect(screen.queryByTestId("brush-settings")).not.toBeInTheDocument();
+
+			// 再次點擊畫筆工具按鈕
+			const pencilButton = screen.getByTestId("pencil-button");
+			fireEvent.click(pencilButton);
+
+			// 設置面板應該重新顯示
+			expect(screen.getByTestId("brush-settings")).toBeInTheDocument();
 		});
 
 		test("設置面板應顯示關閉圖示", () => {
