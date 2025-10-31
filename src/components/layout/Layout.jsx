@@ -52,7 +52,7 @@ const Layout = () => {
 		try {
 			setAnalysisLoading(true);
 			const currentMessageCount = await getChatMessagesCount(currentChatroomId);
-			if (currentMessageCount < 3) {
+			if (currentMessageCount < 0) {
 				showAlert('請先與AI對話超過3句話，再進行情緒分析', 'warning');
 				setAnalysisLoading(false);
 				return;
@@ -364,7 +364,7 @@ const Layout = () => {
 							},
 						}}
 					>
-						當天情緒分析
+						情緒分析
 					</Button>
 
 					<Button
