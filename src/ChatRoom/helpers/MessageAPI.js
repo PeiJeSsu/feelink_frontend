@@ -485,11 +485,12 @@ export const savePreQuestionForChatroom = async (chatroomId, preQuestion) => {
     }
 };
 
-export const saveCanvasToBackend = async (canvasData, chatroomId) => {
+export const saveCanvasToBackend = async (canvasData, chatroomId, canvasImageUrl = null) => {
     try {
         const response = await apiConfig.post(`/api/canvas/save`, {
             canvasData: canvasData,
-            chatroomId: chatroomId
+            chatroomId: chatroomId,
+            canvasImageUrl: canvasImageUrl
         }, {
             headers: {
                 'Content-Type': 'application/json',
@@ -519,5 +520,31 @@ export const deleteChatroomCanvas = async (chatroomId) => {
     } catch (error) {
         console.error('刪除畫布失敗:', error);
         throw new Error(error.response?.data?.message || error.message || '刪除畫布失敗');
+    }
+};
+
+export const getChatroomCanvasImage = async (chatroomId) => {
+    try {
+        const response = await apiConfig.get(`/api/canvas/chatroom/${chatroomId}/image`);
+        return response.data;
+    } catch (error) {
+        if (error.response?.status === 404) {
+            return null; // 沒有畫布資料
+        }
+        console.error('取得畫布縮圖失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '取得畫布縮圖失敗');
+    }
+};
+
+// 獲取多個聊天室的最新情緒分析摘要（用於長期分析折線圖）
+export const getLatestAnalysisForChatrooms = async (chatroomIds) => {
+    try {
+        const response = await apiConfig.post('/api/emotion-analysis/chatrooms/latest-summary', {
+            chatroomIds: chatroomIds
+        });
+        return response.data;
+    } catch (error) {
+        console.error('獲取聊天室情緒分析摘要失敗:', error);
+        throw new Error(error.response?.data?.message || error.message || '獲取情緒分析摘要失敗');
     }
 };
