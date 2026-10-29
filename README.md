@@ -1,14 +1,14 @@
 # FeelInk 超繪聊
 
-**An AI emotional support platform that combines drawing with empathetic AI conversation.**
+**An AI emotional support platform that pairs drawing with empathetic AI chat.**
 
-Users express how they feel by drawing on a canvas and chatting with an AI partner. FeelInk reads both the artwork and the conversation to understand the user's emotions, responds with empathy, and steps in with real support resources when it detects signs of distress.
+Draw and chat with an AI partner that reads your emotions and responds with care.
 
-- 🏆 **3rd Place**, Information Applications Track, 30th InnoServe Awards (1,964 teams nationwide)
+- 🏆 **3rd Place**, 30th InnoServe Awards (1,964 teams nationwide)
 - 🏅 **Honorable Mention**, MOE Intelligent Innovation Contest (2025)
 - 🏅 **Honorable Mention**, NTOU CSE Capstone Competition (2025)
 
-> This repository is the **React frontend**. The Spring Boot backend lives in [feelink_backend](https://github.com/PeiJeSsu/feelink_backend).
+> This is the **React frontend**. Backend: [feelink_backend](https://github.com/PeiJeSsu/feelink_backend)
 
 ---
 
@@ -35,7 +35,7 @@ Users express how they feel by drawing on a canvas and chatting with an AI partn
 ## ✨ Features
 
 ### 🎨 Drawing
-- Rich drawing tools built on Fabric.js: textured brushes (crayon, ink, and more), shapes, text, eraser, and paint bucket
+- Fabric.js tools: textured brushes, shapes, text, eraser, and paint bucket
 - Adjustable color, size, and opacity; move, rotate, scale, group, undo, and redo
 - Save and reopen canvases, or export them as files
 
@@ -45,14 +45,14 @@ Users express how they feel by drawing on a canvas and chatting with an AI partn
 - Multimodal input: the AI can analyze the canvas as well as the conversation
 
 ### 🖌️ AI-Assisted Creation
-- **Analyze canvas**: the AI interprets colors, subjects, and composition to gauge the user's mood
-- **Generate objects**: describe something and the AI draws it, with the background removed, ready to place on the canvas
+- **Analyze canvas**: reads colors, subjects, and composition to gauge mood
+- **Generate objects**: the AI draws what you describe, background removed
 - **Drawing relay**: the AI picks up the user's drawing and continues it
 
 ### 🛡️ Emotional Support
-- **Crisis-aware replies**: recent messages are scored on a five-level risk rubric, and the level shapes the response, from ordinary conversation up to crisis hotlines
-- **Real resources**: when support is needed, the AI searches the web (SerpAPI) to recommend counseling services that actually exist
-- **Daily emotion report**: scores eight emotions, summarizes the day, and infers the user's psychological needs
+- **Crisis-aware replies**: a 5-level risk score decides when to offer hotlines
+- **Real resources**: finds real counseling services via web search (SerpAPI)
+- **Daily emotion report**: scores eight emotions and infers the user's needs
 
 ---
 
@@ -84,8 +84,8 @@ flowchart LR
 
 ## ✅ Testing & CI/CD
 
-- **1,300+ automated tests**: about 900 Jest tests in this repo and 440 JUnit tests in the backend
-- Every push to `main` and every pull request runs the full test suite with coverage, followed by SonarQube analysis, through GitHub Actions
+- **1,300+ tests**: ~900 Jest (this repo) and 440 JUnit (backend)
+- GitHub Actions runs all tests and SonarQube on every push and PR
 - Workflows are in [`.github/workflows`](.github/workflows)
 
 ---
@@ -123,6 +123,10 @@ npm run test:coverage  # Run tests with a coverage report
 
 ## 👥 Team
 
-Capstone project by a 4-person team at the Department of Computer Science and Engineering, National Taiwan Ocean University, advised by Prof. Shang-Pin Ma.
+Capstone project by a 4-person team at NTOU CSE, advised by Prof. Shang-Pin Ma.
 
-**My role (Team Lead):** led system architecture design, designed the crisis-aware response flow, built real-time streaming chat over SSE, integrated the frontend and backend, and set up the CI/CD pipeline.
+**My role (Team Lead):**
+- Led system architecture design and frontend–backend integration
+- Designed the crisis-aware response flow
+- Built real-time streaming chat over SSE
+- Set up the CI/CD pipeline
