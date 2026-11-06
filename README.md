@@ -45,7 +45,7 @@ Draw and chat with an AI partner that reads your emotions and responds with care
 - Multimodal input: the AI can analyze the canvas as well as the conversation
 
 ### 🖌️ AI-Assisted Creation
-- **Analyze canvas**: reads colors, subjects, and composition to gauge mood
+- **Analyze canvas**: sends the drawing to Gemini and shows its interpretation
 - **Generate objects**: the AI draws what you describe, background removed
 - **Drawing relay**: the AI picks up the user's drawing and continues it
 
